@@ -9,9 +9,8 @@ define('CS_SHARED_SECRET', 'hDJmkfnGYQlMzsjVlgcnnYiLB0mbX5N8Kb1ZBm7DG6U=');
 define('CS_SANDBOX', true);
 define('CS_LOG_FILE', __DIR__ . '/cybersource.log');
 
-define('TEST_AMOUNT_SMALL', 5000);
-define('TEST_AMOUNT_MEDIUM', 150000);
-define('TEST_AMOUNT_LARGE', 500000);
+define('AMOUNT', 5000);
+
 
 try {
     $cs = new CyberSource(
@@ -54,7 +53,7 @@ switch ($action) {
     // Authorize a payment (no capture)
     case 'authorize':
         $payload = CyberSource::buildPaymentPayload(
-            TEST_AMOUNT_SMALL,
+            AMOUNT,
             '4111111111111111',
             '12',
             '2031',
@@ -74,7 +73,7 @@ switch ($action) {
     //Auth + Capture in one call 
     case 'auth_capture':
         $payload = CyberSource::buildPaymentPayload(
-            TEST_AMOUNT_MEDIUM,
+            AMOUNT,
             '4111111111111111',
             '12',
             '2031',
@@ -105,7 +104,7 @@ switch ($action) {
     // ── 3. Capture a prior authorisation 
     case 'capture':
         $paymentId = $_GET['payment_id'] ?? ($argv[2] ?? '');
-        $amount = (int) ($_GET['amount'] ?? ($argv[3] ?? TEST_AMOUNT_SMALL));
+        $amount = (int) ($_GET['amount'] ?? ($argv[3] ?? AMOUNT));
 
         if (!$paymentId) {
             echo json_encode(['error' => 'Missing payment_id — add ?payment_id=XXX']) . "\n";
@@ -132,7 +131,7 @@ switch ($action) {
     //Refund a captured/settled payment
     case 'refund':
         $captureId = $_GET['capture_id'] ?? ($argv[2] ?? '');
-        $amount = (int) ($_GET['amount'] ?? ($argv[3] ?? TEST_AMOUNT_MEDIUM));
+        $amount = (int) ($_GET['amount'] ?? ($argv[3] ?? AMOUNT));
 
         if (!$captureId) {
             echo json_encode(['error' => 'Missing capture_id — add ?capture_id=XXX']) . "\n";
