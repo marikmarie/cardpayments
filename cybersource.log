@@ -1,0 +1,46 @@
+[2026-06-06 11:13:04] [REQUEST] {
+    "method": "POST",
+    "url": "https://apitest.cybersource.com/pts/v2/payments",
+    "currency": "UGX",
+    "body": {
+        "clientReferenceInformation": {
+            "code": "UGX-AUTH-1780737184"
+        },
+        "paymentInformation": {
+            "card": {
+                "number": "4111111111111111",
+                "expirationMonth": "12",
+                "expirationYear": "2031",
+                "securityCode": "123"
+            }
+        },
+        "orderInformation": {
+            "amountDetails": {
+                "totalAmount": "5000",
+                "currency": "UGX"
+            },
+            "billTo": {
+                "firstName": "Cissy",
+                "lastName": "Nakato",
+                "address1": "Plot 1 Kampala Road",
+                "locality": "Kampala",
+                "administrativeArea": "Central",
+                "postalCode": "00000",
+                "country": "UG",
+                "email": "cissy@example.co.ug",
+                "phoneNumber": "256772000001"
+            }
+        }
+    }
+}
+[2026-06-06 11:13:04] [RESPONSE] {
+    "httpStatus": 400,
+    "response": {
+        "submitTimeUtc": "2026-06-06T09:13:06.013963156Z",
+        "status": "DECLINED",
+        "errorInformation": {
+            "reason": "INVALID_DATA",
+            "message": "Invalid Json Request"
+        }
+    }
+}
