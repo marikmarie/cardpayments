@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><?= \App\View::e(($title ?? 'CissyTech Payments') . ' · CissyTech') ?></title>
+  <link rel="stylesheet" href="<?= $url('/assets/app.css') ?>">
+</head>
+<body class="app-body">
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="<?= $url('/links') ?>">
+      <span class="brand-mark">▯</span>
+      <span>Cissy<span>Tech</span><small>Payments</small></span>
+    </a>
+
+    <p class="workspace-label">Workspace</p>
+    <nav class="side-nav">
+      <a class="<?= ($active_nav ?? 'overview') === 'overview' ? 'active' : '' ?>" href="<?= $url('/links') ?>">
+        <span>▦</span> Overview
+      </a>
+      <a class="<?= ($active_nav ?? '') === 'create' ? 'active' : '' ?>" href="<?= $url('/links/create') ?>">
+        <span>＋</span> Create payment link
+      </a>
+      <a class="<?= ($active_nav ?? '') === 'test' ? 'active' : '' ?>" href="<?= $url('/test-center') ?>">
+        <span>◈</span> Test center
+      </a>
+      <a class="<?= ($active_nav ?? '') === 'api' ? 'active' : '' ?>" href="<?= $url('/developers/api') ?>">
+        <span>⌘</span> API reference
+      </a>
+    </nav>
+
+    <div class="sidebar-note">
+      <span class="note-dot"></span>
+      <div>
+        <strong>Sandbox mode</strong>
+        <small>Cybersource Test server</small>
+      </div>
+    </div>
+
+    <div class="account">
+      <span class="avatar">C</span>
+      <div>
+        <strong>CissyTech Team</strong>
+        <small>Open test workspace</small>
+      </div>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <div>
+        <p class="breadcrumb">CISSYTECH / PAYMENTS</p>
+        <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
+      </div>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">＋ New link</a>
+    </header>
+
+    <main class="content">
+      <?php if (!empty($flash)): ?>
+        <div class="flash <?= \App\View::e($flash['type']) ?>">
+          <?= \App\View::e($flash['message']) ?>
+        </div>
+      <?php endif; ?>
+      <?= $content ?>
+    </main>
+  </div>
+</div>
+</body>
+</html>
