@@ -5,11 +5,19 @@ use App\Controllers\ApiController;
 use App\Controllers\ApiDocsController;
 use App\Controllers\LinkController;
 use App\Controllers\TestController;
+use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use App\Url;
 
 require dirname(__DIR__) . '/bootstrap.php';
-session_start(['cookie_httponly' => true, 'cookie_samesite' => 'Lax']);
+$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+session_start([
+    'cookie_httponly' => true,
+    'cookie_samesite' => 'Lax',
+    'cookie_secure' => $isHttps,
+    'cookie_path' => Url::basePath() ?: '/',
+]);
 
 $method = $_SERVER['REQUEST_METHOD'];
 $path = Url::withoutBase(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/');
@@ -27,8 +35,11 @@ try {
 
     $links = new LinkController();
     $test = new TestController();
+    $vendor = new VendorSimulatorController();
     if ($method === 'GET' && $path === '/developers/api') { (new ApiDocsController())->index(); exit; }
     if ($method === 'GET' && $path === '/test-center') { $test->index(); exit; }
+    if ($method === 'GET' && $path === '/vendor-simulator') { $vendor->index(); exit; }
+    if ($method === 'POST' && $path === '/vendor-simulator/payment-links') { $vendor->create($_POST); }
     if ($method === 'POST' && preg_match('#^/test-center/links/([a-f0-9]+)/refresh$#', $path, $m)) { $test->refresh($m[1]); }
     if ($method === 'POST' && preg_match('#^/test-center/links/([a-f0-9]+)/email$#', $path, $m)) { $test->send($m[1]); }
     if ($method === 'GET' && $path === '/links') { $links->index(); exit; }
@@ -45,5 +56,7 @@ try {
     http_response_code(500);
     $isApi = str_starts_with($path, '/api/') || str_starts_with($path, '/webhooks/');
     if ($isApi) header('Content-Type: application/json');
-    echo $isApi ? json_encode(['error' => $e->getMessage()]) : 'Something went wrong: ' . htmlspecialchars($e->getMessage());
+    $debug = filter_var(\App\Config::get('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+    $message = $debug ? $e->getMessage() : 'An unexpected error occurred. Please try again.';
+    echo $isApi ? json_encode(['error' => $message]) : 'Something went wrong: ' . htmlspecialchars($message);
 }

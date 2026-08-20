@@ -14,49 +14,40 @@ $volume = array_sum(array_map(
 
 <section class="welcome-row">
   <div>
-    <p class="eyebrow">Cybersource integration</p>
-    <h1>Welcome to CissyTech Payments.</h1>
-    <p>Process card payments through the API, or create secure Cybersource-hosted checkout links.</p>
+    <h1>Overview</h1>
+    <p>Payment links and payments.</p>
   </div>
-  <a class="outline-action" href="<?= $url('/links/create') ?>">Create a payment link <span>→</span></a>
+  <a class="outline-action" href="<?= $url('/links/create') ?>">New payment link</a>
 </section>
 
 <section class="metric-grid">
-  <article class="metric-card cyan">
-    <span class="metric-icon">↗</span>
-    <p>Payment links</p>
-    <strong><?= $total ?></strong>
-    <small><?= $created ?> awaiting payment</small>
+  <article class="metric-card">
+    <p>Open links</p>
+    <strong><?= $created ?></strong>
   </article>
-  <article class="metric-card blue">
-    <span class="metric-icon">✓</span>
+  <article class="metric-card">
     <p>Processed payments</p>
     <strong><?= $paid ?></strong>
-    <small>Authorized, paid, or completed</small>
   </article>
-  <article class="metric-card dark">
-    <span class="metric-icon">⌁</span>
-    <p>Payment volume</p>
+  <article class="metric-card">
+    <p>Received</p>
     <strong>UGX <?= number_format($volume, 0) ?></strong>
-    <small>Successful sandbox payments</small>
   </article>
 </section>
 
 <section class="panel recent-panel">
   <div class="panel-header">
     <div>
-      <h3>Recent payment links</h3>
-      <p>Manage the hosted checkout links created for your customers.</p>
+      <h3>Recent links</h3>
     </div>
-    <a href="<?= $url('/links/create') ?>">View all <span>→</span></a>
+    <a href="<?= $url('/links/create') ?>">New link</a>
   </div>
 
   <?php if (!$links): ?>
     <div class="empty-state">
       <span>✦</span>
-      <h3>Create your first payment link</h3>
-      <p>Send customers to a secure CyberSource hosted checkout page.</p>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">Create payment link</a>
+      <h3>No links yet</h3>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">Create link</a>
     </div>
   <?php else: ?>
     <div class="table-wrap">
@@ -109,25 +100,24 @@ $volume = array_sum(array_map(
 
 <section id="api" class="api-band">
   <div>
-    <p class="eyebrow">Developer tools</p>
-    <h3>Connect your own systems</h3>
-    <p>Use <code>POST /api/v1/payments</code> for direct sales, or <code>POST /api/v1/payment-links</code> for hosted checkout.</p>
-    <a class="docs-link" href="<?= $url('/developers/api') ?>">View API reference →</a>
+    <h3>API keys</h3>
+    <p>Create a key for each system that connects to your API.</p>
+    <a class="docs-link" href="<?= $url('/developers/api') ?>">API reference</a>
   </div>
   <form action="<?= $url('/api-keys') ?>" method="post" class="key-form">
-    <input name="name" placeholder="e.g. Storefront API" required>
-    <button>Create API key</button>
+    <input name="name" placeholder="e.g. Online shop" required>
+    <button>Create key</button>
   </form>
 </section>
 
 <?php if (!empty($api_key)): ?>
   <section class="key-card">
     <div>
-      <p class="eyebrow">Copy this now</p>
-      <strong>Your new API key</strong>
+      <p class="eyebrow">New key</p>
+      <strong>Copy it now</strong>
     </div>
     <code><?= \App\View::e($api_key['token']) ?></code>
-    <small>This full value is never shown again.</small>
+    <small>It will not be shown again.</small>
   </section>
 <?php endif; ?>
 
@@ -135,7 +125,6 @@ $volume = array_sum(array_map(
   <div class="panel-header">
     <div>
       <h3>API keys</h3>
-      <p>Give each connected system its own key. Revoke a key immediately when it is no longer needed.</p>
     </div>
   </div>
   <div class="table-wrap">

@@ -14,7 +14,7 @@
       <span>Cissy<span>Tech</span><small>Payments</small></span>
     </a>
 
-    <p class="workspace-label">Workspace</p>
+    <p class="workspace-label">Menu</p>
     <nav class="side-nav">
       <a class="<?= ($active_nav ?? 'overview') === 'overview' ? 'active' : '' ?>" href="<?= $url('/links') ?>">
         <span>▦</span> Overview
@@ -25,35 +25,21 @@
       <a class="<?= ($active_nav ?? '') === 'test' ? 'active' : '' ?>" href="<?= $url('/test-center') ?>">
         <span>◈</span> Test center
       </a>
+      <a class="<?= ($active_nav ?? '') === 'vendor' ? 'active' : '' ?>" href="<?= $url('/vendor-simulator') ?>">
+        <span>↗</span> Vendor simulator
+      </a>
       <a class="<?= ($active_nav ?? '') === 'api' ? 'active' : '' ?>" href="<?= $url('/developers/api') ?>">
         <span>⌘</span> API reference
       </a>
     </nav>
 
-    <div class="sidebar-note">
-      <span class="note-dot"></span>
-      <div>
-        <strong>Sandbox mode</strong>
-        <small>Cybersource Test server</small>
-      </div>
-    </div>
 
-    <div class="account">
-      <span class="avatar">C</span>
-      <div>
-        <strong>CissyTech Team</strong>
-        <small>Open test workspace</small>
-      </div>
-    </div>
   </aside>
 
   <div class="workspace">
     <header class="topbar">
-      <div>
-        <p class="breadcrumb">CISSYTECH / PAYMENTS</p>
-        <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
-      </div>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">＋ New link</a>
+      <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">New link</a>
     </header>
 
     <main class="content">

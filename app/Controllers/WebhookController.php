@@ -13,7 +13,12 @@ final class WebhookController extends Controller
 {
     public function health(): never
     {
-        $this->json(['status' => 'ok']);
+        try {
+            (new Store())->read('webhook_events');
+            $this->json(['status' => 'ok', 'database' => 'connected']);
+        } catch (\Throwable) {
+            $this->json(['status' => 'unavailable', 'database' => 'unavailable'], 503);
+        }
     }
 
     public function receive(): never

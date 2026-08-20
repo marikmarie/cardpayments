@@ -16,7 +16,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 ## Local setup
 
 1. The dashboard is open for local testing. Protect it with authentication before putting it on a public server.
-2. Start the application:
+2. For local work, set `APP_URL="http://localhost:8000"` in your untracked `.env` file, then start the application:
 
    ```powershell
    php -S localhost:8000 router.php
@@ -100,28 +100,33 @@ Run `database/schema.mysql.sql` on MySQL 8+ when you deploy, enable `pdo_mysql`,
 Set CyberSource's webhook callback URL to:
 
 ```text
-https://mariam.cissytech.com/bank/webhooks/cybersource
+https://mariam.cissytech.com/cardpayments/webhooks/cybersource
 ```
 
 Set its health-check URL to:
 
 ```text
-https://mariam.cissytech.com/bank/webhooks/cybersource/health
+https://mariam.cissytech.com/cardpayments/webhooks/cybersource/health
 ```
 
 Create a separate CyberSource Webhooks Digital Signature Key and set `CYBERSOURCE_WEBHOOK_KEY_ID` and `CYBERSOURCE_WEBHOOK_SHARED_SECRET` in `.env`. The receiver validates the `v-c-signature` HMAC, key ID, and timestamp before it records the event or updates a local invoice status. Subscribe to the `customerInvoicing` events `invoicing.customer.invoice.paid`, `invoicing.customer.invoice.partial-payment`, `invoicing.customer.invoice.cancel`, and `invoicing.customer.invoice.send`.
 
 For local test work, open `/test-center`, open a hosted checkout URL, complete the CyberSource Test payment, and select **Refresh status**. A local `localhost` URL cannot receive CyberSource webhooks; automatic updates require deployment to a public HTTPS address and the signature key configuration above.
 
-## Hosting at `/bank`
+## Hosting at `mariam.cissytech.com/cardpayments`
+
+The repository includes a root `.htaccess`, so it can be uploaded directly to the `cardpayments` web folder with WinSCP. Apache exposes only `public/`; your `.env`, source code, database schema, and storage stay outside the public URL.
 
 On the hosted server set this value in `.env`:
 
 ```ini
-APP_URL="https://mariam.cissytech.com/bank"
+APP_URL="https://mariam.cissytech.com/cardpayments"
+APP_DEBUG="false"
 ```
 
-The application now generates dashboard links, form actions, assets, API documentation, the webhook callback, and the health-check URL with the `/bank` prefix. Configure your web server to route requests under `/bank` to `public/index.php` while serving files under `public/assets` directly.
+The application generates dashboard links, form actions, assets, API documentation, the webhook callback, and the health-check URL with the `/cardpayments` prefix.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the precise WinSCP upload and server configuration steps.
 
 For CyberSource Test, enable Invoicing in Business Center first. Create a webhook subscription with product ID `customerInvoicing`, event types `invoicing.customer.invoice.paid`, `invoicing.customer.invoice.partial-payment`, `invoicing.customer.invoice.cancel`, and `invoicing.customer.invoice.send`, and use the two URLs above. Save the webhook ID returned by CyberSource. After deployment, CyberSource checks the health URL and activates the subscription once it can reach it.
 

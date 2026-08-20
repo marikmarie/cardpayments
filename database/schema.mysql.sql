@@ -1,9 +1,6 @@
-CREATE DATABASE IF NOT EXISTS paylink_lab CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE paylink_lab;
-
 -- Compact application state used by the plain-PHP repository layer. It keeps
 -- the local JSON and MySQL storage contracts identical.
-CREATE TABLE app_state (
+CREATE TABLE IF NOT EXISTS app_state (
   id TINYINT PRIMARY KEY,
   state JSON NOT NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
