@@ -2,7 +2,7 @@
   <div>
     <p class="eyebrow">Developer documentation</p>
     <h1>Build on the CissyTech Payments API.</h1>
-    <p>Create a payment link from your backend. The active checkout is set on Overview. Card details always go to CyberSource.</p>
+    <p>Create an invoice from your backend. The active payment page is set on Overview. Card details always go to CyberSource.</p>
   </div>
   <a class="primary-action" href="<?= $url('/api/v1/openapi.json') ?>" target="_blank" rel="noreferrer">
     Download OpenAPI JSON ↗
@@ -14,7 +14,7 @@
     <strong>On this page</strong>
     <a href="#start">Get started</a>
     <a href="#payments">Process a payment</a>
-    <a href="#links">Create a payment link</a>
+    <a href="#links">Create an invoice</a>
     <a href="#retrieve">Confirm payment</a>
     <a href="#webhooks">Webhooks</a>
     <a href="#errors">Errors &amp; security</a>
@@ -66,7 +66,7 @@ X-API-Key: plk_test_...</pre>
       <p class="eyebrow">03 / Hosted checkout</p>
       <div class="endpoint-title">
         <div>
-          <h2>Create a payment link</h2>
+          <h2>Create an invoice</h2>
           <p>Creates one CyberSource invoice and returns the payment link currently selected on Overview.</p>
         </div>
         <span class="method post">POST</span>

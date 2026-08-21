@@ -15,9 +15,9 @@ $volume = array_sum(array_map(
 <section class="welcome-row">
   <div>
     <h1>Overview</h1>
-    <p>Payment links and payments.</p>
+    <p>Invoices and payments.</p>
   </div>
-  <a class="outline-action" href="<?= $url('/links/create') ?>">New payment link</a>
+  <a class="outline-action" href="<?= $url('/links/create') ?>">New invoice</a>
 </section>
 
 <section class="metric-grid">
@@ -52,16 +52,16 @@ $volume = array_sum(array_map(
 <section class="panel recent-panel">
   <div class="panel-header">
     <div>
-      <h3>Recent links</h3>
+      <h3>Recent invoices</h3>
     </div>
-    <a href="<?= $url('/links/create') ?>">New link</a>
+    <a href="<?= $url('/links/create') ?>">New invoice</a>
   </div>
 
   <?php if (!$links): ?>
     <div class="empty-state">
       <span>✦</span>
-      <h3>No links yet</h3>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">Create link</a>
+      <h3>No invoices yet</h3>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">Create invoice</a>
     </div>
   <?php else: ?>
     <div class="table-wrap">

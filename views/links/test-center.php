@@ -5,9 +5,9 @@ $statusLabel = fn(array $link): string => strtoupper((string) ($link['status'] ?
 <section class="test-hero">
   <div>
     <h1>Test payments</h1>
-    <p>Create a link, pay on CyberSource, then refresh its status.</p>
+    <p>Create an invoice, pay on CyberSource, then refresh its status.</p>
   </div>
-  <a class="primary-action" href="<?= $url('/links/create') ?>">New test link</a>
+  <a class="primary-action" href="<?= $url('/links/create') ?>">New test invoice</a>
 </section>
 
 <section class="check-grid">
@@ -40,17 +40,17 @@ $statusLabel = fn(array $link): string => strtoupper((string) ($link['status'] ?
 <section class="panel test-links-panel">
   <div class="panel-header">
     <div>
-      <h3>Payment links</h3>
+      <h3>Invoices</h3>
       <p>Refresh to get the latest status.</p>
     </div>
-    <a href="<?= $url('/links/create') ?>">New link <span>→</span></a>
+    <a href="<?= $url('/links/create') ?>">New invoice <span>→</span></a>
   </div>
 
   <?php if (!$links): ?>
     <div class="empty-state">
       <span>✓</span>
-      <h3>No payment links</h3>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">Create link</a>
+      <h3>No invoices</h3>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">Create invoice</a>
     </div>
   <?php else: ?>
     <div class="table-wrap">

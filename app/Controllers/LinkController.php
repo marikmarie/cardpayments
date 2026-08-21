@@ -28,7 +28,7 @@ final class LinkController extends Controller
     public function index(): void
     {
         View::render('links/index', [
-            'title' => 'Payment links',
+            'title' => 'Invoices',
             'links' => $this->links->all(),
             'transactions' => (new Transaction(new Store()))->all(),
             'flash' => $_SESSION['flash'] ?? null,
@@ -42,7 +42,7 @@ final class LinkController extends Controller
     public function createForm(): void
     {
         View::render('links/create', [
-            'title' => 'Create payment link', 'active_nav' => 'create',
+            'title' => 'Create invoice', 'active_nav' => 'create',
             'checkout_type' => $this->checkoutSettings->type(), 'flash' => $_SESSION['flash'] ?? null,
         ]);
         unset($_SESSION['flash']);
@@ -52,7 +52,7 @@ final class LinkController extends Controller
     {
         try {
             $record = $this->createFromInput($input);
-            $this->flash('success', "Payment link {$record['invoice_number']} created.");
+            $this->flash('success', "Invoice {$record['invoice_number']} created.");
             $this->redirect('/links');
         } catch (\Throwable $e) {
             $this->flash('error', $e->getMessage());
@@ -68,7 +68,7 @@ final class LinkController extends Controller
                 throw new \InvalidArgumentException('Add a valid customer email before sending this payment link.');
             }
             if (!empty($link['due_date']) && $link['due_date'] < gmdate('Y-m-d')) {
-                throw new \InvalidArgumentException('This payment link is past its due date. Create a new link with a future due date.');
+                throw new \InvalidArgumentException('This invoice is past its due date. Create a new invoice with a future due date.');
             }
             if (in_array(strtoupper((string) $link['status']), ['PAID', 'COMPLETED', 'CANCELED'], true)) {
                 throw new \InvalidArgumentException('This payment link can no longer be emailed.');
@@ -138,7 +138,7 @@ final class LinkController extends Controller
         if (!is_numeric($amount) || (float) $amount <= 0 || !$currency || !$description) {
             throw new \InvalidArgumentException('Enter a description, positive amount, and currency.');
         }
-        if (($send && !filter_var($email, FILTER_VALIDATE_EMAIL)) || ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL))) {
+        if (($send && !$this->validEmail($email)) || ($email !== '' && !$this->validEmail($email))) {
             throw new \InvalidArgumentException('A valid customer email is required when sending the payment link.');
         }
 
@@ -178,5 +178,13 @@ final class LinkController extends Controller
     private function need(string $id): array
     {
         return $this->links->find($id) ?? throw new \RuntimeException('Payment link not found.');
+    }
+
+    private function validEmail(string $email): bool
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return false;
+        $domain = substr(strrchr($email, '@') ?: '', 1);
+        $suffix = substr(strrchr($domain, '.') ?: '', 1);
+        return (bool) preg_match('/^[a-z]{2,63}$/i', $suffix);
     }
 }

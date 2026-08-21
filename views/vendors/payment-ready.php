@@ -1,8 +1,8 @@
 <section class="payment-ready-hero">
   <span class="success-mark">✓</span>
-  <p class="eyebrow">Link created</p>
-  <h1>Payment link ready</h1>
-  <p>Use the active payment link.</p>
+  <p class="eyebrow">Invoice created</p>
+  <h1>Payment page ready</h1>
+  <p>Use the active payment URL.</p>
 </section>
 
 <section class="payment-ready-grid">

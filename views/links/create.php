@@ -1,6 +1,6 @@
 <section class="create-heading">
-  <h1>New payment link</h1>
-  <p><?= $checkout_type === 'cissytech' ? 'CissyTech payment link is active.' : 'CyberSource payment link is active.' ?> Card details are entered on CyberSource.</p>
+  <h1>New invoice</h1>
+  <p><?= $checkout_type === 'cissytech' ? 'CissyTech payment page is active.' : 'CyberSource payment page is active.' ?> Card details are entered on CyberSource.</p>
 </section>
 
 <form class="link-form compact-link-form" action="<?= $url('/links') ?>" method="post">
@@ -63,6 +63,6 @@
   </section>
 
   <div class="form-actions compact-actions">
-    <button class="primary-action">Create link</button>
+    <button class="primary-action">Create invoice</button>
   </div>
 </form>

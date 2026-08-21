@@ -20,7 +20,7 @@
         <span>▦</span> Overview
       </a>
       <a class="<?= ($active_nav ?? '') === 'create' ? 'active' : '' ?>" href="<?= $url('/links/create') ?>">
-        <span>＋</span> Create payment link
+        <span>＋</span> Create invoice
       </a>
       <a class="<?= ($active_nav ?? '') === 'test' ? 'active' : '' ?>" href="<?= $url('/test-center') ?>">
         <span>◈</span> Test center
@@ -39,7 +39,7 @@
   <div class="workspace">
     <header class="topbar">
       <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">New link</a>
+      <a class="primary-action" href="<?= $url('/links/create') ?>">New invoice</a>
     </header>
 
     <main class="content">

@@ -62,7 +62,7 @@ final class TestController extends Controller
                 throw new \InvalidArgumentException('Add a valid customer email before sending this payment link.');
             }
             if (!empty($link['due_date']) && $link['due_date'] < gmdate('Y-m-d')) {
-                throw new \InvalidArgumentException('This payment link is past its due date. Create a new link with a future due date.');
+                throw new \InvalidArgumentException('This invoice is past its due date. Create a new invoice with a future due date.');
             }
             if (in_array(strtoupper((string) $link['status']), ['PAID', 'COMPLETED', 'CANCELED'], true)) {
                 throw new \InvalidArgumentException('This payment link can no longer be emailed.');
