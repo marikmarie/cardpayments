@@ -290,7 +290,15 @@ class CyberSource
     //log
     private function log(string $type, $data): void
     {
-        $logFile = __DIR__ . '/cybersource.log';
+        $logDirectory = __DIR__ . '/storage';
+        if (!is_dir($logDirectory)) {
+            mkdir($logDirectory, 0770, true);
+        }
+        if (!is_writable($logDirectory)) {
+            error_log('CissyTech CyberSource logging unavailable: storage directory is not writable.');
+            return;
+        }
+        $logFile = $logDirectory . '/cybersource.log';
 
         $entry = [
             'time' => date('Y-m-d H:i:s'),
@@ -298,11 +306,14 @@ class CyberSource
             'data' => $data
         ];
 
-        file_put_contents(
+        $written = file_put_contents(
             $logFile,
             json_encode($entry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n",
-            FILE_APPEND
+            FILE_APPEND | LOCK_EX
         );
+        if ($written === false) {
+            error_log('CissyTech CyberSource logging unavailable: could not write storage/cybersource.log.');
+        }
     }
 
     /** Keep request diagnostics useful without writing card data to disk. */

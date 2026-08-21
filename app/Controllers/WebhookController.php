@@ -15,7 +15,12 @@ final class WebhookController extends Controller
     {
         try {
             (new Store())->read('webhook_events');
-            $this->json(['status' => 'ok', 'database' => 'connected']);
+            $storage = dirname(__DIR__, 2) . '/storage';
+            $this->json([
+                'status' => 'ok',
+                'database' => 'connected',
+                'storage' => is_dir($storage) && is_writable($storage) ? 'writable' : 'not_writable',
+            ]);
         } catch (\Throwable) {
             $this->json(['status' => 'unavailable', 'database' => 'unavailable'], 503);
         }
