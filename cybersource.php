@@ -249,7 +249,9 @@ class CyberSource
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
@@ -259,19 +261,22 @@ class CyberSource
 
         $raw = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlNo = curl_errno($ch);
         $curlErr = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false) {
-            return $this->envelope(
+            $response = $this->envelope(
                 false,
                 0,
                 'TRANSPORT_ERROR',
                 null,
                 null,
-                $raw,
-                "cURL error: {$curlErr}"
+                null,
+                "cURL error {$curlNo}: {$curlErr}"
             );
+            $this->log('RESPONSE', $response);
+            return $response;
         }
 
         $normalized = $this->normalize($code, $raw);

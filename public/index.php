@@ -27,7 +27,11 @@ try {
     if ($method === 'GET' && $path === '/') { header('Location: ' . Url::path('/links')); exit; }
 
     if ($method === 'GET' && $path === '/webhooks/cybersource/health') { (new WebhookController())->health(); }
-    if ($method === 'POST' && $path === '/webhooks/cybersource') { (new WebhookController())->receive(); }
+    if ($path === '/webhooks/cybersource') {
+        $webhook = new WebhookController();
+        if ($method === 'POST') $webhook->receive();
+        $webhook->information();
+    }
     if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'POST' && $path === '/api/v1/payments') { (new ApiController())->charge(); }

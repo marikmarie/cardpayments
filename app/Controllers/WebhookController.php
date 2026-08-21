@@ -21,6 +21,14 @@ final class WebhookController extends Controller
         }
     }
 
+    public function information(): never
+    {
+        $this->json([
+            'message' => 'This endpoint accepts signed POST notifications from CyberSource.',
+            'healthCheckUrl' => \App\Url::path('/webhooks/cybersource/health'),
+        ], 405);
+    }
+
     public function receive(): never
     {
         $keyId = (string) Config::get('CYBERSOURCE_WEBHOOK_KEY_ID');
