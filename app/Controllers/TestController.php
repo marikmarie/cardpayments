@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Models\PaymentLink;
+use App\Models\CheckoutSettings;
 use App\Models\WebhookEvent;
 use App\Services\CyberSourceService;
 use App\Store;
@@ -27,6 +28,7 @@ final class TestController extends Controller
             'title' => 'Test center',
             'active_nav' => 'test',
             'links' => $this->links->all(),
+            'checkout_type' => (new CheckoutSettings(new Store()))->type(),
             'events' => (new WebhookEvent(new Store()))->all(),
             'webhook_ready' => $keyId !== '' && $secret !== '',
             'callback_url' => rtrim((string) Config::get('APP_URL', 'http://localhost:8000'), '/') . '/webhooks/cybersource',

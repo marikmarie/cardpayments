@@ -1,6 +1,6 @@
 <section class="create-heading">
   <h1>New payment link</h1>
-  <p>Card details are entered on CyberSource.</p>
+  <p><?= $checkout_type === 'cissytech' ? 'CissyTech payment link is active.' : 'CyberSource payment link is active.' ?> Card details are entered on CyberSource.</p>
 </section>
 
 <form class="link-form compact-link-form" action="<?= $url('/links') ?>" method="post">

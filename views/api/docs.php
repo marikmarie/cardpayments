@@ -2,7 +2,7 @@
   <div>
     <p class="eyebrow">Developer documentation</p>
     <h1>Build on the CissyTech Payments API.</h1>
-    <p>Create CyberSource-hosted payment links from your backend. This is the default integration for every API client.</p>
+    <p>Create a payment link from your backend. The active checkout is set on Overview. Card details always go to CyberSource.</p>
   </div>
   <a class="primary-action" href="<?= $url('/api/v1/openapi.json') ?>" target="_blank" rel="noreferrer">
     Download OpenAPI JSON ↗
@@ -63,11 +63,11 @@ X-API-Key: plk_test_...</pre>
     </section>
 
     <section id="links" class="docs-section panel">
-      <p class="eyebrow">03 / Hosted checkout — default</p>
+      <p class="eyebrow">03 / Hosted checkout</p>
       <div class="endpoint-title">
         <div>
           <h2>Create a payment link</h2>
-          <p>Creates a CyberSource invoice and gives you the hosted checkout URL. Use this for every normal integration: card data goes directly to CyberSource.</p>
+          <p>Creates one CyberSource invoice and returns the payment link currently selected on Overview.</p>
         </div>
         <span class="method post">POST</span>
       </div>
@@ -75,12 +75,16 @@ X-API-Key: plk_test_...</pre>
       <div class="request-grid">
         <div>
           <h3>Request body</h3>
-          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "ORDER-1001", "description": "Order payment", "due_date": "2026-09-30", "send": false, "allow_partial": false, "customer": { "name": "Mariam", "email": "customer@example.com" } }</pre>
+          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "ORDER-1001", "description": "Order payment", "send": false, "customer": { "name": "Mariam", "email": "customer@example.com" } }</pre>
         </div>
         <div>
           <h3>201 response</h3>
-          <pre>{ "data": { "id": "your-link-id", "provider_invoice_id": "ORDER-1001", "payment_url": "https://...", "amount": "1000.00", "currency": "UGX", "status": "CREATED" } }</pre>
+          <pre>{ "data": { "id": "your-link-id", "checkout_type": "active choice", "payment_url": "active payment link", "status": "CREATED" } }</pre>
         </div>
+      </div>
+      <div class="warning">
+        <strong>Choose the checkout once</strong>
+        <p>On Overview, select CissyTech for a branded page before CyberSource or CyberSource for direct checkout. Every vendor receives only the active link.</p>
       </div>
     </section>
 

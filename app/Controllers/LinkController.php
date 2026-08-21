@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\ApiKey;
+use App\Models\CheckoutSettings;
 use App\Models\PaymentLink;
 use App\Models\Transaction;
 use App\Services\CyberSourceService;
@@ -14,12 +15,14 @@ final class LinkController extends Controller
 {
     private PaymentLink $links;
     private ApiKey $keys;
+    private CheckoutSettings $checkoutSettings;
 
     public function __construct()
     {
         $store = new Store();
         $this->links = new PaymentLink($store);
         $this->keys = new ApiKey($store);
+        $this->checkoutSettings = new CheckoutSettings($store);
     }
 
     public function index(): void
@@ -31,13 +34,17 @@ final class LinkController extends Controller
             'flash' => $_SESSION['flash'] ?? null,
             'api_key' => $_SESSION['new_api_key'] ?? null,
             'api_keys' => $this->keys->all(),
+            'checkout_type' => $this->checkoutSettings->type(),
         ]);
         unset($_SESSION['flash'], $_SESSION['new_api_key']);
     }
 
     public function createForm(): void
     {
-        View::render('links/create', ['title' => 'Create payment link', 'active_nav' => 'create', 'flash' => $_SESSION['flash'] ?? null]);
+        View::render('links/create', [
+            'title' => 'Create payment link', 'active_nav' => 'create',
+            'checkout_type' => $this->checkoutSettings->type(), 'flash' => $_SESSION['flash'] ?? null,
+        ]);
         unset($_SESSION['flash']);
     }
 
@@ -82,6 +89,21 @@ final class LinkController extends Controller
             $invoice = (new CyberSourceService())->fetch($link['provider_invoice_id']);
             $this->links->update($id, ['status' => $invoice['status'] ?? $link['status'], 'provider_data' => $invoice]);
             $this->flash('success', 'Payment link status refreshed.');
+        } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+        }
+        $this->redirect('/links');
+    }
+
+    public function setCheckoutType(array $input): void
+    {
+        try {
+            $type = strtolower($this->value($input, 'checkout_type'));
+            if (!in_array($type, ['cissytech', 'cybersource'], true)) {
+                throw new \InvalidArgumentException('Choose CissyTech or CyberSource checkout.');
+            }
+            $this->checkoutSettings->setType($type);
+            $this->flash('success', 'Active checkout link updated.');
         } catch (\Throwable $e) {
             $this->flash('error', $e->getMessage());
         }
@@ -134,6 +156,7 @@ final class LinkController extends Controller
             'amount' => number_format((float) $amount, 2, '.', ''),
             'currency' => $currency,
             'send' => $send,
+            'checkout_type' => $this->checkoutSettings->type(),
         ];
         $provider = (new CyberSourceService())->createLink($request);
         if (!$provider['invoice_id'] || !$provider['payment_url']) {

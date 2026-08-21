@@ -49,7 +49,7 @@
 
   <aside class="panel vendor-note">
     <h3>How it works</h3>
-    <p>The vendor server receives <code>payment_url</code> and redirects the customer there. Keep <code>X-API-Key</code> on the server.</p>
+    <p>The vendor server receives the active <code>payment_url</code>. Change the active link on Overview. Keep <code>X-API-Key</code> on the server.</p>
     <pre>POST /api/v1/payment-links
 send: false
 
@@ -65,6 +65,6 @@ send: false
       <strong><?= \App\View::e($session_link['invoice_number']) ?></strong>
       <small><?= \App\View::e($session_link['currency']) ?> <?= \App\View::e($session_link['amount']) ?> · <?= \App\View::e($session_link['status']) ?></small>
     </div>
-    <a class="outline-action" href="<?= \App\View::e($session_link['payment_url']) ?>">Open payment page</a>
+    <a class="outline-action" href="<?= \App\View::e(\App\Services\CheckoutLink::selectedUrl($session_link, $checkout_type)) ?>">Open payment page</a>
   </section>
 <?php endif; ?>

@@ -533,7 +533,7 @@ td a, td small { display: block; color: var(--muted); font-size: 13px; text-deco
 label { color: #384f5a; font-size: 15px; font-weight: 700; }
 label > small { color: #87969d; font-size: 12px; font-weight: 400; }
 
-input, textarea {
+input, textarea, select {
   display: block;
   width: 100%;
   margin-top: 7px;
@@ -545,10 +545,10 @@ input, textarea {
   font: 16px Arial, Helvetica, sans-serif;
 }
 
-input:focus, textarea:focus { outline: 3px solid rgba(0, 174, 239, .16); border-color: var(--blue); }
+input:focus, textarea:focus, select:focus { outline: 3px solid rgba(0, 174, 239, .16); border-color: var(--blue); }
 input::placeholder, textarea::placeholder { color: #a7b3b8; opacity: 1; }
 textarea { min-height: 72px; resize: vertical; }
-.compact-form-grid input, .compact-form-grid textarea { padding: 8px 10px; font-size: 15px; }
+.compact-form-grid input, .compact-form-grid textarea, .compact-form-grid select { padding: 8px 10px; font-size: 15px; }
 .compact-form-grid textarea { min-height: 54px; }
 .options { display: grid; gap: 19px; }
 .options .section-title { margin-bottom: 0; }
@@ -566,6 +566,32 @@ textarea { min-height: 72px; resize: vertical; }
 .toggle small { display: block; color: var(--muted); font-size: 14px; font-weight: 400; }
 .form-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
 .compact-actions { justify-content: flex-end; }
+.checkout-setting { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 18px; margin-bottom: 16px; }
+.checkout-setting form { display: flex; align-items: end; gap: 10px; }
+.checkout-setting label { font-size: 13px; }
+.checkout-setting select { min-width: 210px; margin-top: 4px; padding: 7px 9px; font-size: 13px; }
+.checkout-setting .primary-action { min-height: 36px; padding: 7px 13px; font-size: 13px; }
+.checkout-setting small { color: var(--muted); font-size: 12px; }
+
+.checkout-body { min-height: 100vh; background: #f4f9fb; }
+.checkout-header { display: flex; height: 70px; align-items: center; justify-content: space-between; padding: 0 max(22px, calc((100vw - 900px) / 2)); background: #fff; border-bottom: 1px solid var(--line); color: #657981; font-size: 13px; font-weight: 700; }
+.checkout-header .brand { padding: 0; font-size: 20px; }
+.checkout-header .brand-mark { width: 34px; height: 34px; font-size: 18px; }
+.checkout-header .brand small { margin-top: 5px; font-size: 9px; }
+.checkout-main { width: min(100% - 36px, 570px); margin: 54px auto; }
+.checkout-card { padding: 32px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(35, 64, 75, .07); }
+.checkout-card h1 { margin: 4px 0 7px; font-size: 27px; line-height: 1.22; }
+.checkout-copy { margin: 0; color: var(--muted); font-size: 15px; }
+.checkout-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0 18px; padding: 18px; border-radius: 8px; background: #f7fbfc; }
+.checkout-summary div { display: grid; gap: 2px; }
+.checkout-summary span, .checkout-status-row > span:first-child { color: #71858d; font-size: 12px; }
+.checkout-summary strong { font-size: 15px; }
+.checkout-status-row { display: flex; align-items: center; justify-content: space-between; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
+.checkout-button { display: flex; width: 100%; justify-content: center; margin-top: 20px; }
+.checkout-refresh { margin-top: 9px; text-align: center; }
+.checkout-refresh .ghost-button { font-size: 13px; }
+.checkout-note { margin: 19px 0 0; color: #71858d; font-size: 12px; text-align: center; }
+.checkout-not-found { text-align: center; }
 
 @media (max-width: 980px) {
   .sidebar { flex-basis: 225px; }
@@ -589,6 +615,7 @@ textarea { min-height: 72px; resize: vertical; }
   .docs-nav strong { grid-column: 1 / -1; }
   .request-grid { grid-template-columns: 1fr; }
   .compact-options { grid-template-columns: 1fr; }
+  .checkout-setting, .checkout-setting form { align-items: stretch; flex-direction: column; }
   .wide { grid-column: auto; }
   .row-actions { flex-direction: column; }
   .docs-hero { align-items: flex-start; flex-direction: column; }
@@ -598,6 +625,9 @@ textarea { min-height: 72px; resize: vertical; }
   .vendor-flow { grid-template-columns: 1fr; gap: 15px; }
   .vendor-flow i { width: 1px; height: 16px; margin: 0 15px; }
   .vendor-fields, .payment-summary { grid-template-columns: 1fr; }
+  .checkout-main { margin-top: 32px; }
+  .checkout-card { padding: 24px 20px; }
+  .checkout-header { padding: 0 18px; }
   .payment-flow { grid-template-columns: 1fr; gap: 18px; }
   .payment-flow i { width: 1px; height: 20px; margin: 0 17px; }
 }

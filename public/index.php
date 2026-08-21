@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Controllers\ApiController;
 use App\Controllers\ApiDocsController;
+use App\Controllers\CheckoutController;
 use App\Controllers\LinkController;
 use App\Controllers\TestController;
 use App\Controllers\VendorSimulatorController;
@@ -25,6 +26,9 @@ $path = rtrim($path, '/') ?: '/';
 
 try {
     if ($method === 'GET' && $path === '/') { header('Location: ' . Url::path('/links')); exit; }
+
+    if ($method === 'GET' && preg_match('#^/pay/([a-f0-9]{24})$#', $path, $m)) { (new CheckoutController())->show($m[1]); exit; }
+    if ($method === 'POST' && preg_match('#^/pay/([a-f0-9]{24})/refresh$#', $path, $m)) { (new CheckoutController())->refresh($m[1]); }
 
     if ($method === 'GET' && $path === '/webhooks/cybersource/health') { (new WebhookController())->health(); }
     if ($path === '/webhooks/cybersource') {
@@ -51,6 +55,7 @@ try {
     if ($method === 'POST' && $path === '/links') { $links->create($_POST); }
     if ($method === 'POST' && preg_match('#^/links/([a-f0-9]+)/send$#', $path, $m)) { $links->send($m[1]); }
     if ($method === 'POST' && preg_match('#^/links/([a-f0-9]+)/sync$#', $path, $m)) { $links->sync($m[1]); }
+    if ($method === 'POST' && $path === '/settings/checkout-type') { $links->setCheckoutType($_POST); }
     if ($method === 'POST' && $path === '/api-keys') { $links->createApiKey($_POST); }
     if ($method === 'POST' && preg_match('#^/api-keys/([a-f0-9]+)/revoke$#', $path, $m)) { $links->revokeApiKey($m[1]); }
 

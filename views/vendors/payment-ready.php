@@ -2,7 +2,7 @@
   <span class="success-mark">✓</span>
   <p class="eyebrow">Link created</p>
   <h1>Payment link ready</h1>
-  <p>Use this link to open CyberSource checkout.</p>
+  <p>Use the active payment link.</p>
 </section>
 
 <section class="payment-ready-grid">
@@ -18,10 +18,10 @@
       </div>
     </div>
     <label>
-      Payment URL
-      <input readonly value="<?= \App\View::e($link['payment_url']) ?>">
+      Selected payment URL
+      <input readonly value="<?= \App\View::e(\App\Services\CheckoutLink::selectedUrl($link, $checkout_type)) ?>">
     </label>
-    <a class="primary-action full-action" href="<?= \App\View::e($link['payment_url']) ?>">Open payment page</a>
+    <a class="primary-action full-action" href="<?= \App\View::e(\App\Services\CheckoutLink::selectedUrl($link, $checkout_type)) ?>">Open payment page</a>
   </article>
 
   <article class="panel vendor-response-card">

@@ -5,9 +5,11 @@ namespace App\Controllers;
 
 use App\Config;
 use App\Models\ApiKey;
+use App\Models\CheckoutSettings;
 use App\Models\PaymentLink;
 use App\Models\Transaction;
 use App\Services\CyberSourceService;
+use App\Services\CheckoutLink;
 use App\Store;
 
 final class ApiController extends Controller
@@ -16,6 +18,7 @@ final class ApiController extends Controller
     private PaymentLink $links;
     private Transaction $transactions;
     private LinkController $dashboard;
+    private CheckoutSettings $checkoutSettings;
 
     public function __construct()
     {
@@ -24,6 +27,7 @@ final class ApiController extends Controller
         $this->links = new PaymentLink($store);
         $this->transactions = new Transaction($store);
         $this->dashboard = new LinkController();
+        $this->checkoutSettings = new CheckoutSettings($store);
     }
 
     public function create(): never
@@ -130,9 +134,12 @@ final class ApiController extends Controller
 
     private function resource(array $link): array
     {
+        $checkoutType = $this->checkoutSettings->type();
         return [
             'id' => $link['id'], 'invoice_number' => $link['invoice_number'], 'provider_invoice_id' => $link['provider_invoice_id'],
-            'payment_url' => $link['payment_url'], 'amount' => $link['amount'], 'currency' => $link['currency'],
+            'payment_url' => CheckoutLink::selectedUrl($link, $checkoutType),
+            'checkout_type' => $checkoutType,
+            'amount' => $link['amount'], 'currency' => $link['currency'],
             'status' => $link['status'], 'created_at' => $link['created_at'], 'updated_at' => $link['updated_at'] ?? null,
             'refreshed_at' => $link['refreshed_at'] ?? null,
         ];

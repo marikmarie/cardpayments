@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\PaymentLink;
+use App\Models\CheckoutSettings;
+use App\Services\CheckoutLink;
 use App\Store;
 use App\View;
 
@@ -11,11 +13,14 @@ final class VendorSimulatorController extends Controller
 {
     private LinkController $creator;
     private PaymentLink $links;
+    private CheckoutSettings $checkoutSettings;
 
     public function __construct()
     {
+        $store = new Store();
         $this->creator = new LinkController();
-        $this->links = new PaymentLink(new Store());
+        $this->links = new PaymentLink($store);
+        $this->checkoutSettings = new CheckoutSettings($store);
     }
 
     public function index(): void
@@ -29,6 +34,7 @@ final class VendorSimulatorController extends Controller
             'active_nav' => 'vendor',
             'session_link' => $sessionLink,
             'flash' => $_SESSION['flash'] ?? null,
+            'checkout_type' => $this->checkoutSettings->type(),
         ]);
         unset($_SESSION['flash']);
     }
@@ -53,6 +59,7 @@ final class VendorSimulatorController extends Controller
                 'title' => 'Payment ready',
                 'active_nav' => 'vendor',
                 'link' => $link,
+                'checkout_type' => $this->checkoutSettings->type(),
                 'api_response' => json_encode(['data' => $this->resource($link)], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             ]);
         } catch (\Throwable $e) {
@@ -67,7 +74,8 @@ final class VendorSimulatorController extends Controller
             'id' => $link['id'],
             'invoice_number' => $link['invoice_number'],
             'provider_invoice_id' => $link['provider_invoice_id'],
-            'payment_url' => $link['payment_url'],
+            'payment_url' => CheckoutLink::selectedUrl($link, $this->checkoutSettings->type()),
+            'checkout_type' => $this->checkoutSettings->type(),
             'amount' => $link['amount'],
             'currency' => $link['currency'],
             'status' => $link['status'],

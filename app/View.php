@@ -15,6 +15,16 @@ final class View
         require dirname(__DIR__) . '/views/layout.php';
     }
 
+    public static function renderPublic(string $name, array $data = []): void
+    {
+        $data['url'] ??= [Url::class, 'path'];
+        extract($data, EXTR_SKIP);
+        ob_start();
+        require dirname(__DIR__) . "/views/{$name}.php";
+        $content = ob_get_clean();
+        require dirname(__DIR__) . '/views/public-layout.php';
+    }
+
     public static function e(mixed $value): string
     {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

@@ -35,6 +35,20 @@ $volume = array_sum(array_map(
   </article>
 </section>
 
+<section class="panel checkout-setting">
+  <form action="<?= $url('/settings/checkout-type') ?>" method="post">
+    <label>
+      Payment link used now
+      <select name="checkout_type">
+        <option value="cissytech" <?= $checkout_type === 'cissytech' ? 'selected' : '' ?>>CissyTech payment link</option>
+        <option value="cybersource" <?= $checkout_type === 'cybersource' ? 'selected' : '' ?>>CyberSource payment link</option>
+      </select>
+    </label>
+    <button class="primary-action">Save</button>
+  </form>
+  <small><?= $checkout_type === 'cissytech' ? 'Customers see your CissyTech page before secure CyberSource checkout.' : 'Customers open CyberSource checkout directly.' ?></small>
+</section>
+
 <section class="panel recent-panel">
   <div class="panel-header">
     <div>
@@ -67,7 +81,7 @@ $volume = array_sum(array_map(
             <tr>
               <td>
                 <strong><?= \App\View::e($link['invoice_number']) ?></strong>
-                <a href="<?= \App\View::e($link['payment_url']) ?>" target="_blank" rel="noreferrer">Open checkout ↗</a>
+                <a href="<?= \App\View::e(\App\Services\CheckoutLink::selectedUrl($link, $checkout_type)) ?>" target="_blank" rel="noreferrer">Open checkout ↗</a>
               </td>
               <td>
                 <strong class="customer-name"><?= \App\View::e($link['customer_name']) ?></strong>

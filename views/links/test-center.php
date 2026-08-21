@@ -72,7 +72,7 @@ $statusLabel = fn(array $link): string => strtoupper((string) ($link['status'] ?
                 <small><?= \App\View::e($link['currency']) ?> <?= \App\View::e($link['amount']) ?></small>
               </td>
               <td>
-                <a class="checkout-link" href="<?= \App\View::e($link['payment_url']) ?>" target="_blank" rel="noreferrer">Open checkout ↗</a>
+                <a class="checkout-link" href="<?= \App\View::e(\App\Services\CheckoutLink::selectedUrl($link, $checkout_type)) ?>" target="_blank" rel="noreferrer">Open checkout ↗</a>
               </td>
               <td>
                 <span class="status <?= strtolower(\App\View::e($statusLabel($link))) ?>">

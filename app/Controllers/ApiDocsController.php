@@ -24,7 +24,7 @@ final class ApiDocsController extends Controller
             'info' => [
                 'title' => 'CissyTech Payments API',
                 'version' => '1.0.0',
-                'description' => 'Create CyberSource Invoicing hosted payment links. Direct card payments are an explicit PCI-gated option.',
+                'description' => 'Create a CissyTech-branded or direct CyberSource hosted payment link. Card entry always remains on CyberSource.',
             ],
             'servers' => [['url' => $this->baseUrl()]],
             'security' => [['ApiKeyAuth' => []]],
@@ -68,7 +68,7 @@ final class ApiDocsController extends Controller
             ],
             'paths' => [
                 '/api/v1/payments' => ['post' => $this->operation('Process a card payment', 'PaymentInput', 'PaymentResponse')],
-                '/api/v1/payment-links' => ['post' => $this->operation('Create a CyberSource-hosted payment link', 'PaymentLinkInput', 'PaymentLinkResponse')],
+                '/api/v1/payment-links' => ['post' => $this->operation('Create a hosted payment link', 'PaymentLinkInput', 'PaymentLinkResponse')],
                 '/api/v1/payment-links/{id}' => ['get' => [
                     'summary' => 'Retrieve or refresh a payment-link status',
                     'description' => 'Pass refresh=true after hosted checkout to retrieve the current invoice status directly from CyberSource.',
