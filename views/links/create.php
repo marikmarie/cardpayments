@@ -33,8 +33,8 @@
         <input name="customer_name" placeholder="Mariam Tukas">
       </label>
       <label>
-        Customer email <small>Optional</small>
-        <input name="customer_email" type="email" placeholder="customer@example.com">
+        Customer email 
+        <input name="customer_email" type="email" placeholder="maiam@gmail.com">
       </label>
       <label class="wide">
         Description

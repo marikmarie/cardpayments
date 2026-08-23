@@ -1,7 +1,7 @@
 <section class="vendor-hero">
   <div>
     <h1>Vendor test</h1>
-    <p>Create an invoice and receive its payment URL in this browser. Email is optional.</p>
+    <p>Create an invoice and receive its payment URL in this browser. </p>
   </div>
 </section>
 
@@ -40,8 +40,8 @@
         <input name="customer_name" placeholder="Customer name">
       </label>
       <label>
-        Customer email <small>Optional — saved with the invoice only</small>
-        <input name="customer_email" type="email" placeholder="customer@example.com">
+        Customer email 
+        <input name="customer_email" type="email" placeholder="mariam@gmail.com">
       </label>
       <button class="primary-action">Create invoice</button>
     </div>

@@ -53,7 +53,7 @@ X-API-Key: plk_test_...</pre>
       <div class="request-grid">
         <div>
           <h3>Request body</h3>
-          <pre>{ "amount": "1000.00", "currency": "UGX", "reference": "ORDER-1002", "card": { "number": "4111111111111111", "expiration_month": "12", "expiration_year": "2031", "security_code": "123" }, "bill_to": { "firstName": "John", "lastName": "Doe", "address1": "1 Market St", "locality": "Kampala", "administrativeArea": "Central", "postalCode": "256", "country": "UG", "email": "customer@example.com" } }</pre>
+          <pre>{ "amount": "1000.00", "currency": "UGX", "reference": "ORDER-1002", "card": { "number": "4111111111111111", "expiration_month": "12", "expiration_year": "2031", "security_code": "123" }, "bill_to": { "firstName": "John", "lastName": "Doe", "address1": "1 Market St", "locality": "Kampala", "administrativeArea": "Central", "postalCode": "256", "country": "UG", "email": "mariam@gmail.com" } }</pre>
         </div>
         <div>
           <h3>201 response</h3>
@@ -75,7 +75,7 @@ X-API-Key: plk_test_...</pre>
       <div class="request-grid">
         <div>
           <h3>Request body</h3>
-          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "ORDER-1001", "description": "Order payment", "send": false, "customer": { "name": "Mariam", "email": "customer@example.com" } }</pre>
+          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "ORDER-1001", "description": "Order payment", "send": false, "customer": { "name": "Mariam", "email": "mariam@gmail.com" } }</pre>
         </div>
         <div>
           <h3>201 response</h3>
