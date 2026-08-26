@@ -228,6 +228,9 @@ class CyberSource
     {
         $method = strtoupper($method);
         $hasBody = in_array($method, ['POST', 'PUT', 'PATCH'], true);
+        $operation = $method === 'GET' && preg_match('#^/invoicing/v2/invoices/[^/]+$#', $path)
+            ? 'invoice_status'
+            : 'api_request';
         // CyberSource follow-on actions such as invoice delivery require an
         // empty JSON object ({}) rather than an empty array ([]).
         $wirePayload = $hasBody && ($payload ?? []) === [] ? new stdClass() : $payload;
@@ -237,6 +240,7 @@ class CyberSource
 
         // LOG REQUEST
         $this->log('REQUEST', [
+            'operation' => $operation,
             'method' => $method,
             'url' => "https://{$this->host}{$path}",
             'headers' => $headers,
@@ -271,9 +275,20 @@ class CyberSource
                 $raw,
                 "cURL error: {$curlErr}"
             );
+<<<<<<< HEAD
+=======
+            $response['operation'] = $operation;
+            $response['invoice_status'] = null;
+            $this->log('RESPONSE', $response);
+            return $response;
+>>>>>>> da81d85e9ab8bdce04d245f96aa59e6654969081
         }
 
         $normalized = $this->normalize($code, $raw);
+        $normalized['operation'] = $operation;
+        $normalized['invoice_status'] = $operation === 'invoice_status'
+            ? ($normalized['data']['status'] ?? null)
+            : null;
 
         // ✅ LOG NORMALIZED RESPONSE
         $this->log('RESPONSE', $normalized);
