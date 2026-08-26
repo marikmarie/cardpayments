@@ -16,8 +16,7 @@ class CyberSource
     private string $secretKey;     // base64 shared secret
     private int $timeout;
 
-    /** @var array Last raw response, for debugging. */
-    private array $last = [];
+      private array $last = [];
 
     private function __construct(array $cfg)
     {
@@ -249,9 +248,7 @@ class CyberSource
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
@@ -261,22 +258,19 @@ class CyberSource
 
         $raw = curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlNo = curl_errno($ch);
         $curlErr = curl_error($ch);
         curl_close($ch);
 
         if ($raw === false) {
-            $response = $this->envelope(
+            return $this->envelope(
                 false,
                 0,
                 'TRANSPORT_ERROR',
                 null,
                 null,
-                null,
-                "cURL error {$curlNo}: {$curlErr}"
+                $raw,
+                "cURL error: {$curlErr}"
             );
-            $this->log('RESPONSE', $response);
-            return $response;
         }
 
         $normalized = $this->normalize($code, $raw);
@@ -290,15 +284,7 @@ class CyberSource
     //log
     private function log(string $type, $data): void
     {
-        $logDirectory = __DIR__ . '/storage';
-        if (!is_dir($logDirectory)) {
-            mkdir($logDirectory, 0770, true);
-        }
-        if (!is_writable($logDirectory)) {
-            error_log('CissyTech CyberSource logging unavailable: storage directory is not writable.');
-            return;
-        }
-        $logFile = $logDirectory . '/cybersource.log';
+        $logFile = __DIR__ . '/cybersource.log';
 
         $entry = [
             'time' => date('Y-m-d H:i:s'),
@@ -306,14 +292,11 @@ class CyberSource
             'data' => $data
         ];
 
-        $written = file_put_contents(
+        file_put_contents(
             $logFile,
             json_encode($entry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n",
-            FILE_APPEND | LOCK_EX
+            FILE_APPEND
         );
-        if ($written === false) {
-            error_log('CissyTech CyberSource logging unavailable: could not write storage/cybersource.log.');
-        }
     }
 
     /** Keep request diagnostics useful without writing card data to disk. */

@@ -82,7 +82,7 @@ Content-Type: application/json
     "administrativeArea": "Central",
     "postalCode": "256",
     "country": "UG",
-    "email": "customer@example.com"
+    "email": "mariam@gmail.com"
   }
 }
 ```

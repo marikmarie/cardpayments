@@ -7,7 +7,7 @@ $closed = in_array($status, ['PAID', 'COMPLETED', 'CANCELED'], true);
   <p class="eyebrow">CissyTech payment link</p>
   <h1><?= $complete ? 'Payment received' : ($status === 'CANCELED' ? 'Payment link closed' : 'Complete your payment') ?></h1>
   <p class="checkout-copy">
-    <?= $complete ? 'This payment has been received.' : ($status === 'CANCELED' ? 'This payment link is no longer available.' : 'You will enter your card details securely on CyberSource.') ?>
+    <?= $complete ? 'This payment has been received.' : ($status === 'CANCELED' ? 'This payment link is no longer available.' : ' Continue to enter your card details.') ?>
   </p>
 
   <div class="checkout-summary">

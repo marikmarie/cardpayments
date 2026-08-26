@@ -14,7 +14,7 @@
     <div class="compact-form-grid">
       <label>
         Invoice number
-        <input name="invoice_number" placeholder="INV-1001">
+        <input name="invoice_number" placeholder="INV1001">
       </label>
       <label>
         Amount

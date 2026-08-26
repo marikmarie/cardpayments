@@ -15,7 +15,7 @@
     <div class="vendor-form-body">
       <label>
         Vendor order reference
-        <input name="invoice_number" placeholder="ORDER-1001" maxlength="20" required>
+        <input name="invoice_number" placeholder="ORDER1001" maxlength="20" required>
       </label>
       <div class="vendor-fields">
         <label>
