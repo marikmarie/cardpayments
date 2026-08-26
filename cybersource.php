@@ -266,7 +266,7 @@ class CyberSource
         curl_close($ch);
 
         if ($raw === false) {
-            return $this->envelope(
+            $response = $this->envelope(
                 false,
                 0,
                 'TRANSPORT_ERROR',
@@ -275,13 +275,10 @@ class CyberSource
                 $raw,
                 "cURL error: {$curlErr}"
             );
-<<<<<<< HEAD
-=======
             $response['operation'] = $operation;
             $response['invoice_status'] = null;
             $this->log('RESPONSE', $response);
             return $response;
->>>>>>> da81d85e9ab8bdce04d245f96aa59e6654969081
         }
 
         $normalized = $this->normalize($code, $raw);
