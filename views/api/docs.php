@@ -79,7 +79,7 @@ X-API-Key: plk_test_...</pre>
         </div>
         <div>
           <h3>201 response</h3>
-          <pre>{ "data": { "id": "your-link-id", "checkout_type": "active choice", "payment_url": "active payment link", "status": "CREATED" } }</pre>
+          <pre>{ "data": { "invoice_number": "ORDER-1001", "payment_url": "active payment link" } }</pre>
         </div>
       </div>
       <div class="warning">

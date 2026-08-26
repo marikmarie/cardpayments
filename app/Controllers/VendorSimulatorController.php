@@ -71,14 +71,8 @@ final class VendorSimulatorController extends Controller
     private function resource(array $link): array
     {
         return [
-            'id' => $link['id'],
             'invoice_number' => $link['invoice_number'],
-            'provider_invoice_id' => $link['provider_invoice_id'],
             'payment_url' => CheckoutLink::selectedUrl($link, $this->checkoutSettings->type()),
-            'checkout_type' => $this->checkoutSettings->type(),
-            'amount' => $link['amount'],
-            'currency' => $link['currency'],
-            'status' => $link['status'],
         ];
     }
 }

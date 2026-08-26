@@ -43,7 +43,7 @@ final class ApiController extends Controller
                 'send' => $payload['send'] ?? false, 'customer_name' => $customer['name'] ?? '',
                 'customer_email' => $customer['email'] ?? '',
             ]);
-            $this->json(['data' => $this->resource($link)], 201);
+            $this->json(['data' => $this->createdInvoiceResource($link)], 201);
         } catch (\Throwable $e) {
             $this->json(['error' => $e->getMessage()], 422);
         }
@@ -142,6 +142,14 @@ final class ApiController extends Controller
             'amount' => $link['amount'], 'currency' => $link['currency'],
             'status' => $link['status'], 'created_at' => $link['created_at'], 'updated_at' => $link['updated_at'] ?? null,
             'refreshed_at' => $link['refreshed_at'] ?? null,
+        ];
+    }
+
+    private function createdInvoiceResource(array $link): array
+    {
+        return [
+            'invoice_number' => $link['invoice_number'],
+            'payment_url' => CheckoutLink::selectedUrl($link, $this->checkoutSettings->type()),
         ];
     }
 
