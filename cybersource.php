@@ -33,7 +33,10 @@ class CyberSource
     public static function init(array $cfg): self
     {
         $cfg['mode'] = $cfg['mode'] ?? 'api';
-        $cfg['environment'] = $cfg['environment'] ?? 'sandbox';
+        $cfg['environment'] = strtolower((string) ($cfg['environment'] ?? 'live'));
+        if ($cfg['environment'] === 'production') {
+            $cfg['environment'] = 'live';
+        }
 
         if (!in_array($cfg['mode'], ['api', 'payment_link'], true)) {
             throw new InvalidArgumentException("mode must be 'api' or 'payment_link'");
@@ -252,7 +255,9 @@ class CyberSource
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => $this->timeout,
+            CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
             CURLOPT_SSL_VERIFYPEER => true,
         ]);
 
@@ -296,7 +301,15 @@ class CyberSource
     //log
     private function log(string $type, $data): void
     {
-        $logFile = __DIR__ . '/cybersource.log';
+        $directory = __DIR__ . '/storage';
+        if (!is_dir($directory)) {
+            mkdir($directory, 0770, true);
+        }
+        if (!is_writable($directory)) {
+            error_log('CissyTech CyberSource logging unavailable: storage is not writable.');
+            return;
+        }
+        $logFile = $directory . '/cybersource.log';
 
         $entry = [
             'time' => date('Y-m-d H:i:s'),
@@ -304,11 +317,14 @@ class CyberSource
             'data' => $data
         ];
 
-        file_put_contents(
+        $written = file_put_contents(
             $logFile,
             json_encode($entry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n",
-            FILE_APPEND
+            FILE_APPEND | LOCK_EX
         );
+        if ($written === false) {
+            error_log('CissyTech CyberSource logging unavailable: could not write storage/cybersource.log.');
+        }
     }
 
     /** Keep request diagnostics useful without writing card data to disk. */

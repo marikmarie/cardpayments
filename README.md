@@ -5,7 +5,6 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 ## What is included
 
 - Open local dashboard for creating, sending, and refreshing payment links.
-- Test Center for hosted-checkout testing, live invoice-status refreshes, webhook health, and signed-event visibility.
 - `POST /api/v1/payment-links` JSON API for other systems.
 - `POST /api/v1/payments` JSON API for direct CyberSource card authorizations, disabled by default.
 - Dashboard-issued API keys, passed as `X-API-Key`.
@@ -16,7 +15,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 ## Local setup
 
 1. The dashboard is open for local testing. Protect it with authentication before putting it on a public server.
-2. For local work, set `APP_URL="http://localhost:8000"` in your untracked `.env` file, then start the application:
+2. Start the application:
 
    ```powershell
    php -S localhost:8000 router.php
@@ -24,7 +23,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 
 3. Open `http://localhost:8000` and create a payment link.
 
-The supplied `.env` uses the current CyberSource Test credentials. It is excluded by `.gitignore`; do not upload it or the log file.
+Set `CYBERSOURCE_ENV="live"` and add production REST credentials generated in CyberSource Production Business Center. Test and production REST keys are separate. `.env` and log files are excluded by `.gitignore`; do not commit either.
 
 ## External API
 
@@ -51,7 +50,7 @@ Content-Type: application/json
 }
 ```
 
-The `201` response contains your internal payment-link ID, CyberSource invoice ID, payment URL, and current status. Retrieve the last local status with `GET /api/v1/payment-links/{id}`. To confirm a completed hosted payment immediately, call `GET /api/v1/payment-links/{id}?refresh=true`; this securely fetches the latest invoice status from CyberSource and returns `PAID` once CyberSource has completed it. Customer details are optional when you return the link yourself; `customer.email` is required if `send` is `true`.
+The `201` response contains only `invoice_number` and `payment_url`. Keep the invoice number and use `GET /api/v1/payment-links/{id}?refresh=true` to retrieve the latest invoice status before fulfilling an order. Customer details are optional when you return the link yourself; `customer.email` is required if `send` is `true`.
 
 ### Direct payment API
 
@@ -75,14 +74,14 @@ Content-Type: application/json
     "security_code": "123"
   },
   "bill_to": {
-    "firstName": "John",
-    "lastName": "Doe",
-    "address1": "1 Market St",
+    "firstName": "Samson",
+    "lastName": "Kwiki",
+    "address1": "Ntinda",
     "locality": "Kampala",
     "administrativeArea": "Central",
     "postalCode": "256",
     "country": "UG",
-    "email": "mariam@gmail.com"
+    "email": "maiam@cissy.com"
   }
 }
 ```
@@ -100,35 +99,18 @@ Run `database/schema.mysql.sql` on MySQL 8+ when you deploy, enable `pdo_mysql`,
 Set CyberSource's webhook callback URL to:
 
 ```text
-https://mariam.cissytech.com/cardpayments/webhooks/cybersource
+https://your-domain.example/webhooks/cybersource
 ```
 
 Set its health-check URL to:
 
 ```text
-https://mariam.cissytech.com/cardpayments/webhooks/cybersource/health
+https://your-domain.example/webhooks/cybersource/health
 ```
 
 Create a separate CyberSource Webhooks Digital Signature Key and set `CYBERSOURCE_WEBHOOK_KEY_ID` and `CYBERSOURCE_WEBHOOK_SHARED_SECRET` in `.env`. The receiver validates the `v-c-signature` HMAC, key ID, and timestamp before it records the event or updates a local invoice status. Subscribe to the `customerInvoicing` events `invoicing.customer.invoice.paid`, `invoicing.customer.invoice.partial-payment`, `invoicing.customer.invoice.cancel`, and `invoicing.customer.invoice.send`.
 
-For local test work, open `/test-center`, open a hosted checkout URL, complete the CyberSource Test payment, and select **Refresh status**. A local `localhost` URL cannot receive CyberSource webhooks; automatic updates require deployment to a public HTTPS address and the signature key configuration above.
-
-## Hosting at `mariam.cissytech.com/cardpayments`
-
-The repository includes a root `.htaccess`, so it can be uploaded directly to the `cardpayments` web folder with WinSCP. Apache exposes only `public/`; your `.env`, source code, database schema, and storage stay outside the public URL.
-
-On the hosted server set this value in `.env`:
-
-```ini
-APP_URL="https://mariam.cissytech.com/cardpayments"
-APP_DEBUG="false"
-```
-
-The application generates dashboard links, form actions, assets, API documentation, the webhook callback, and the health-check URL with the `/cardpayments` prefix.
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the precise WinSCP upload and server configuration steps.
-
-For CyberSource Test, enable Invoicing in Business Center first. Create a webhook subscription with product ID `customerInvoicing`, event types `invoicing.customer.invoice.paid`, `invoicing.customer.invoice.partial-payment`, `invoicing.customer.invoice.cancel`, and `invoicing.customer.invoice.send`, and use the two URLs above. Save the webhook ID returned by CyberSource. After deployment, CyberSource checks the health URL and activates the subscription once it can reach it.
+Use **Refresh** on the invoice overview to retrieve the latest CyberSource payment status. Automatic updates require a public HTTPS webhook URL and the signature key configuration above.
 
 ## Which CyberSource APIs this application uses
 
@@ -139,6 +121,6 @@ For CyberSource Test, enable Invoicing in Business Center first. Create a webhoo
 
 ## Findings
 
-- Your CyberSource client now works when its wire-header order is `Host`, `Signature`, `Digest`, `v-c-merchant-id`, `v-c-date`, `Content-Type`.
+- Production requests go to `https://api.cybersource.com`; add production credentials from Production Business Center before creating an invoice.
 - Payment links are the right default integration: customers enter cards on CyberSource's hosted page, which keeps PAN and CVV out of this application and third-party integrations.
 - HTTP Signature is being retired by CyberSource, so plan a later migration to JWT/MLE before their deadline.

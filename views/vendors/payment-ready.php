@@ -39,5 +39,5 @@
     <h3>Confirm payment</h3>
     <p>Use a webhook or refresh the link status before fulfilling the order.</p>
   </div>
-  <a class="outline-action" href="<?= $url('/test-center') ?>">Check status</a>
+  <a class="outline-action" href="<?= $url('/links') ?>">View invoice status</a>
 </section>

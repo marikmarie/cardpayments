@@ -31,7 +31,7 @@ final class Config
 
         return [
             'mode' => 'payment_link',
-            'environment' => self::get('CYBERSOURCE_ENV', 'sandbox'),
+            'environment' => self::get('CYBERSOURCE_ENV', 'live'),
             'merchant_id' => self::get('CYBERSOURCE_MERCHANT_ID'),
             'key_id' => self::get('CYBERSOURCE_KEY_ID'),
             'secret_key' => self::get('CYBERSOURCE_SHARED_SECRET'),

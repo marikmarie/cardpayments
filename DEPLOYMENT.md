@@ -13,15 +13,15 @@ APP_URL="https://mariam.cissytech.com/cardpayments"
 APP_DEBUG="false"
 STORAGE_PATH="storage/data.json"
 
-CYBERSOURCE_ENV="sandbox"
-CYBERSOURCE_MERCHANT_ID="your_test_mid"
+CYBERSOURCE_ENV="live"
+CYBERSOURCE_MERCHANT_ID="your_production_mid"
 CYBERSOURCE_KEY_ID="your_rest_key_id"
 CYBERSOURCE_SHARED_SECRET="your_rest_shared_secret"
 CYBERSOURCE_WEBHOOK_KEY_ID="your_webhook_key_id"
 CYBERSOURCE_WEBHOOK_SHARED_SECRET="your_webhook_shared_secret"
 ```
 
-Use `CYBERSOURCE_ENV="production"` and production credentials only after CyberSource enables the live account.
+Use separate production REST and webhook credentials from `https://businesscenter.cybersource.com`. The application accepts `live` (and maps `production` to `live` for compatibility).
 
 ## 2. Upload with WinSCP
 

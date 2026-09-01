@@ -5,7 +5,6 @@ use App\Controllers\ApiController;
 use App\Controllers\ApiDocsController;
 use App\Controllers\CheckoutController;
 use App\Controllers\LinkController;
-use App\Controllers\TestController;
 use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use App\Url;
@@ -42,14 +41,10 @@ try {
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([a-f0-9]+)$#', $path, $m)) { (new ApiController())->show($m[1]); }
 
     $links = new LinkController();
-    $test = new TestController();
     $vendor = new VendorSimulatorController();
     if ($method === 'GET' && $path === '/developers/api') { (new ApiDocsController())->index(); exit; }
-    if ($method === 'GET' && $path === '/test-center') { $test->index(); exit; }
     if ($method === 'GET' && $path === '/vendor-simulator') { $vendor->index(); exit; }
     if ($method === 'POST' && $path === '/vendor-simulator/payment-links') { $vendor->create($_POST); }
-    if ($method === 'POST' && preg_match('#^/test-center/links/([a-f0-9]+)/refresh$#', $path, $m)) { $test->refresh($m[1]); }
-    if ($method === 'POST' && preg_match('#^/test-center/links/([a-f0-9]+)/email$#', $path, $m)) { $test->send($m[1]); }
     if ($method === 'GET' && $path === '/links') { $links->index(); exit; }
     if ($method === 'GET' && $path === '/links/create') { $links->createForm(); exit; }
     if ($method === 'POST' && $path === '/links') { $links->create($_POST); }

@@ -22,9 +22,6 @@
       <a class="<?= ($active_nav ?? '') === 'create' ? 'active' : '' ?>" href="<?= $url('/links/create') ?>">
         <span>＋</span> Create invoice
       </a>
-      <a class="<?= ($active_nav ?? '') === 'test' ? 'active' : '' ?>" href="<?= $url('/test-center') ?>">
-        <span>◈</span> Test center
-      </a>
       <a class="<?= ($active_nav ?? '') === 'vendor' ? 'active' : '' ?>" href="<?= $url('/vendor-simulator') ?>">
         <span>↗</span> Vendor simulator
       </a>
