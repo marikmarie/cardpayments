@@ -10,9 +10,9 @@ final class View
         $data['url'] ??= [Url::class, 'path'];
         extract($data, EXTR_SKIP);
         ob_start();
-        require dirname(__DIR__) . "/views/{$name}.php";
+        require dirname(__DIR__) . "/card/views/{$name}.php";
         $content = ob_get_clean();
-        require dirname(__DIR__) . '/views/layout.php';
+        require dirname(__DIR__) . '/card/views/layout.php';
     }
 
     public static function renderPublic(string $name, array $data = []): void
@@ -20,9 +20,9 @@ final class View
         $data['url'] ??= [Url::class, 'path'];
         extract($data, EXTR_SKIP);
         ob_start();
-        require dirname(__DIR__) . "/views/{$name}.php";
+        require dirname(__DIR__) . "/card/views/{$name}.php";
         $content = ob_get_clean();
-        require dirname(__DIR__) . '/views/public-layout.php';
+        require dirname(__DIR__) . '/card/views/public-layout.php';
     }
 
     public static function e(mixed $value): string

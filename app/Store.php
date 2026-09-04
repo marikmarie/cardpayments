@@ -12,7 +12,8 @@ final class Store
     {
         $this->file = dirname(__DIR__) . '/' . Config::get('STORAGE_PATH', 'storage/data.json');
         $dsn = Config::get('DB_DSN');
-        if ($dsn) {
+        $driver = strtolower(strtok((string) $dsn, ':') ?: '');
+        if ($dsn && in_array($driver, \PDO::getAvailableDrivers(), true)) {
             try {
                 $this->database = new \PDO($dsn, Config::get('DB_USER'), Config::get('DB_PASSWORD'), [
                     \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,

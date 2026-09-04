@@ -1,0 +1,19 @@
+{
+  "external_reference": "POS-INV-000172",
+  "branch_code": "KAMPALA-01",
+  "total_amount": "50000.00",
+  "currency": "UGX",
+  "payment_method": "MOBILE_MONEY",
+  "buyer": {
+    "type": "B2C",
+    "name": "Cash Customer"
+  },
+  "items": [
+    {
+      "product_code": "ITEM-001",
+      "quantity": "2",
+      "unit_price": "25000.00",
+      "discount": "0.00"
+    }
+  ]
+}

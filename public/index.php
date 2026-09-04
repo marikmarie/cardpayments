@@ -8,6 +8,7 @@ use App\Controllers\LinkController;
 use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use App\Url;
+use Efris\Http\EfrisController;
 
 require dirname(__DIR__) . '/bootstrap.php';
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -23,6 +24,15 @@ $method = $_SERVER['REQUEST_METHOD'];
 $path = Url::withoutBase(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/');
 $path = rtrim($path, '/') ?: '/';
 
+if ($method === 'GET' && $path === '/assets/app.css') {
+    $stylesheet = dirname(__DIR__) . '/card/assets/app.css';
+    if (is_file($stylesheet)) {
+        header('Content-Type: text/css; charset=UTF-8');
+        readfile($stylesheet);
+        exit;
+    }
+}
+
 try {
     if ($method === 'GET' && $path === '/') { header('Location: ' . Url::path('/links')); exit; }
 
@@ -36,9 +46,15 @@ try {
         $webhook->information();
     }
     if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); }
+    if ($method === 'GET' && $path === '/api/v1/efris/openapi.json') { (new EfrisController())->openApi(); }
+    if ($method === 'GET' && $path === '/api/v1/efris/health') { (new EfrisController())->health(); }
+    if ($method === 'GET' && $path === '/api/v1/efris/branches') { (new EfrisController())->branches(); }
+    if ($method === 'POST' && $path === '/api/v1/efris/invoices') { (new EfrisController())->createInvoice(); }
+    if ($method === 'GET' && preg_match('#^/api/v1/efris/invoices/([^/]+)$#', $path, $m)) {
+        (new EfrisController())->showInvoice(rawurldecode($m[1]));
+    }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
-    if ($method === 'POST' && $path === '/api/v1/payments') { (new ApiController())->charge(); }
-    if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([a-f0-9]+)$#', $path, $m)) { (new ApiController())->show($m[1]); }
+    if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
 
     $links = new LinkController();
     $vendor = new VendorSimulatorController();

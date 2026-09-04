@@ -34,11 +34,11 @@ public_html/
 └── cardpayments/
     ├── .env                 # private server configuration
     ├── .htaccess            # routes every browser request to public/
-    ├── app/
-    ├── database/
+    ├── app/                 # shared foundation
+    ├── card/                # payment dashboard, CyberSource, views, assets and schema
+    ├── efris/               # separate EFRIS gateway module
     ├── public/
     ├── storage/
-    └── views/
 ```
 
 The supplied root `.htaccess` routes public requests through `public/index.php`. It requires Apache `mod_rewrite` and `AllowOverride FileInfo` (common on cPanel hosting).
@@ -49,7 +49,7 @@ The PHP user must be able to write to `storage/`. Set that folder to `755` first
 
 ## 4. Database (recommended)
 
-Create a MySQL database and user in the hosting panel, import `database/schema.mysql.sql`, then set:
+Create a MySQL database and user in the hosting panel, import `card/database/schema.mysql.sql`, then set:
 
 ```ini
 DB_DSN="mysql:host=localhost;dbname=your_database_name;charset=utf8mb4"

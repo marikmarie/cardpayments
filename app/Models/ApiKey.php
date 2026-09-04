@@ -37,17 +37,29 @@ final class ApiKey
 
     public function verify(?string $token): bool
     {
-        if (!$token) return false;
+        return $this->authenticate($token) !== null;
+    }
+
+    /**
+     * Return the non-secret key record for an authenticated integration.
+     * EFRIS uses the key ID to resolve its tenant on the server; callers never
+     * send a tenant, TIN, device number, or cryptographic material.
+     */
+    public function authenticate(?string $token): ?array
+    {
+        if (!$token) return null;
         $hash = hash('sha256', $token);
-        return (bool) $this->store->transaction(function (array &$data) use ($hash): bool {
-            if (empty($data['api_keys'])) return false;
+        return $this->store->transaction(function (array &$data) use ($hash): ?array {
+            if (empty($data['api_keys'])) return null;
             foreach ($data['api_keys'] as &$row) {
                 if (hash_equals($row['token_hash'], $hash)) {
                     $row['last_used_at'] = gmdate('c');
-                    return true;
+                    $authenticated = $row;
+                    unset($authenticated['token_hash']);
+                    return $authenticated;
                 }
             }
-            return false;
+            return null;
         });
     }
 
