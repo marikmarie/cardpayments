@@ -78,7 +78,7 @@ final class PegasusController extends Controller
                     'requestBody' => $this->bodySchema(['transaction_type', 'vendor_transaction_id', 'amount'], [
                         'transaction_type' => ['type' => 'string', 'enum' => ['PULL', 'PUSH'], 'example' => 'PULL'],
                         'vendor_transaction_id' => ['type' => 'string', 'example' => 'COLLECT-1001'],
-                        'amount' => ['type' => 'string', 'example' => '500.00'],
+                        'amount' => ['type' => 'string', 'description' => 'Whole UGX amount.', 'example' => '500'],
                         'from_account' => ['type' => 'string', 'example' => '256772000000'],
                         'from_network' => ['type' => 'string', 'example' => 'MTN'],
                         'to_account' => ['type' => 'string', 'example' => '256702685176'],

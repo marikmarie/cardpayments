@@ -71,6 +71,9 @@ final class PegasusClient
     {
         if (!function_exists('curl_init')) throw new \RuntimeException('PHP cURL is required for PegPay.');
         $url = rtrim($this->config()['url'], '/') . '/';
+        $operation = (string) ($payload['Method'] ?? 'unknown');
+        $this->logRequest($operation, $url, $payload);
+
         $curl = curl_init($url);
         curl_setopt_array($curl, [
             CURLOPT_POST => true,
@@ -85,37 +88,48 @@ final class PegasusClient
         $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
 
-        $operation = (string) ($payload['Method'] ?? 'unknown');
         if ($raw === false) {
-            $this->logResponse($operation, $status, null, $error);
+            $this->logResponse($operation, $url, $status, null, $error);
             throw new \RuntimeException('PegPay transport error: ' . $error);
         }
         $response = json_decode((string) $raw, true);
         if (!is_array($response)) {
-            $this->logResponse($operation, $status, $raw, 'PegPay returned invalid JSON.');
+            $this->logResponse($operation, $url, $status, $raw, 'PegPay returned invalid JSON.');
             throw new \RuntimeException('PegPay returned an invalid JSON response.');
         }
-        $this->logResponse($operation, $status, $response);
+        $this->logResponse($operation, $url, $status, $response);
         if ($status >= 400) throw new \RuntimeException('PegPay returned HTTP ' . $status . '.');
         return $response;
     }
 
-    /** Store provider responses without recording payment requests or credentials. */
-    private function logResponse(string $operation, int $status, mixed $response, ?string $error = null): void
+    /** Store the outgoing request without exposing provider credentials or signatures. */
+    private function logRequest(string $operation, string $url, array $payload): void
+    {
+        $this->writeLog('REQUEST', [
+            'operation' => $operation,
+            'method' => 'POST',
+            'url' => $url,
+            'body' => $this->redact($payload),
+        ]);
+    }
+
+    private function logResponse(string $operation, string $url, int $status, mixed $response, ?string $error = null): void
+    {
+        $this->writeLog('RESPONSE', array_filter([
+            'operation' => $operation,
+            'url' => $url,
+            'http_status' => $status,
+            'response' => $this->redact($response),
+            'error' => $error,
+        ], static fn (mixed $value): bool => $value !== null && $value !== ''));
+    }
+
+    private function writeLog(string $type, array $data): void
     {
         $directory = dirname(__DIR__, 2) . '/storage';
         if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) return;
 
-        $entry = [
-            'time' => gmdate('c'),
-            'type' => 'RESPONSE',
-            'data' => array_filter([
-                'operation' => $operation,
-                'http_status' => $status,
-                'response' => $this->redact($response),
-                'error' => $error,
-            ], static fn (mixed $value): bool => $value !== null && $value !== ''),
-        ];
+        $entry = ['time' => gmdate('c'), 'type' => $type, 'data' => $data];
         @file_put_contents(
             $directory . '/pegasus.log',
             json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL,

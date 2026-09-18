@@ -37,7 +37,8 @@ final class PegasusService
         $this->client->requireConfiguration();
         $transaction = $this->transactionInput($input);
         $reserved = $this->reserve($transaction);
-        if ($reserved['replayed']) return $reserved;
+        // PegPay Status Code 22 is explicitly retried with the same VendorTranId.
+        if ($reserved['replayed'] && ($reserved['record']['status_code'] ?? '') !== '22') return $reserved;
 
         try {
             return ['record' => $this->saveResponse($transaction['id'], $this->client->postTransaction($this->postPayload($transaction))), 'replayed' => false];
@@ -97,8 +98,9 @@ final class PegasusService
         if ($type === 'PULL') {
             $fromAccount = $this->account($fromAccount);
             $fromNetwork = $this->network($fromNetwork);
-            if ($toAccount !== '') $toAccount = $this->account($toAccount);
-            $toNetwork = $toNetwork === '' ? $fromNetwork : $this->network($toNetwork);
+            // PegPay documents FromAccount for PULL transactions; no destination account is sent.
+            $toAccount = '';
+            $toNetwork = $fromNetwork;
         } else {
             $toAccount = $this->account($toAccount);
             $toNetwork = $this->network($toNetwork);
@@ -106,8 +108,8 @@ final class PegasusService
             $fromNetwork = $fromNetwork === '' ? $toNetwork : $this->network($fromNetwork);
         }
         $amount = trim((string) ($input['amount'] ?? ''));
-        if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $amount) || (float) $amount <= 0) {
-            throw new \InvalidArgumentException('amount must be a positive UGX value with at most two decimals.');
+        if (!preg_match('/^[1-9]\d*$/', $amount)) {
+            throw new \InvalidArgumentException('amount must be a positive whole UGX value.');
         }
         $network = $type === 'PULL' ? $fromNetwork : $toNetwork;
         $minimum = in_array($network, ['MTN', 'AIRTEL'], true) ? 500 : 5000;
@@ -125,7 +127,7 @@ final class PegasusService
 
     private function postPayload(array $transaction): array
     {
-        return [
+        $payload = [
             'Method' => 'PostTransaction',
             'SessionId' => $transaction['id'],
             'Narration' => $transaction['narration'],
@@ -140,10 +142,11 @@ final class PegasusService
             'TranAmount' => $transaction['amount'],
             'TranCharge' => '0',
             'VendorTranId' => $transaction['id'],
-            'ToAccount' => $transaction['toAccount'],
             'FromAccount' => $transaction['fromAccount'],
             'TranType' => $transaction['type'],
         ];
+        if ($transaction['type'] === 'PUSH') $payload['ToAccount'] = $transaction['toAccount'];
+        return $payload;
     }
 
     private function reserve(array $transaction): array

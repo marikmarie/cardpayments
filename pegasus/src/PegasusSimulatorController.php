@@ -50,7 +50,7 @@ final class PegasusSimulatorController extends Controller
         return [
             'pull' => [
                 'title' => 'Collect money', 'type' => 'PULL', 'channel' => 'mobile', 'button' => 'Submit PULL collection',
-                'reference' => "PULL-TEST-{$stamp}", 'amount' => '500.00',
+                'reference' => "PULL-TEST-{$stamp}", 'amount' => '500',
                 'from_account' => '256772000000', 'from_network' => 'MTN',
                 'to_account' => '256702685176', 'to_network' => 'AIRTEL',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'COLLECTION-TEST',
@@ -58,7 +58,7 @@ final class PegasusSimulatorController extends Controller
             ],
             'push' => [
                 'title' => 'Send a mobile payout', 'type' => 'PUSH', 'channel' => 'mobile', 'button' => 'Submit mobile payout',
-                'reference' => "PUSH-TEST-{$stamp}", 'amount' => '500.00',
+                'reference' => "PUSH-TEST-{$stamp}", 'amount' => '500',
                 'from_account' => '256702685176', 'from_network' => 'AIRTEL',
                 'to_account' => '256772000000', 'to_network' => 'MTN',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'PAYOUT-TEST',
@@ -66,7 +66,7 @@ final class PegasusSimulatorController extends Controller
             ],
             'bank_push' => [
                 'title' => 'Send a bank payout', 'type' => 'PUSH', 'channel' => 'bank', 'button' => 'Submit bank payout',
-                'reference' => "BANK-PUSH-{$stamp}", 'amount' => '5000.00',
+                'reference' => "BANK-PUSH-{$stamp}", 'amount' => '5000',
                 'from_account' => '3010000007781', 'from_network' => 'PBU',
                 'to_account' => '3010000007781', 'to_network' => 'PBU',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'BANK-PAYOUT-TEST',

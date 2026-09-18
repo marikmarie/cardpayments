@@ -35,7 +35,7 @@
         </label>
         <label>
           Amount (UGX)
-          <input name="amount" type="number" min="500" step="0.01" value="<?= \App\View::e($sample['amount']) ?>" required>
+          <input name="amount" type="number" min="500" step="1" value="<?= \App\View::e($sample['amount']) ?>" required>
         </label>
         <label>
           From account
@@ -49,18 +49,20 @@
             <?php endforeach; ?>
           </select>
         </label>
-        <label>
-          To account
-          <input name="to_account" inputmode="numeric" value="<?= \App\View::e($sample['to_account']) ?>" required>
-        </label>
-        <label>
-          To network
-          <select name="to_network" required>
-            <?php foreach ($networks as $code => $name): ?>
-              <option value="<?= $code ?>" <?= $code === $sample['to_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
-            <?php endforeach; ?>
-          </select>
-        </label>
+        <?php if ($sample['type'] === 'PUSH'): ?>
+          <label>
+            To account
+            <input name="to_account" inputmode="numeric" value="<?= \App\View::e($sample['to_account']) ?>" required>
+          </label>
+          <label>
+            To network
+            <select name="to_network" required>
+              <?php foreach ($networks as $code => $name): ?>
+                <option value="<?= $code ?>" <?= $code === $sample['to_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
+              <?php endforeach; ?>
+            </select>
+          </label>
+        <?php endif; ?>
         <label>
           Customer name
           <input name="customer_name" value="<?= \App\View::e($sample['customer_name']) ?>" maxlength="100">
