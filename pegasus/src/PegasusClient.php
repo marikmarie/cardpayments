@@ -21,6 +21,9 @@ final class PegasusClient
         if (!$this->configured()) {
             throw new \LogicException('PegPay is not configured. Add its URL, vendor credentials, and private-key path to .env.');
         }
+        if (!is_file($this->config()['private_key_path'])) {
+            throw new \LogicException('PEGASUS_PRIVATE_KEY_PATH must point to the RSA private signing key file.');
+        }
     }
 
     public function validateRecipient(string $account, string $network): array
@@ -94,9 +97,11 @@ final class PegasusClient
             throw new \InvalidArgumentException('PegPay signed fields must contain ASCII characters only.');
         }
         $config = $this->config();
-        $key = is_file($config['private_key_path'])
-            ? openssl_pkey_get_private((string) file_get_contents($config['private_key_path']), $config['private_key_passphrase'])
-            : false;
+        $keyMaterial = (string) file_get_contents($config['private_key_path']);
+        if (str_contains($keyMaterial, 'BEGIN CERTIFICATE')) {
+            throw new \RuntimeException('PegPay requires an RSA private signing key. A public certificate cannot sign data.');
+        }
+        $key = openssl_pkey_get_private($keyMaterial, $config['private_key_passphrase']);
         if ($key === false) throw new \RuntimeException('PegPay private key could not be loaded.');
         if (!openssl_sign($data, $signature, $key, OPENSSL_ALGO_SHA1)) {
             throw new \RuntimeException('PegPay digital signature could not be created.');

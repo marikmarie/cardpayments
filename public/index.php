@@ -10,6 +10,7 @@ use App\Controllers\WebhookController;
 use App\Url;
 use Efris\Http\EfrisController;
 use Pegasus\PegasusController;
+use Pegasus\PegasusSimulatorController;
 
 require dirname(__DIR__) . '/bootstrap.php';
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -61,6 +62,8 @@ try {
     if ($method === 'GET' && preg_match('#^/api/v1/pegasus/transactions/([^/]+)$#', $path, $m)) {
         (new PegasusController())->transactionStatus(rawurldecode($m[1]));
     }
+    if ($method === 'GET' && $path === '/pegasus-tester') { (new PegasusSimulatorController())->index(); exit; }
+    if ($method === 'POST' && $path === '/pegasus-tester/transactions') { (new PegasusSimulatorController())->submit($_POST); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
 

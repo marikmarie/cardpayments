@@ -23,7 +23,7 @@ CYBERSOURCE_WEBHOOK_SHARED_SECRET="your_webhook_shared_secret"
 
 Use separate production REST and webhook credentials from `https://businesscenter.cybersource.com`. The application accepts `live` (and maps `production` to `live` for compatibility).
 
-For PegPay, add the test or production API URL, vendor code, password and the server-only private-key path to `.env`. Send Pegasus the matching public `.cer` or `.crt` file. Never upload the private key to Git or place it in the web-accessible project folder.
+For PegPay, add the test or production API URL, vendor code, password and the server-only private-key path to `.env`. Send Pegasus the matching public `.cer` or `.crt` file. If you generated `pegasus-public.crt`, send that file to Pegasus; it matches `private.key`. Never upload the private key to Git or place it in the web-accessible project folder.
 
 ## 2. Upload with WinSCP
 

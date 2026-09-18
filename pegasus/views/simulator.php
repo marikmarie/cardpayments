@@ -1,0 +1,94 @@
+<?php
+/** @var array $samples */
+/** @var array|null $result */
+
+$networks = ['MTN', 'AIRTEL'];
+?>
+<section class="create-heading">
+  <p class="eyebrow">PegPay UAT</p>
+  <h1>Test collections and payouts</h1>
+  <p>Use Pegasus test accounts only. The values below are examples and must be replaced with the accounts Pegasus gives you.</p>
+</section>
+
+<section class="warning">
+  <strong>Private key required</strong>
+  <p>Requests are signed on the server. Set <code>PEGASUS_PRIVATE_KEY_PATH</code> to the RSA private key, never to a public <code>.crt</code> or <code>.cer</code> certificate.</p>
+</section>
+
+<div class="link-form">
+  <?php foreach ($samples as $sample): ?>
+    <form class="panel form-section" action="<?= $url('/pegasus-tester/transactions') ?>" method="post">
+      <input type="hidden" name="transaction_type" value="<?= \App\View::e($sample['type']) ?>">
+      <div class="section-title">
+        <span><?= $sample['type'] === 'PULL' ? '↓' : '↑' ?></span>
+        <div>
+          <h3><?= \App\View::e($sample['title']) ?> <small>(<?= \App\View::e($sample['type']) ?>)</small></h3>
+          <p><?= $sample['type'] === 'PULL' ? 'Collect from the customer account.' : 'Send from your account to the recipient.' ?></p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Vendor transaction ID
+          <input name="vendor_transaction_id" value="<?= \App\View::e($sample['reference']) ?>" maxlength="60" required>
+        </label>
+        <label>
+          Amount (UGX)
+          <input name="amount" type="number" min="500" step="0.01" value="<?= \App\View::e($sample['amount']) ?>" required>
+        </label>
+        <label>
+          From account
+          <input name="from_account" inputmode="numeric" value="<?= \App\View::e($sample['from_account']) ?>" required>
+        </label>
+        <label>
+          From network
+          <select name="from_network" required>
+            <?php foreach ($networks as $network): ?>
+              <option value="<?= $network ?>" <?= $network === $sample['from_network'] ? 'selected' : '' ?>><?= $network ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
+          To account
+          <input name="to_account" inputmode="numeric" value="<?= \App\View::e($sample['to_account']) ?>" required>
+        </label>
+        <label>
+          To network
+          <select name="to_network" required>
+            <?php foreach ($networks as $network): ?>
+              <option value="<?= $network ?>" <?= $network === $sample['to_network'] ? 'selected' : '' ?>><?= $network ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
+          Customer name
+          <input name="customer_name" value="<?= \App\View::e($sample['customer_name']) ?>" maxlength="100">
+        </label>
+        <label>
+          Customer reference
+          <input name="customer_reference" value="<?= \App\View::e($sample['customer_reference']) ?>" maxlength="100">
+        </label>
+        <label class="wide">
+          Narration
+          <input name="narration" value="<?= \App\View::e($sample['narration']) ?>" maxlength="200">
+        </label>
+      </div>
+      <div class="form-actions compact-actions">
+        <button class="primary-action"><?= \App\View::e($sample['button']) ?></button>
+      </div>
+    </form>
+  <?php endforeach; ?>
+</div>
+
+<?php if ($result): ?>
+  <section class="panel form-section">
+    <div class="section-title">
+      <span>✓</span>
+      <div>
+        <h3>Latest test response</h3>
+        <p>Check a PENDING transaction with the PegPay status API after the provider's required wait time.</p>
+      </div>
+    </div>
+    <pre class="code-block"><?= \App\View::e(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+  </section>
+<?php endif; ?>

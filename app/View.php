@@ -25,6 +25,17 @@ final class View
         require dirname(__DIR__) . '/card/views/public-layout.php';
     }
 
+    /** Render a separate integration module inside the shared dashboard. */
+    public static function renderModule(string $module, string $name, array $data = []): void
+    {
+        $data['url'] ??= [Url::class, 'path'];
+        extract($data, EXTR_SKIP);
+        ob_start();
+        require dirname(__DIR__) . "/{$module}/views/{$name}.php";
+        $content = ob_get_clean();
+        require dirname(__DIR__) . '/card/views/layout.php';
+    }
+
     public static function e(mixed $value): string
     {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');

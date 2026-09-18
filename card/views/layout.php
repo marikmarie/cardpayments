@@ -26,6 +26,9 @@
       <a class="<?= ($active_nav ?? '') === 'vendor' ? 'active' : '' ?>" href="<?= $url('/vendor-simulator') ?>">
         <span>↗</span> Vendor simulator
       </a>
+      <a class="<?= ($active_nav ?? '') === 'pegasus' ? 'active' : '' ?>" href="<?= $url('/pegasus-tester') ?>">
+        <span>⇄</span> PegPay test
+      </a>
       <a class="<?= ($active_nav ?? '') === 'api' ? 'active' : '' ?>" href="<?= $url('/developers/api') ?>">
         <span>⌘</span> API reference
       </a>
