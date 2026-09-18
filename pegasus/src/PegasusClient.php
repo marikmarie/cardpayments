@@ -115,9 +115,19 @@ final class PegasusClient
             'url' => trim((string) Config::get('PEGASUS_API_URL', '')),
             'vendor_code' => trim((string) Config::get('PEGASUS_VENDOR_CODE', '')),
             'password' => (string) Config::get('PEGASUS_PASSWORD', ''),
-            'private_key_path' => trim((string) Config::get('PEGASUS_PRIVATE_KEY_PATH', '')),
+            'private_key_path' => $this->privateKeyPath(),
             'private_key_passphrase' => (string) Config::get('PEGASUS_PRIVATE_KEY_PASSPHRASE', ''),
             'client_ip' => trim((string) Config::get('PEGASUS_CLIENT_IP', '')),
         ];
+    }
+
+    /** Resolve a relative key path from the project root, not Apache's working folder. */
+    private function privateKeyPath(): string
+    {
+        $path = trim((string) Config::get('PEGASUS_PRIVATE_KEY_PATH', ''));
+        if ($path === '' || str_starts_with($path, '/') || preg_match('/^[A-Za-z]:[\\\\\/]/', $path)) {
+            return $path;
+        }
+        return dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . ltrim($path, './\\');
     }
 }
