@@ -23,6 +23,8 @@ final class PegasusSimulatorController extends Controller
             'title' => 'PegPay test',
             'active_nav' => 'pegasus',
             'samples' => $this->samples(),
+            'mobile_networks' => ['MTN' => 'MTN Mobile Money', 'AIRTEL' => 'Airtel Money'],
+            'payout_networks' => $this->payoutNetworks(),
             'result' => $_SESSION['pegasus_test_result'] ?? null,
             'flash' => $_SESSION['flash'] ?? null,
         ]);
@@ -47,7 +49,7 @@ final class PegasusSimulatorController extends Controller
         $stamp = gmdate('YmdHis');
         return [
             'pull' => [
-                'title' => 'Collect money', 'type' => 'PULL', 'button' => 'Submit PULL collection',
+                'title' => 'Collect money', 'type' => 'PULL', 'channel' => 'mobile', 'button' => 'Submit PULL collection',
                 'reference' => "PULL-TEST-{$stamp}", 'amount' => '500.00',
                 'from_account' => '256772000000', 'from_network' => 'MTN',
                 'to_account' => '256702685176', 'to_network' => 'AIRTEL',
@@ -55,13 +57,38 @@ final class PegasusSimulatorController extends Controller
                 'narration' => 'PegPay UAT collection',
             ],
             'push' => [
-                'title' => 'Send a payout', 'type' => 'PUSH', 'button' => 'Submit PUSH payout',
+                'title' => 'Send a mobile payout', 'type' => 'PUSH', 'channel' => 'mobile', 'button' => 'Submit mobile payout',
                 'reference' => "PUSH-TEST-{$stamp}", 'amount' => '500.00',
                 'from_account' => '256702685176', 'from_network' => 'AIRTEL',
                 'to_account' => '256772000000', 'to_network' => 'MTN',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'PAYOUT-TEST',
                 'narration' => 'PegPay UAT payout',
             ],
+            'bank_push' => [
+                'title' => 'Send a bank payout', 'type' => 'PUSH', 'channel' => 'bank', 'button' => 'Submit bank payout',
+                'reference' => "BANK-PUSH-{$stamp}", 'amount' => '5000.00',
+                'from_account' => '3010000007781', 'from_network' => 'PBU',
+                'to_account' => '3010000007781', 'to_network' => 'PBU',
+                'customer_name' => 'CissyTech UAT', 'customer_reference' => 'BANK-PAYOUT-TEST',
+                'narration' => 'PegPay UAT bank payout',
+            ],
+        ];
+    }
+
+    /** Bank and mobile codes published in the PegPay integration document. */
+    private function payoutNetworks(): array
+    {
+        return [
+            'MTN' => 'MTN Mobile Money', 'AIRTEL' => 'Airtel Money',
+            'ABC' => 'ABC Bank', 'ABSA' => 'Absa Bank Uganda', 'BOAU' => 'Bank of Africa',
+            'BOB' => 'Bank of Baroda', 'BOI' => 'Bank of India', 'CBU' => 'Cairo Bank Uganda',
+            'CNT' => 'Centenary Bank', 'DFCU' => 'DFCU Bank', 'DTB' => 'Diamond Trust Bank',
+            'ECO' => 'Ecobank', 'EQU' => 'Equity Bank Uganda', 'EXIM' => 'EXIM Bank',
+            'FTB' => 'Finance Trust Bank', 'GTB' => 'Guaranty Trust Bank', 'HFB' => 'Housing Finance Bank',
+            'IMBUL' => 'I&M Bank Uganda', 'KCB' => 'Kenya Commercial Bank', 'NCBA' => 'NCBA Bank',
+            'OPB' => 'Opportunity Bank', 'PBU' => 'PostBank Uganda', 'STAN' => 'Stanchart Bank',
+            'TB' => 'Tropical Bank', 'UMFI' => 'UGAFODE MFI', 'UDB' => 'Uganda Development Bank',
+            'UBA' => 'United Bank for Africa',
         ];
     }
 }

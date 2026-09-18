@@ -1,29 +1,30 @@
 <?php
 /** @var array $samples */
 /** @var array|null $result */
-
-$networks = ['MTN', 'AIRTEL'];
+/** @var array $mobile_networks */
+/** @var array $payout_networks */
 ?>
 <section class="create-heading">
   <p class="eyebrow">PegPay UAT</p>
   <h1>Test collections and payouts</h1>
-  <p>Use Pegasus test accounts only. The values below are examples and must be replaced with the accounts Pegasus gives you.</p>
+  <p>Use Pegasus test accounts only. The examples include mobile-money collections, mobile payouts, and bank payouts.</p>
 </section>
 
 <section class="warning">
   <strong>Private key required</strong>
-  <p>Requests are signed on the server. Set <code>PEGASUS_PRIVATE_KEY_PATH</code> to the RSA private key, never to a public <code>.crt</code> or <code>.cer</code> certificate.</p>
+  <p>PULL collections use MTN or Airtel as documented. PUSH payouts can use mobile money or the listed bank codes. Set <code>PEGASUS_PRIVATE_KEY_PATH</code> to the RSA private key, never to a public certificate.</p>
 </section>
 
 <div class="link-form">
   <?php foreach ($samples as $sample): ?>
     <form class="panel form-section" action="<?= $url('/pegasus-tester/transactions') ?>" method="post">
       <input type="hidden" name="transaction_type" value="<?= \App\View::e($sample['type']) ?>">
+      <?php $networks = $sample['type'] === 'PULL' ? $mobile_networks : $payout_networks; ?>
       <div class="section-title">
         <span><?= $sample['type'] === 'PULL' ? '↓' : '↑' ?></span>
         <div>
           <h3><?= \App\View::e($sample['title']) ?> <small>(<?= \App\View::e($sample['type']) ?>)</small></h3>
-          <p><?= $sample['type'] === 'PULL' ? 'Collect from the customer account.' : 'Send from your account to the recipient.' ?></p>
+          <p><?= $sample['type'] === 'PULL' ? 'Collect from an MTN or Airtel mobile wallet.' : ($sample['channel'] === 'bank' ? 'Send to a bank account using its PegPay bank code.' : 'Send from your account to a mobile-money recipient.') ?></p>
         </div>
       </div>
 
@@ -43,8 +44,8 @@ $networks = ['MTN', 'AIRTEL'];
         <label>
           From network
           <select name="from_network" required>
-            <?php foreach ($networks as $network): ?>
-              <option value="<?= $network ?>" <?= $network === $sample['from_network'] ? 'selected' : '' ?>><?= $network ?></option>
+            <?php foreach ($networks as $code => $name): ?>
+              <option value="<?= $code ?>" <?= $code === $sample['from_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
             <?php endforeach; ?>
           </select>
         </label>
@@ -55,8 +56,8 @@ $networks = ['MTN', 'AIRTEL'];
         <label>
           To network
           <select name="to_network" required>
-            <?php foreach ($networks as $network): ?>
-              <option value="<?= $network ?>" <?= $network === $sample['to_network'] ? 'selected' : '' ?>><?= $network ?></option>
+            <?php foreach ($networks as $code => $name): ?>
+              <option value="<?= $code ?>" <?= $code === $sample['to_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
             <?php endforeach; ?>
           </select>
         </label>
