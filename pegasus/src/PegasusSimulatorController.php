@@ -29,10 +29,13 @@ final class PegasusSimulatorController extends Controller
             'result' => $_SESSION['pegasus_test_result'] ?? null,
             'verification' => $_SESSION['pegasus_verification'] ?? null,
             'status_result' => $_SESSION['pegasus_status_result'] ?? null,
+            'balance_result' => $_SESSION['pegasus_balance_result'] ?? null,
             'last_transaction_id' => $_SESSION['pegasus_last_transaction_id'] ?? '',
+            'log' => $this->pegasus->logDetails(),
+            'active_tab' => $_SESSION['pegasus_active_tab'] ?? 'verify',
             'flash' => $_SESSION['flash'] ?? null,
         ]);
-        unset($_SESSION['pegasus_test_result'], $_SESSION['pegasus_verification'], $_SESSION['pegasus_status_result'], $_SESSION['flash']);
+        unset($_SESSION['pegasus_test_result'], $_SESSION['pegasus_verification'], $_SESSION['pegasus_status_result'], $_SESSION['pegasus_balance_result'], $_SESSION['pegasus_active_tab'], $_SESSION['flash']);
     }
 
     public function verify(array $input): never
@@ -40,6 +43,7 @@ final class PegasusSimulatorController extends Controller
         try {
             $result = $this->pegasus->validateRecipient($input);
             $_SESSION['pegasus_verification'] = $result;
+            $_SESSION['pegasus_active_tab'] = 'verify';
             $success = ($result['status_code'] ?? '') === '0';
             $this->flash($success ? 'success' : 'error', $success ? 'Recipient verified.' : 'PegPay could not verify this recipient.');
         } catch (\Throwable $e) {
@@ -63,6 +67,10 @@ final class PegasusSimulatorController extends Controller
             $statusChecked = $result['status_checked'] ?? false;
             $_SESSION['pegasus_test_result'] = ['data' => $record, 'replayed' => $result['replayed'], 'status_checked' => $statusChecked];
             $_SESSION['pegasus_last_transaction_id'] = $record['vendor_transaction_id'];
+            $_SESSION['pegasus_active_tab'] = match ($input['transaction_type'] ?? '') {
+                'PULL' => 'collect',
+                default => $testBank === '' ? 'mobile-payout' : 'bank-payout',
+            };
             $message = "PegPay returned {$record['status']}.";
             if ($statusChecked) $message .= ' Status was checked after five seconds.';
             $this->flash($record['status'] === 'FAILED' ? 'error' : 'success', $message);
@@ -83,7 +91,22 @@ final class PegasusSimulatorController extends Controller
             if (!$record) throw new \InvalidArgumentException('This transaction was not created in this tester.');
             $_SESSION['pegasus_status_result'] = $this->pegasus->resource($record);
             $_SESSION['pegasus_last_transaction_id'] = $id;
+            $_SESSION['pegasus_active_tab'] = 'status';
             $this->flash('success', 'PegPay status checked.');
+        } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+        }
+        $this->redirect('/pegasus-tester');
+    }
+
+    public function balance(): never
+    {
+        try {
+            $result = $this->pegasus->balance();
+            $_SESSION['pegasus_balance_result'] = $result;
+            $_SESSION['pegasus_active_tab'] = 'balance';
+            $success = (string) ($result['StatusCode'] ?? '') === '0';
+            $this->flash($success ? 'success' : 'error', $success ? 'PegPay balance retrieved.' : 'PegPay did not return a balance.');
         } catch (\Throwable $e) {
             $this->flash('error', $e->getMessage());
         }

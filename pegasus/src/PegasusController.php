@@ -50,7 +50,13 @@ final class PegasusController extends Controller
     {
         $this->apiKey($this->keys);
         if (!$this->pegasus->find($id)) $this->json(['error' => 'PegPay transaction not found.'], 404);
-        $this->respond(fn() => $this->pegasus->refresh($id));
+        $this->respond(fn() => $this->pegasus->resource($this->pegasus->refresh($id)));
+    }
+
+    public function balance(): never
+    {
+        $this->apiKey($this->keys);
+        $this->respond(fn() => $this->pegasus->balance());
     }
 
     public function openApi(): never
@@ -98,6 +104,10 @@ final class PegasusController extends Controller
                     'summary' => 'Retrieve the latest PegPay transaction status',
                     'parameters' => [['name' => 'vendorTransactionId', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']]],
                     'responses' => ['200' => ['description' => 'Latest PegPay status'], '401' => ['description' => 'Invalid API key'], '404' => ['description' => 'Not found'], '502' => ['description' => 'PegPay status check failed']],
+                ]],
+                '/api/v1/pegasus/balance' => ['get' => [
+                    'summary' => 'Get the PegPay vendor account balance',
+                    'responses' => ['200' => ['description' => 'PegPay balance response'], '401' => ['description' => 'Invalid API key'], '502' => ['description' => 'PegPay balance request failed']],
                 ]],
             ],
         ]);

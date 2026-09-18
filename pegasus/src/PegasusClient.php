@@ -67,6 +67,35 @@ final class PegasusClient
         ]);
     }
 
+    public function balance(): array
+    {
+        $config = $this->config();
+        return $this->request([
+            'Method' => 'GetAccountBalance',
+            'VendorCode' => $config['vendor_code'],
+            'Password' => $config['password'],
+        ]);
+    }
+
+    /** @return array{path: string, writable: bool, entries: array} */
+    public function logDetails(): array
+    {
+        $directory = $this->logDirectory();
+        if (is_dir($directory) && !is_writable($directory)) @chmod($directory, 0775);
+        $path = $directory . '/pegasus.log';
+        $entries = [];
+        if (is_readable($path)) {
+            $size = filesize($path) ?: 0;
+            $contents = (string) file_get_contents($path, false, null, max(0, $size - 65536));
+            foreach (array_reverse(array_filter(explode(PHP_EOL, $contents))) as $line) {
+                $entry = json_decode($line, true);
+                if (is_array($entry)) $entries[] = $entry;
+                if (count($entries) === 12) break;
+            }
+        }
+        return ['path' => 'storage/pegasus.log', 'writable' => is_dir($directory) && is_writable($directory), 'entries' => $entries];
+    }
+
     private function request(array $payload): array
     {
         if (!function_exists('curl_init')) throw new \RuntimeException('PHP cURL is required for PegPay.');
@@ -126,15 +155,27 @@ final class PegasusClient
 
     private function writeLog(string $type, array $data): void
     {
-        $directory = dirname(__DIR__, 2) . '/storage';
-        if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) return;
+        $directory = $this->logDirectory();
+        if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) {
+            error_log('PegPay log directory could not be created.');
+            return;
+        }
+        if (!is_writable($directory)) @chmod($directory, 0775);
+        if (!is_writable($directory)) {
+            error_log('PegPay log directory is not writable.');
+            return;
+        }
 
         $entry = ['time' => gmdate('c'), 'type' => $type, 'data' => $data];
-        @file_put_contents(
-            $directory . '/pegasus.log',
-            json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL,
-            FILE_APPEND | LOCK_EX
-        );
+        $line = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+        if ($line === false || @file_put_contents($directory . '/pegasus.log', $line . PHP_EOL, FILE_APPEND | LOCK_EX) === false) {
+            error_log('PegPay log could not be written.');
+        }
+    }
+
+    private function logDirectory(): string
+    {
+        return dirname(__DIR__, 2) . '/storage';
     }
 
     private function redact(mixed $value): mixed

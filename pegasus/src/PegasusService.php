@@ -28,7 +28,19 @@ final class PegasusService
             'registered' => $response['IsRegistered'] ?? null,
             'status_code' => (string) ($response['Status'] ?? $response['StatusCode'] ?? ''),
             'status_description' => $response['StatusDescription'] ?? $response['StatusDesc'] ?? null,
+            'provider_response' => $response,
         ];
+    }
+
+    public function balance(): array
+    {
+        $this->client->requireConfiguration();
+        return $this->client->balance();
+    }
+
+    public function logDetails(): array
+    {
+        return $this->client->logDetails();
     }
 
     /** @return array{record: array, replayed: bool, status_checked: bool} */
@@ -85,6 +97,7 @@ final class PegasusService
             'status_description' => $record['status_description'] ?? null,
             'pegpay_id' => $record['pegpay_id'] ?? null,
             'telecom_id' => $record['telecom_id'] ?? null,
+            'provider_response' => $record['provider_response'] ?? null,
             'created_at' => $record['created_at'],
             'updated_at' => $record['updated_at'] ?? null,
         ];
@@ -192,6 +205,7 @@ final class PegasusService
             'status_description' => (string) ($response['StatusDescription'] ?? $response['StatusDesc'] ?? 'No status description returned.'),
             'pegpay_id' => $response['PegpayId'] ?? $response['PegPayId'] ?? null,
             'telecom_id' => $response['TelecomID'] ?? null,
+            'provider_response' => $response,
             'updated_at' => gmdate('c'),
         ]);
     }
