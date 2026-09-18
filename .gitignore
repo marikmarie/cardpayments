@@ -1,6 +1,7 @@
 .env
 cybersource.log
 storage/*.json
+storage/*.log
 
 # Server certificates, keys, and source documents stay outside the code repository.
 *.pem

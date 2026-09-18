@@ -84,11 +84,57 @@ final class PegasusClient
         $error = curl_error($curl);
         $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
-        if ($raw === false) throw new \RuntimeException('PegPay transport error: ' . $error);
+
+        $operation = (string) ($payload['Method'] ?? 'unknown');
+        if ($raw === false) {
+            $this->logResponse($operation, $status, null, $error);
+            throw new \RuntimeException('PegPay transport error: ' . $error);
+        }
         $response = json_decode((string) $raw, true);
-        if (!is_array($response)) throw new \RuntimeException('PegPay returned an invalid JSON response.');
+        if (!is_array($response)) {
+            $this->logResponse($operation, $status, $raw, 'PegPay returned invalid JSON.');
+            throw new \RuntimeException('PegPay returned an invalid JSON response.');
+        }
+        $this->logResponse($operation, $status, $response);
         if ($status >= 400) throw new \RuntimeException('PegPay returned HTTP ' . $status . '.');
         return $response;
+    }
+
+    /** Store provider responses without recording payment requests or credentials. */
+    private function logResponse(string $operation, int $status, mixed $response, ?string $error = null): void
+    {
+        $directory = dirname(__DIR__, 2) . '/storage';
+        if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) return;
+
+        $entry = [
+            'time' => gmdate('c'),
+            'type' => 'RESPONSE',
+            'data' => array_filter([
+                'operation' => $operation,
+                'http_status' => $status,
+                'response' => $this->redact($response),
+                'error' => $error,
+            ], static fn (mixed $value): bool => $value !== null && $value !== ''),
+        ];
+        @file_put_contents(
+            $directory . '/pegasus.log',
+            json_encode($entry, JSON_UNESCAPED_SLASHES) . PHP_EOL,
+            FILE_APPEND | LOCK_EX
+        );
+    }
+
+    private function redact(mixed $value): mixed
+    {
+        if (!is_array($value)) return $value;
+
+        foreach ($value as $key => $item) {
+            if (in_array(strtolower((string) $key), ['password', 'signature', 'digitalsignature', 'authorization'], true)) {
+                $value[$key] = '[redacted]';
+                continue;
+            }
+            $value[$key] = $this->redact($item);
+        }
+        return $value;
     }
 
     private function sign(string $data): string
