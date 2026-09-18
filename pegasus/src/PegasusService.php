@@ -31,17 +31,26 @@ final class PegasusService
         ];
     }
 
-    /** @return array{record: array, replayed: bool} */
+    /** @return array{record: array, replayed: bool, status_checked: bool} */
     public function createTransaction(array $input): array
     {
         $this->client->requireConfiguration();
         $transaction = $this->transactionInput($input);
         $reserved = $this->reserve($transaction);
         // PegPay Status Code 22 is explicitly retried with the same VendorTranId.
-        if ($reserved['replayed'] && ($reserved['record']['status_code'] ?? '') !== '22') return $reserved;
+        if ($reserved['replayed'] && ($reserved['record']['status_code'] ?? '') !== '22') {
+            return $reserved + ['status_checked' => false];
+        }
 
         try {
-            return ['record' => $this->saveResponse($transaction['id'], $this->client->postTransaction($this->postPayload($transaction))), 'replayed' => false];
+            $record = $this->saveResponse($transaction['id'], $this->client->postTransaction($this->postPayload($transaction)));
+            $statusChecked = false;
+            if ($transaction['type'] === 'PUSH' && ($record['status_code'] ?? '') === '122') {
+                sleep(5); // PegPay requires at least five seconds before checking a pending payout.
+                $record = $this->refresh($transaction['id']);
+                $statusChecked = true;
+            }
+            return ['record' => $record, 'replayed' => false, 'status_checked' => $statusChecked];
         } catch (\Throwable $e) {
             $this->update($transaction['id'], [
                 'status' => 'UNKNOWN',

@@ -32,7 +32,11 @@ final class PegasusController extends Controller
         $this->apiKey($this->keys);
         try {
             $result = $this->pegasus->createTransaction($this->jsonBody());
-            $this->json(['data' => $this->pegasus->resource($result['record']), 'replayed' => $result['replayed']], $result['replayed'] ? 200 : 201);
+            $this->json([
+                'data' => $this->pegasus->resource($result['record']),
+                'replayed' => $result['replayed'],
+                'status_checked' => $result['status_checked'] ?? false,
+            ], $result['replayed'] ? 200 : 201);
         } catch (\LogicException $e) {
             $this->json(['error' => $e->getMessage()], 503);
         } catch (\InvalidArgumentException $e) {

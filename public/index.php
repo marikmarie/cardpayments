@@ -63,7 +63,9 @@ try {
         (new PegasusController())->transactionStatus(rawurldecode($m[1]));
     }
     if ($method === 'GET' && $path === '/pegasus-tester') { (new PegasusSimulatorController())->index(); exit; }
+    if ($method === 'POST' && $path === '/pegasus-tester/verify') { (new PegasusSimulatorController())->verify($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/transactions') { (new PegasusSimulatorController())->submit($_POST); }
+    if ($method === 'POST' && $path === '/pegasus-tester/status') { (new PegasusSimulatorController())->status($_POST); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
 
