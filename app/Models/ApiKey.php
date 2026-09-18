@@ -35,11 +35,6 @@ final class ApiKey
         return $row + ['token' => $token];
     }
 
-    public function verify(?string $token): bool
-    {
-        return $this->authenticate($token) !== null;
-    }
-
     /**
      * Return the non-secret key record for an authenticated integration.
      * EFRIS uses the key ID to resolve its tenant on the server; callers never

@@ -9,21 +9,15 @@ class CyberSource
         'live' => 'api.cybersource.com',
     ];
 
-    private string $mode;          // 'payment_link'
-    private string $environment;   // 'sandbox' | 'live'
     private string $host;          // resolved host for the environment
     private string $merchantId;    // v-c-merchant-id
     private string $keyId;         // shared-secret key serial number (Business Center)
     private string $secretKey;     // base64 shared secret
     private int $timeout;
 
-    private array $last = [];
-
     private function __construct(array $cfg)
     {
-        $this->mode = $cfg['mode'];
-        $this->environment = $cfg['environment'];
-        $this->host = self::HOSTS[$this->environment];
+        $this->host = self::HOSTS[$cfg['environment']];
         $this->merchantId = $cfg['merchant_id'];
         $this->keyId = $cfg['key_id'];
         $this->secretKey = $cfg['secret_key'];
@@ -33,15 +27,11 @@ class CyberSource
 
     public static function init(array $cfg): self
     {
-        $cfg['mode'] = $cfg['mode'] ?? 'payment_link';
         $cfg['environment'] = strtolower((string) ($cfg['environment'] ?? 'live'));
         if ($cfg['environment'] === 'production') {
             $cfg['environment'] = 'live';
         }
 
-        if ($cfg['mode'] !== 'payment_link') {
-            throw new InvalidArgumentException("mode must be 'payment_link'");
-        }
         if (!isset(self::HOSTS[$cfg['environment']])) {
             throw new InvalidArgumentException("environment must be 'sandbox' or 'live'");
         }
@@ -99,13 +89,6 @@ class CyberSource
         return $this->request('GET', "/invoicing/v2/invoices/{$invoiceId}");
     }
 
-    /** Cancel an invoice. */
-    public function cancelInvoice(string $invoiceId): array
-    {
-        return $this->request('POST', "/invoicing/v2/invoices/{$invoiceId}/cancelation", []);
-    }
-
-
     private function request(string $method, string $path, ?array $payload = null): array
     {
         $method = strtoupper($method);
@@ -151,17 +134,18 @@ class CyberSource
         curl_close($ch);
 
         if ($raw === false) {
-            $response = $this->envelope(
-                false,
-                0,
-                'TRANSPORT_ERROR',
-                null,
-                null,
-                $raw,
-                "cURL error: {$curlErr}"
-            );
-            $response['operation'] = $operation;
-            $response['invoice_status'] = null;
+            $response = [
+                'success' => false,
+                'code' => 0,
+                'status' => 'TRANSPORT_ERROR',
+                'id' => null,
+                'message' => "cURL error: {$curlErr}",
+                'error' => 'TRANSPORT_ERROR',
+                'data' => null,
+                'raw' => null,
+                'operation' => $operation,
+                'invoice_status' => null,
+            ];
             $this->log('RESPONSE', $response);
             return $response;
         }
@@ -289,10 +273,7 @@ class CyberSource
         return $headers;
     }
 
-    /**
-     * HMAC-SHA256 the signing string with the base64-decoded shared secret,
-     * then base64-encode the result. (Swap this out for RSA/JWT later.)
-     */
+    /** HMAC-SHA256 of the canonical string using the decoded shared secret. */
     private function sign(string $signingString): string
     {
         $decodedSecret = base64_decode($this->secretKey, true);
@@ -304,70 +285,31 @@ class CyberSource
         return base64_encode($rawHmac);
     }
 
-    // -------------------------------------------------------------------------
-    // Response envelope  (your standard shape)
-    // -------------------------------------------------------------------------
-
     private function normalize(int $code, string $raw): array
     {
-        $data = json_decode($raw, true);
+        $decoded = json_decode($raw, true);
+        $data = is_array($decoded) ? $decoded : [];
+        $errorInformation = is_array($data['errorInformation'] ?? null) ? $data['errorInformation'] : [];
         $ok = ($code >= 200 && $code < 300);
         $status = $data['status'] ?? null;
         $id = $data['id'] ?? null;
-
-        // CyberSource success statuses worth treating as "good"
-        $goodStatuses = [
-            'AUTHORIZED',
-            'PARTIAL_AUTHORIZED',
-            'PENDING',
-            'TRANSMITTED',
-            'CREATED',
-            'SENT',
-            'COMPLETED',
-            'VOIDED',
-            'REVERSED',
-            'PAID'
-        ];
-
-        $success = $ok && ($status === null || in_array($status, $goodStatuses, true));
-
         $message = $data['message']
-            ?? $data['errorInformation']['message']
+            ?? $errorInformation['message']
             ?? $status
             ?? ($raw !== '' ? $raw : null)
             ?? ($ok ? 'OK' : 'Request failed');
-
-        $error = $ok ? null : ($data['reason'] ?? $data['errorInformation']['reason'] ?? $message);
-
-        return $this->envelope($success, $code, $status, $id, $data, $raw, $error, $message);
-    }
-
-    private function envelope(
-        bool $success,
-        int $code,
-        ?string $status,
-        ?string $id,
-        ?array $data,
-        ?string $raw,
-        ?string $error,
-        ?string $message = null
-    ): array {
-        $this->last = [
-            'success' => $success,
+        $error = $ok ? null : ($data['reason'] ?? $errorInformation['reason'] ?? $message);
+        return [
+            'success' => $ok,
             'code' => $code,
             'status' => $status,
             'id' => $id,
-            'message' => $message ?? $status,
+            'message' => $message,
             'error' => $error,
-            'data' => $data,
+            'data' => $data ?: null,
             'raw' => $raw,
         ];
-        return $this->last;
     }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     /** Recursively drop null / "" values so we never send empty fields. */
     private function prune(array $arr): array
@@ -385,16 +327,4 @@ class CyberSource
         return $arr;
     }
 
-    public function lastResponse(): array
-    {
-        return $this->last;
-    }
-    public function getMode(): string
-    {
-        return $this->mode;
-    }
-    public function getEnvironment(): string
-    {
-        return $this->environment;
-    }
 }

@@ -20,6 +20,13 @@ spl_autoload_register(static function (string $class): void {
             return;
         }
     }
+
+    if (str_starts_with($class, 'Pegasus\\')) {
+        $file = dirname(__DIR__) . '/pegasus/src/' . str_replace('\\', '/', substr($class, strlen('Pegasus\\'))) . '.php';
+        if (is_file($file)) {
+            require $file;
+        }
+    }
 });
 
 \App\Config::load(dirname(__DIR__) . '/.env');

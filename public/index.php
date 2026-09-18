@@ -9,6 +9,7 @@ use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use App\Url;
 use Efris\Http\EfrisController;
+use Pegasus\PegasusController;
 
 require dirname(__DIR__) . '/bootstrap.php';
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -38,6 +39,7 @@ try {
 
     if ($method === 'GET' && preg_match('#^/pay/([a-f0-9]{24})$#', $path, $m)) { (new CheckoutController())->show($m[1]); exit; }
     if ($method === 'POST' && preg_match('#^/pay/([a-f0-9]{24})/refresh$#', $path, $m)) { (new CheckoutController())->refresh($m[1]); }
+    if (in_array($method, ['GET', 'POST'], true) && $path === '/payment/return') { (new CheckoutController())->providerReturn(); exit; }
 
     if ($method === 'GET' && $path === '/webhooks/cybersource/health') { (new WebhookController())->health(); }
     if ($path === '/webhooks/cybersource') {
@@ -52,6 +54,12 @@ try {
     if ($method === 'POST' && $path === '/api/v1/efris/invoices') { (new EfrisController())->createInvoice(); }
     if ($method === 'GET' && preg_match('#^/api/v1/efris/invoices/([^/]+)$#', $path, $m)) {
         (new EfrisController())->showInvoice(rawurldecode($m[1]));
+    }
+    if ($method === 'GET' && $path === '/api/v1/pegasus/openapi.json') { (new PegasusController())->openApi(); }
+    if ($method === 'POST' && $path === '/api/v1/pegasus/validate-recipient') { (new PegasusController())->validateRecipient(); }
+    if ($method === 'POST' && $path === '/api/v1/pegasus/transactions') { (new PegasusController())->createTransaction(); }
+    if ($method === 'GET' && preg_match('#^/api/v1/pegasus/transactions/([^/]+)$#', $path, $m)) {
+        (new PegasusController())->transactionStatus(rawurldecode($m[1]));
     }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }

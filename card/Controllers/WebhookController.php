@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Config;
-use App\Models\WebhookEvent;
 use App\Models\PaymentLink;
 use App\Services\CyberSourceWebhookSignature;
 use App\Store;
@@ -15,12 +14,10 @@ final class WebhookController extends Controller
     public function health(): never
     {
         try {
-            (new Store())->read('webhook_events');
-            $storage = dirname(__DIR__, 2) . '/storage';
+            (new Store())->read('payment_links');
             $this->json([
                 'status' => 'ok',
                 'database' => 'connected',
-                'storage' => is_dir($storage) && is_writable($storage) ? 'writable' : 'not_writable',
             ]);
         } catch (\Throwable) {
             $this->json(['status' => 'unavailable', 'database' => 'unavailable'], 503);
@@ -52,7 +49,6 @@ final class WebhookController extends Controller
 
         $payload = json_decode($raw, true);
         if (!is_array($payload)) $this->json(['error' => 'Invalid JSON'], 400);
-        (new WebhookEvent(new Store()))->record($payload);
         $this->applyInvoiceStatus($payload);
         $this->json(['received' => true], 202);
     }

@@ -90,7 +90,7 @@ X-API-Key: plk_test_...</pre>
         <span class="method post">POST</span>
       </div>
       <code class="path">/webhooks/cybersource</code>
-      <p>Set a public HTTPS callback URL and health-check URL in CyberSource. Create a dedicated Webhooks Digital Signature Key and put its key ID and secret in your environment. CissyTech validates the <code>v-c-signature</code> header before saving an event or updating a link to <code>PAID</code>, <code>PARTIALLY_PAID</code>, <code>CANCELED</code>, or <code>SENT</code>.</p>
+      <p>Set a public HTTPS callback URL and health-check URL in CyberSource. Create a dedicated Webhooks Digital Signature Key and put its key ID and secret in your environment. CissyTech validates the <code>v-c-signature</code> header before updating a link to <code>PAID</code>, <code>PARTIALLY_PAID</code>, <code>CANCELED</code>, or <code>SENT</code>.</p>
     </section>
 
     <section id="errors" class="docs-section panel">

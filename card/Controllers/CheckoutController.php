@@ -56,4 +56,18 @@ final class CheckoutController extends Controller
         }
         $this->redirect('/pay/' . $id);
     }
+
+    /**
+     * Browser return endpoint for hosted checkout providers.
+     *
+     * A browser return is informational only. Payment status is confirmed by
+     * the signed webhook or an invoice-status lookup, never by return fields.
+     */
+    public function providerReturn(): void
+    {
+        header('Cache-Control: no-store, private');
+        View::renderPublic('checkout/return', [
+            'title' => 'Payment update',
+        ]);
+    }
 }

@@ -30,8 +30,8 @@ final class ApiController extends Controller
 
     public function create(): never
     {
-        $this->authorize();
-        $payload = $this->body();
+        $this->apiKey($this->keys);
+        $payload = $this->jsonBody();
         $customer = $payload['customer'] ?? [];
         try {
             $link = $this->paymentLinks->create([
@@ -49,7 +49,7 @@ final class ApiController extends Controller
 
     public function show(string $id): never
     {
-        $this->authorize();
+        $this->apiKey($this->keys);
         $link = $this->links->find($id) ?? $this->links->findByInvoiceNumber($id);
         if (!$link) $this->json(['error' => 'Not found'], 404);
 
@@ -67,20 +67,6 @@ final class ApiController extends Controller
         }
 
         $this->json(['data' => $this->resource($link)]);
-    }
-
-    private function authorize(): void
-    {
-        if (!$this->keys->verify($_SERVER['HTTP_X_API_KEY'] ?? null)) {
-            $this->json(['error' => 'Use a valid X-API-Key header.'], 401);
-        }
-    }
-
-    private function body(): array
-    {
-        $data = json_decode((string) file_get_contents('php://input'), true);
-        if (!is_array($data)) $this->json(['error' => 'Request body must be valid JSON.'], 400);
-        return $data;
     }
 
     private function resource(array $link): array

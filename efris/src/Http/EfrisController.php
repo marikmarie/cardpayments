@@ -31,7 +31,7 @@ final class EfrisController extends Controller
     public function branches(): never
     {
         try {
-            $this->json(['data' => $this->gateway->branches($this->apiKey())]);
+            $this->json(['data' => $this->gateway->branches($this->apiKey($this->keys))]);
         } catch (GatewayException $e) {
             $this->json(['error' => $e->getMessage()], $e->httpStatus);
         }
@@ -41,8 +41,8 @@ final class EfrisController extends Controller
     {
         try {
             $result = $this->gateway->fiscalise(
-                $this->apiKey(),
-                $this->body(),
+                $this->apiKey($this->keys),
+                $this->jsonBody(),
                 (string) ($_SERVER['HTTP_IDEMPOTENCY_KEY'] ?? '')
             );
             $status = $result['http_status'];
@@ -56,7 +56,7 @@ final class EfrisController extends Controller
     public function showInvoice(string $externalReference): never
     {
         try {
-            $result = $this->gateway->invoice($this->apiKey(), $externalReference);
+            $result = $this->gateway->invoice($this->apiKey($this->keys), $externalReference);
             if ($result === null) $this->json(['error' => 'Invoice not found.'], 404);
             $status = $result['http_status'];
             unset($result['http_status']);
@@ -75,17 +75,4 @@ final class EfrisController extends Controller
         $this->json($spec);
     }
 
-    private function apiKey(): array
-    {
-        $key = $this->keys->authenticate($_SERVER['HTTP_X_API_KEY'] ?? null);
-        if ($key === null) $this->json(['error' => 'Use a valid X-API-Key header.'], 401);
-        return $key;
-    }
-
-    private function body(): array
-    {
-        $body = json_decode((string) file_get_contents('php://input'), true);
-        if (!is_array($body)) $this->json(['error' => 'Request body must be valid JSON.'], 400);
-        return $body;
-    }
 }
