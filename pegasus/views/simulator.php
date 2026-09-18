@@ -21,10 +21,6 @@ foreach ($bank_test_accounts as $code => $recipient) {
   <p>Use Pegasus test accounts only. The examples include mobile-money collections, mobile payouts, and bank payouts.</p>
 </section>
 
-<section class="warning">
-  <strong>Private key required</strong>
-  <p>PULL collections use MTN or Airtel as documented. PUSH payouts can use mobile money or the listed bank codes. Set <code>PEGASUS_PRIVATE_KEY_PATH</code> to the RSA private key, never to a public certificate.</p>
-</section>
 
 <nav class="pegasus-tabs" aria-label="PegPay tester functions" data-default-tab="<?= \App\View::e($active_tab) ?>">
   <button type="button" class="pegasus-tab" data-pegasus-tab="verify">Verify</button>
