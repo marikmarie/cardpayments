@@ -9,10 +9,12 @@ use App\Store;
 final class PegasusService
 {
     private PegasusClient $client;
+    private PegasusRepository $repository;
 
     public function __construct(private Store $store)
     {
-        $this->client = new PegasusClient();
+        $this->repository = new PegasusRepository($store);
+        $this->client = new PegasusClient($this->repository);
     }
 
     public function validateRecipient(array $input): array
@@ -49,6 +51,7 @@ final class PegasusService
         $this->client->requireConfiguration();
         $transaction = $this->transactionInput($input);
         $reserved = $this->reserve($transaction);
+        $this->repository->saveTransaction($reserved['record']);
         // PegPay Status Code 22 is explicitly retried with the same VendorTranId.
         if ($reserved['replayed'] && ($reserved['record']['status_code'] ?? '') !== '22') {
             return $reserved + ['status_checked' => false];
@@ -187,6 +190,15 @@ final class PegasusService
                 'fingerprint' => $fingerprint,
                 'transaction_type' => $transaction['type'],
                 'amount' => $transaction['amount'],
+                'from_account' => $transaction['fromAccount'],
+                'to_account' => $transaction['toAccount'],
+                'from_network' => $transaction['fromNetwork'],
+                'to_network' => $transaction['toNetwork'],
+                'payment_code' => $transaction['fromNetwork'] === $transaction['toNetwork'] ? '1' : '2',
+                'customer_reference' => $transaction['customerRef'],
+                'customer_name' => $transaction['customerName'],
+                'narration' => $transaction['narration'],
+                'request_payload' => $this->postPayload($transaction),
                 'status' => 'PENDING',
                 'status_description' => 'Awaiting PegPay response.',
                 'created_at' => gmdate('c'),
@@ -212,11 +224,13 @@ final class PegasusService
 
     private function update(string $id, array $changes): array
     {
-        return $this->store->transaction(function (array &$state) use ($id, $changes): array {
+        $record = $this->store->transaction(function (array &$state) use ($id, $changes): array {
             $record = $state['pegasus_transactions'][$id] ?? null;
             if (!$record) throw new \RuntimeException('PegPay transaction was not found locally.');
             return $state['pegasus_transactions'][$id] = array_merge($record, $changes);
         });
+        $this->repository->saveTransaction($record);
+        return $record;
     }
 
     private function account(mixed $value): string

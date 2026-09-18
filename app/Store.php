@@ -35,6 +35,12 @@ final class Store
         return $this->transaction(fn(array $data) => $data[$table] ?? [], false);
     }
 
+    /** Returns the production PDO connection, or null while using local JSON storage. */
+    public function pdo(): ?\PDO
+    {
+        return $this->database;
+    }
+
     public function transaction(callable $callback, bool $write = true): mixed
     {
         if ($this->database) {
@@ -63,14 +69,14 @@ final class Store
         $this->database->beginTransaction();
         try {
             $query = $write
-                ? 'SELECT state FROM app_state WHERE id = 1 FOR UPDATE'
-                : 'SELECT state FROM app_state WHERE id = 1';
+                ? 'SELECT state FROM tbl_app_state WHERE id = 1 FOR UPDATE'
+                : 'SELECT state FROM tbl_app_state WHERE id = 1';
             $state = $this->database->query($query)->fetchColumn();
             $data = json_decode($state ?: '{}', true) ?: [];
             $result = $callback($data);
             if ($write) {
                 $save = $this->database->prepare(
-                    'INSERT INTO app_state (id, state) VALUES (1, ?) ON DUPLICATE KEY UPDATE state = VALUES(state), updated_at = UTC_TIMESTAMP()'
+                    'INSERT INTO tbl_app_state (id, state) VALUES (1, ?) ON DUPLICATE KEY UPDATE state = VALUES(state), updated_at = UTC_TIMESTAMP()'
                 );
                 $save->execute([json_encode($data, JSON_UNESCAPED_SLASHES)]);
             }

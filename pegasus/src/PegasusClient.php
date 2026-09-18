@@ -8,6 +8,8 @@ use App\Config;
 /** PegPay HTTP, credentials, and RSA signature handling. */
 final class PegasusClient
 {
+    public function __construct(private ?PegasusRepository $repository = null) {}
+
     public function configured(): bool
     {
         foreach (['PEGASUS_API_URL', 'PEGASUS_VENDOR_CODE', 'PEGASUS_PASSWORD', 'PEGASUS_PRIVATE_KEY_PATH'] as $key) {
@@ -93,6 +95,7 @@ final class PegasusClient
                 if (count($entries) === 12) break;
             }
         }
+        if ($entries === []) $entries = $this->repository?->recentLogs() ?? [];
         return ['path' => 'storage/pegasus.log', 'writable' => is_dir($directory) && is_writable($directory), 'entries' => $entries];
     }
 
@@ -101,7 +104,8 @@ final class PegasusClient
         if (!function_exists('curl_init')) throw new \RuntimeException('PHP cURL is required for PegPay.');
         $url = rtrim($this->config()['url'], '/') . '/';
         $operation = (string) ($payload['Method'] ?? 'unknown');
-        $this->logRequest($operation, $url, $payload);
+        $vendorTransactionId = ($payload['VendorTranId'] ?? '') !== '' ? (string) $payload['VendorTranId'] : null;
+        $this->logRequest($operation, $url, $payload, $vendorTransactionId);
 
         $curl = curl_init($url);
         curl_setopt_array($curl, [
@@ -118,34 +122,36 @@ final class PegasusClient
         curl_close($curl);
 
         if ($raw === false) {
-            $this->logResponse($operation, $url, $status, null, $error);
+            $this->logResponse($operation, $url, $status, null, $error, $vendorTransactionId);
             throw new \RuntimeException('PegPay transport error: ' . $error);
         }
         $response = json_decode((string) $raw, true);
         if (!is_array($response)) {
-            $this->logResponse($operation, $url, $status, $raw, 'PegPay returned invalid JSON.');
+            $this->logResponse($operation, $url, $status, $raw, 'PegPay returned invalid JSON.', $vendorTransactionId);
             throw new \RuntimeException('PegPay returned an invalid JSON response.');
         }
-        $this->logResponse($operation, $url, $status, $response);
+        $this->logResponse($operation, $url, $status, $response, null, $vendorTransactionId);
         if ($status >= 400) throw new \RuntimeException('PegPay returned HTTP ' . $status . '.');
         return $response;
     }
 
     /** Store the outgoing request without exposing provider credentials or signatures. */
-    private function logRequest(string $operation, string $url, array $payload): void
+    private function logRequest(string $operation, string $url, array $payload, ?string $vendorTransactionId): void
     {
-        $this->writeLog('REQUEST', [
+        $this->writeLog('REQUEST', array_filter([
             'operation' => $operation,
+            'vendor_transaction_id' => $vendorTransactionId,
             'method' => 'POST',
             'url' => $url,
             'body' => $this->redact($payload),
-        ]);
+        ], static fn(mixed $value): bool => $value !== null && $value !== ''));
     }
 
-    private function logResponse(string $operation, string $url, int $status, mixed $response, ?string $error = null): void
+    private function logResponse(string $operation, string $url, int $status, mixed $response, ?string $error, ?string $vendorTransactionId): void
     {
         $this->writeLog('RESPONSE', array_filter([
             'operation' => $operation,
+            'vendor_transaction_id' => $vendorTransactionId,
             'url' => $url,
             'http_status' => $status,
             'response' => $this->redact($response),
@@ -155,22 +161,25 @@ final class PegasusClient
 
     private function writeLog(string $type, array $data): void
     {
+        $entry = ['time' => gmdate('c'), 'type' => $type, 'data' => $data];
         $directory = $this->logDirectory();
         if (!is_dir($directory) && !@mkdir($directory, 0775, true) && !is_dir($directory)) {
             error_log('PegPay log directory could not be created.');
+            $this->repository?->recordLog($entry);
             return;
         }
         if (!is_writable($directory)) @chmod($directory, 0775);
         if (!is_writable($directory)) {
             error_log('PegPay log directory is not writable.');
+            $this->repository?->recordLog($entry);
             return;
         }
 
-        $entry = ['time' => gmdate('c'), 'type' => $type, 'data' => $data];
         $line = json_encode($entry, JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         if ($line === false || @file_put_contents($directory . '/pegasus.log', $line . PHP_EOL, FILE_APPEND | LOCK_EX) === false) {
             error_log('PegPay log could not be written.');
         }
+        $this->repository?->recordLog($entry);
     }
 
     private function logDirectory(): string
