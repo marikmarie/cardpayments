@@ -62,7 +62,7 @@ The SQL file does not create or select a database. Import it while `cissytechweb
 
 Confirm that PHP has the `pdo_mysql` extension enabled. If these values are blank, the application uses `storage/data.json`; this is suitable for small testing only, not multi-user production use.
 
-All physical application tables use the `tbl_` prefix: `tbl_app_state`, `tbl_pegasus_transactions`, and `tbl_pegasus_api_logs`. If the database was already used by an earlier project version, run `card/database/migrate-to-tbl-prefix.mysql.sql` once before deploying so that `app_state` is safely renamed to `tbl_app_state`.
+All physical application tables use the `tbl_` prefix: `tbl_app_state`, `tbl_pegasus_transactions`, and `tbl_pegasus_api_logs`. If the database was already used by an earlier project version, run `card/database/migrate-to-tbl-prefix.mysql.sql` once before deploying. It copies the old `app_state` data into `tbl_app_state`, then removes the old unprefixed table.
 
 ## 5. Verify before adding CyberSource webhooks
 
