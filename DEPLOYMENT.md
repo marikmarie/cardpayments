@@ -50,7 +50,7 @@ The PHP user must be able to write to `storage/`. Set that folder to `755` first
 
 ## 4. Database (recommended)
 
-Create a MySQL database and user in the hosting panel, import `card/database/schema.mysql.sql`, then set:
+Create a MySQL database and user in the hosting panel, import `card/database/schema.mysql.sql` followed by `pegasus/database/schema.mysql.sql`, then set:
 
 ```ini
 DB_DSN="mysql:host=localhost;dbname=your_database_name;charset=utf8mb4"
@@ -61,6 +61,8 @@ DB_PASSWORD="your_database_password"
 The SQL file does not create or select a database. Import it while `cissytechweb_vault` is selected in phpMyAdmin.
 
 Confirm that PHP has the `pdo_mysql` extension enabled. If these values are blank, the application uses `storage/data.json`; this is suitable for small testing only, not multi-user production use.
+
+All physical application tables use the `tbl_` prefix: `tbl_app_state`, `tbl_pegasus_transactions`, and `tbl_pegasus_api_logs`. If the database was already used by an earlier project version, run `card/database/migrate-to-tbl-prefix.mysql.sql` once before deploying so that `app_state` is safely renamed to `tbl_app_state`.
 
 ## 5. Verify before adding CyberSource webhooks
 

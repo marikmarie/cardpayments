@@ -9,7 +9,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 - Dashboard-issued API keys, passed as `X-API-Key`.
 - Signed `POST /webhooks/cybersource` receiver for CyberSource invoice status events.
 - A separate `efris/` gateway module and OpenAPI contract for tenant-scoped POS/ERP fiscalisation testing.
-- MySQL production schema in `card/database/schema.mysql.sql`.
+- MySQL production schemas in `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql`.
 - Local JSON store in `storage/data.json` because this PHP installation has no PDO driver enabled.
 
 ## Local setup
@@ -58,7 +58,7 @@ The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from ca
 
 ## Database deployment
 
-Run `card/database/schema.mysql.sql` on MySQL 8+ when you deploy, enable `pdo_mysql`, and set `DB_DSN` (for example `mysql:host=127.0.0.1;dbname=paylink_lab;charset=utf8mb4`), `DB_USER`, and `DB_PASSWORD` in `.env`. The repository layer automatically switches from local JSON storage to MySQL; no controller or API changes are needed. This PHP runtime reports `PDO drivers =>` empty, so it correctly uses the local JSON store for immediate testing.
+Run `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql` on MySQL 8+ when you deploy, enable `pdo_mysql`, and set `DB_DSN` (for example `mysql:host=127.0.0.1;dbname=paylink_lab;charset=utf8mb4`), `DB_USER`, and `DB_PASSWORD` in `.env`. The repository layer automatically switches from local JSON storage to MySQL; no controller or API changes are needed. Every physical application table uses the `tbl_` prefix: `tbl_app_state`, `tbl_pegasus_transactions`, and `tbl_pegasus_api_logs`. For an existing installation that has `app_state`, run `card/database/migrate-to-tbl-prefix.mysql.sql` once before deploying this version. This PHP runtime reports `PDO drivers =>` empty, so it correctly uses the local JSON store for immediate testing.
 
 ## Webhooks
 
