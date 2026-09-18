@@ -3,3 +3,11 @@ cybersource.log
 storage/*.json
 
 # Server certificates, keys, and source documents stay outside the code repository.
+*.pem
+*.key
+*.crt
+*.cer
+*.csr
+*.p12
+*.pfx
+/PegPay JSON API Payments and Collections Integration Document.pdf
