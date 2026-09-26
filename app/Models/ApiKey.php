@@ -19,6 +19,18 @@ final class ApiKey
         }, $keys);
     }
 
+    /** Find an integration by its non-secret dashboard ID. */
+    public function find(string $id): ?array
+    {
+        foreach ($this->store->read('api_keys') as $key) {
+            if (hash_equals((string) ($key['id'] ?? ''), $id)) {
+                unset($key['token_hash']);
+                return $key;
+            }
+        }
+        return null;
+    }
+
     public function create(string $name): array
     {
         $token = 'plk_test_' . bin2hex(random_bytes(20));

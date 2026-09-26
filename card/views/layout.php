@@ -29,6 +29,9 @@
       <a class="<?= ($active_nav ?? '') === 'pegasus' ? 'active' : '' ?>" href="<?= $url('/pegasus-tester') ?>">
         <span>⇄</span> PegPay test
       </a>
+      <a class="<?= ($active_nav ?? '') === 'efris' ? 'active' : '' ?>" href="<?= $url('/efris-tester') ?>">
+        <span>▤</span> EFRIS UAT
+      </a>
       <a class="<?= ($active_nav ?? '') === 'api' ? 'active' : '' ?>" href="<?= $url('/developers/api') ?>">
         <span>⌘</span> API reference
       </a>
@@ -40,7 +43,8 @@
   <div class="workspace">
     <header class="topbar">
       <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
-      <a class="primary-action" href="<?= $url('/links/create') ?>">New invoice</a>
+      <?php $action = $topbar_action ?? ['label' => 'New invoice', 'href' => '/links/create']; ?>
+      <a class="primary-action" href="<?= $url($action['href']) ?>"><?= \App\View::e($action['label']) ?></a>
     </header>
 
     <main class="content">
