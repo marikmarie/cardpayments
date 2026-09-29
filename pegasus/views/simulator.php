@@ -5,6 +5,7 @@
 /** @var array|null $status_result */
 /** @var array|null $balance_result */
 /** @var string $last_transaction_id */
+/** @var string $last_payout_id */
 /** @var array $log */
 /** @var array $mobile_networks */
 /** @var array $payout_networks */
@@ -31,6 +32,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
   <button type="button" class="pegasus-tab" data-pegasus-tab="collect">Collect</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="mobile-payout">Mobile payout</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="bank-payout">Bank payout</button>
+  <button type="button" class="pegasus-tab" data-pegasus-tab="duplicate">Duplicate payout</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="status">Status</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="balance">Balance</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="log">Log</button>
@@ -72,7 +74,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>↻</span>
     <div>
       <h3>Check transaction status</h3>
-      <p>Enter a transaction created in this tester. For a pending payout, wait at least five seconds before checking.</p>
+      <p>Check a payout from this tester, or let PegPay respond for an unknown reference. For a pending payout, wait at least five seconds.</p>
     </div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-tester/status') ?>" method="post">
@@ -82,11 +84,37 @@ foreach ($bank_test_accounts as $code => $recipient) {
     </label>
     <div class="form-actions compact-actions">
       <button class="secondary-action">Check status</button>
+      <button class="outline-action" name="unknown_scenario" value="1" formnovalidate>Check unknown test ID</button>
     </div>
   </form>
   <?php if ($status_result): ?>
+    <p><strong><?= !empty($status_result['found_locally']) ? 'Known local transaction' : 'Unknown local transaction — PegPay was asked directly' ?></strong></p>
     <p><strong>Response returned by PegPay</strong></p>
     <pre class="code-block"><?= \App\View::e(json_encode($status_result['provider_response'] ?? $status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+  <?php endif; ?>
+</section>
+
+<section class="panel form-section" data-pegasus-panel="duplicate" hidden>
+  <div class="section-title">
+    <span>≡</span>
+    <div>
+      <h3>Duplicate payout test</h3>
+      <p>Repeat the exact same allowance or salary payout. The tester returns the original result and prevents a second payout request.</p>
+    </div>
+  </div>
+  <?php if ($last_payout_id === ''): ?>
+    <p>Create a mobile or bank payout first. Its transaction ID will appear here for the duplicate test.</p>
+  <?php else: ?>
+    <form class="form-grid" action="<?= $url('/pegasus-tester/duplicate') ?>" method="post">
+      <label>
+        Original payout transaction ID
+        <input name="vendor_transaction_id" value="<?= \App\View::e($last_payout_id) ?>" maxlength="60" required>
+      </label>
+      <div class="form-actions compact-actions">
+        <button class="secondary-action">Repeat payout safely</button>
+      </div>
+    </form>
+    <p><small>Only a documented PegPay retry response with status code 22 can cause the saved request to be resent.</small></p>
   <?php endif; ?>
 </section>
 
@@ -201,7 +229,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
       <span>✓</span>
       <div>
         <h3>Latest PegPay response</h3>
-        <p>Check a PENDING transaction with the PegPay status API after the provider's required wait time.</p>
+      <p><?= !empty($result['duplicate_test']) ? 'Duplicate scenario: the original payout record was returned.' : 'Check a PENDING transaction with the PegPay status API after the provider\'s required wait time.' ?></p>
       </div>
     </div>
     <pre class="code-block"><?= \App\View::e(json_encode($result['data']['provider_response'] ?? $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>

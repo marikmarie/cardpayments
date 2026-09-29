@@ -31,6 +31,7 @@ final class PegasusSimulatorController extends Controller
             'status_result' => $_SESSION['pegasus_status_result'] ?? null,
             'balance_result' => $_SESSION['pegasus_balance_result'] ?? null,
             'last_transaction_id' => $_SESSION['pegasus_last_transaction_id'] ?? '',
+            'last_payout_id' => $_SESSION['pegasus_last_payout_id'] ?? '',
             'log' => $this->pegasus->logDetails(),
             'active_tab' => $_SESSION['pegasus_active_tab'] ?? 'verify',
             'flash' => $_SESSION['flash'] ?? null,
@@ -67,6 +68,9 @@ final class PegasusSimulatorController extends Controller
             $statusChecked = $result['status_checked'] ?? false;
             $_SESSION['pegasus_test_result'] = ['data' => $record, 'replayed' => $result['replayed'], 'status_checked' => $statusChecked];
             $_SESSION['pegasus_last_transaction_id'] = $record['vendor_transaction_id'];
+            if (($input['transaction_type'] ?? '') === 'PUSH') {
+                $_SESSION['pegasus_last_payout_id'] = $record['vendor_transaction_id'];
+            }
             $_SESSION['pegasus_active_tab'] = match ($input['transaction_type'] ?? '') {
                 'PULL' => 'collect',
                 default => $testBank === '' ? 'mobile-payout' : 'bank-payout',
@@ -84,16 +88,42 @@ final class PegasusSimulatorController extends Controller
     {
         try {
             $id = trim((string) ($input['vendor_transaction_id'] ?? ''));
+            if (!empty($input['unknown_scenario'])) {
+                $id = 'UNKNOWN-UAT-' . gmdate('YmdHis');
+            }
             if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
                 throw new \InvalidArgumentException('Enter a valid vendor transaction ID.');
             }
-            $record = $this->pegasus->refresh($id);
-            if (!$record) throw new \InvalidArgumentException('This transaction was not created in this tester.');
-            $_SESSION['pegasus_status_result'] = $this->pegasus->resource($record);
+            $record = $this->pegasus->status($id);
+            $_SESSION['pegasus_status_result'] = $record;
             $_SESSION['pegasus_last_transaction_id'] = $id;
             $_SESSION['pegasus_active_tab'] = 'status';
-            $this->flash('success', 'PegPay status checked.');
+            $this->flash('success', ($record['found_locally'] ?? false) ? 'PegPay status checked.' : 'PegPay status checked for an unknown local reference.');
         } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+        }
+        $this->redirect('/pegasus-tester');
+    }
+
+    public function duplicate(array $input): never
+    {
+        try {
+            $result = $this->pegasus->duplicate((string) ($input['vendor_transaction_id'] ?? ''));
+            $record = $this->pegasus->resource($result['record']);
+            $_SESSION['pegasus_test_result'] = [
+                'data' => $record,
+                'replayed' => $result['replayed'],
+                'duplicate_test' => true,
+                'status_checked' => $result['status_checked'] ?? false,
+            ];
+            $_SESSION['pegasus_last_transaction_id'] = $record['vendor_transaction_id'];
+            $_SESSION['pegasus_last_payout_id'] = $record['vendor_transaction_id'];
+            $_SESSION['pegasus_active_tab'] = 'duplicate';
+            $this->flash('success', $result['replayed']
+                ? 'Duplicate payout protected. The original transaction was returned without a second payout request.'
+                : 'PegPay requested a documented retry for this payout.');
+        } catch (\Throwable $e) {
+            $_SESSION['pegasus_active_tab'] = 'duplicate';
             $this->flash('error', $e->getMessage());
         }
         $this->redirect('/pegasus-tester');
@@ -126,12 +156,12 @@ final class PegasusSimulatorController extends Controller
                 'narration' => 'PegPay UAT collection',
             ],
             'push' => [
-                'title' => 'Send a mobile payout', 'type' => 'PUSH', 'channel' => 'mobile', 'button' => 'Submit mobile payout',
-                'reference' => "PUSH-TEST-{$stamp}", 'amount' => '500',
+                'title' => 'Pay a staff allowance', 'type' => 'PUSH', 'channel' => 'mobile', 'button' => 'Send allowance payout',
+                'reference' => "ALLOWANCE-UAT-{$stamp}", 'amount' => '500',
                 'from_account' => '256702685176', 'from_network' => 'AIRTEL',
                 'to_account' => '256702685176', 'to_network' => 'AIRTEL',
-                'customer_name' => 'CissyTech UAT', 'customer_reference' => 'PAYOUT-TEST',
-                'narration' => 'PegPay UAT payout',
+                'customer_name' => 'CissyTech Staff', 'customer_reference' => 'MONTHLY-ALLOWANCE',
+                'narration' => 'Monthly staff allowance',
             ],
             'bank_push' => [
                 'title' => 'Send a bank payout', 'type' => 'PUSH', 'channel' => 'bank', 'button' => 'Submit bank payout',

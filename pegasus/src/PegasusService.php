@@ -88,6 +88,57 @@ final class PegasusService
         return $this->saveResponse($id, $this->client->transactionStatus($id));
     }
 
+    /** Ask PegPay for a status even when this application has no local record. */
+    public function status(string $id): array
+    {
+        $this->client->requireConfiguration();
+        $id = trim($id);
+        if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
+            throw new \InvalidArgumentException('Enter a valid vendor transaction ID.');
+        }
+
+        $record = $this->find($id);
+        $response = $this->client->transactionStatus($id);
+        if ($record) {
+            return $this->resource($this->saveResponse($id, $response)) + ['found_locally' => true];
+        }
+
+        $code = (string) ($response['StatusCode'] ?? $response['Status'] ?? '');
+        return [
+            'vendor_transaction_id' => $id,
+            'found_locally' => false,
+            'status' => $this->providerStatus($code),
+            'status_code' => $code,
+            'status_description' => (string) ($response['StatusDescription'] ?? $response['StatusDesc'] ?? 'No status description returned.'),
+            'provider_response' => $response,
+        ];
+    }
+
+    /** Repeat a saved payout with the same vendor ID to demonstrate idempotency. */
+    public function duplicate(string $id): array
+    {
+        $record = $this->find(trim($id));
+        if (!$record || ($record['transaction_type'] ?? '') !== 'PUSH') {
+            throw new \InvalidArgumentException('Choose a payout created in this tester.');
+        }
+
+        $addendum = (string) ($record['request_payload']['AddendumData'] ?? '');
+        $whitelist = str_starts_with($addendum, 'whitelist:') ? substr($addendum, 10) : '';
+        return $this->createTransaction([
+            'transaction_type' => 'PUSH',
+            'vendor_transaction_id' => $record['id'],
+            'amount' => $record['amount'],
+            'from_account' => $record['from_account'] ?? '',
+            'from_network' => $record['from_network'] ?? '',
+            'to_account' => $record['to_account'] ?? '',
+            'to_network' => $record['to_network'] ?? '',
+            'customer_name' => $record['customer_name'] ?? '',
+            'customer_reference' => $record['customer_reference'] ?? '',
+            'narration' => $record['narration'] ?? '',
+            'whitelist' => $whitelist,
+        ]);
+    }
+
     public function resource(array $record): array
     {
         return [
@@ -198,6 +249,7 @@ final class PegasusService
                 'customer_reference' => $transaction['customerRef'],
                 'customer_name' => $transaction['customerName'],
                 'narration' => $transaction['narration'],
+                'whitelist' => $transaction['whitelist'],
                 'request_payload' => $this->postPayload($transaction),
                 'status' => 'PENDING',
                 'status_description' => 'Awaiting PegPay response.',
@@ -212,7 +264,7 @@ final class PegasusService
     {
         $code = (string) ($response['StatusCode'] ?? $response['Status'] ?? '');
         return $this->update($id, [
-            'status' => $code === '0' ? 'SUCCESS' : ($code === '122' ? 'PENDING' : 'FAILED'),
+            'status' => $this->providerStatus($code),
             'status_code' => $code,
             'status_description' => (string) ($response['StatusDescription'] ?? $response['StatusDesc'] ?? 'No status description returned.'),
             'pegpay_id' => $response['PegpayId'] ?? $response['PegPayId'] ?? null,
@@ -220,6 +272,11 @@ final class PegasusService
             'provider_response' => $response,
             'updated_at' => gmdate('c'),
         ]);
+    }
+
+    private function providerStatus(string $code): string
+    {
+        return $code === '0' ? 'SUCCESS' : ($code === '122' ? 'PENDING' : 'FAILED');
     }
 
     private function update(string $id, array $changes): array
