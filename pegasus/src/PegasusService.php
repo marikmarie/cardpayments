@@ -139,6 +139,22 @@ final class PegasusService
         ]);
     }
 
+    /** Send the original payload to PegPay again for an approved UAT duplicate test. */
+    public function forceDuplicate(string $id): array
+    {
+        $this->client->requireConfiguration();
+        $record = $this->find(trim($id));
+        if (!$record || ($record['transaction_type'] ?? '') !== 'PUSH') {
+            throw new \InvalidArgumentException('Choose a payout created in this tester.');
+        }
+        $payload = $record['request_payload'] ?? null;
+        if (!is_array($payload) || ($payload['VendorTranId'] ?? '') !== $record['id']) {
+            throw new \RuntimeException('The original payout payload is unavailable. Create a new UAT payout first.');
+        }
+
+        return ['record' => $this->saveResponse($record['id'], $this->client->postTransaction($payload))];
+    }
+
     public function resource(array $record): array
     {
         return [

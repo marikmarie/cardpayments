@@ -108,9 +108,10 @@ foreach ($bank_test_accounts as $code => $recipient) {
       </label>
       <div class="form-actions compact-actions">
         <button class="secondary-action">Repeat payout safely</button>
+        <button class="outline-action" name="send_to_pegpay" value="1">Send duplicate to PegPay</button>
       </div>
     </form>
-    <p><small>Only a documented PegPay retry response with status code 22 can cause the saved request to be resent.</small></p>
+    <p><small>Use “Send duplicate to PegPay” only with their UAT account. It sends the original request again with the same transaction ID and logs the provider response.</small></p>
   <?php endif; ?>
 </section>
 
@@ -230,8 +231,8 @@ foreach ($bank_test_accounts as $code => $recipient) {
     </div>
     <?php if (!empty($result['duplicate_test'])): ?>
       <div class="warning">
-        <strong><?= !empty($result['replayed']) ? 'Duplicate protected' : 'Documented retry sent' ?></strong>
-        <p><?= !empty($result['replayed']) ? 'replayed: true — the original payout was returned and no second request was sent to PegPay.' : 'PegPay response code 22 requires a retry using the same vendor transaction ID.' ?></p>
+        <strong><?= !empty($result['duplicate_sent']) ? 'Duplicate request sent to PegPay' : (!empty($result['replayed']) ? 'Duplicate protected' : 'Documented retry sent') ?></strong>
+        <p><?= !empty($result['duplicate_sent']) ? 'The original payout request was sent to PegPay again. Review the provider response and Log tab.' : (!empty($result['replayed']) ? 'replayed: true — the original payout was returned and no second request was sent to PegPay.' : 'PegPay response code 22 requires a retry using the same vendor transaction ID.') ?></p>
       </div>
     <?php endif; ?>
     <pre class="code-block"><?= \App\View::e(json_encode($result['data']['provider_response'] ?? $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
