@@ -40,6 +40,17 @@ Do not switch the mode to live until the URA test setup is complete and the curr
 5. Expect `TEST_ACCEPTED` and `NOT_SUBMITTED`. Repeat the same request: it returns the original local record with `meta.replayed: true`; it must not create a duplicate.
 6. Retrieve it using `GET /api/v1/efris/invoices/POS-INV-000172` with the same API key.
 
+## Test in the browser
+
+Open `/efris-tester` after creating an API key on Overview. The page keeps the work in four small tabs:
+
+1. Save a local mock tenant and branch using its **Integration ID** (not the API-key secret).
+2. Submit a test invoice and inspect the exact CissyTech request and response.
+3. Check the stored test invoice status. Submitting the unchanged form a second time demonstrates idempotency.
+4. Review the URA items that must be available before a live UAT submission.
+
+The browser tester uses the same local mock gateway as the API, so it returns `TEST_ACCEPTED` and `NOT_SUBMITTED`. It never sends data to URA.
+
 ## What URA must provide before a real test submission
 
 - A registered pilot taxpayer in URA's **test** environment, its test TIN, approved branches and registered device(s).

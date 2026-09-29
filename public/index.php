@@ -9,6 +9,7 @@ use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use App\Url;
 use Efris\Http\EfrisController;
+use Efris\Http\EfrisSimulatorController;
 use Pegasus\PegasusController;
 use Pegasus\PegasusSimulatorController;
 
@@ -56,6 +57,10 @@ try {
     if ($method === 'GET' && preg_match('#^/api/v1/efris/invoices/([^/]+)$#', $path, $m)) {
         (new EfrisController())->showInvoice(rawurldecode($m[1]));
     }
+    if ($method === 'GET' && $path === '/efris-tester') { (new EfrisSimulatorController())->index(); exit; }
+    if ($method === 'POST' && $path === '/efris-tester/setup') { (new EfrisSimulatorController())->setup($_POST); }
+    if ($method === 'POST' && $path === '/efris-tester/invoices') { (new EfrisSimulatorController())->submit($_POST); }
+    if ($method === 'POST' && $path === '/efris-tester/status') { (new EfrisSimulatorController())->status($_POST); }
     if ($method === 'GET' && $path === '/api/v1/pegasus/openapi.json') { (new PegasusController())->openApi(); }
     if ($method === 'GET' && $path === '/api/v1/pegasus/balance') { (new PegasusController())->balance(); }
     if ($method === 'POST' && $path === '/api/v1/pegasus/validate-recipient') { (new PegasusController())->validateRecipient(); }
@@ -67,6 +72,7 @@ try {
     if ($method === 'POST' && $path === '/pegasus-tester/verify') { (new PegasusSimulatorController())->verify($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/transactions') { (new PegasusSimulatorController())->submit($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/status') { (new PegasusSimulatorController())->status($_POST); }
+    if ($method === 'POST' && $path === '/pegasus-tester/duplicate') { (new PegasusSimulatorController())->duplicate($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/balance') { (new PegasusSimulatorController())->balance(); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
