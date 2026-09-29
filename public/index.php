@@ -74,6 +74,9 @@ try {
     if ($method === 'POST' && $path === '/pegasus-tester/status') { (new PegasusSimulatorController())->status($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/duplicate') { (new PegasusSimulatorController())->duplicate($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/balance') { (new PegasusSimulatorController())->balance(); }
+    if ($method === 'GET' && $path === '/pegasus-payouts') { (new PegasusSimulatorController())->payouts(); exit; }
+    if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); exit; }
+    if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
 

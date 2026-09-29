@@ -108,20 +108,26 @@ final class PegasusSimulatorController extends Controller
     public function duplicate(array $input): never
     {
         try {
-            $result = $this->pegasus->duplicate((string) ($input['vendor_transaction_id'] ?? ''));
+            $sendToPegPay = !empty($input['send_to_pegpay']);
+            $result = $sendToPegPay
+                ? $this->pegasus->forceDuplicate((string) ($input['vendor_transaction_id'] ?? ''))
+                : $this->pegasus->duplicate((string) ($input['vendor_transaction_id'] ?? ''));
             $record = $this->pegasus->resource($result['record']);
             $_SESSION['pegasus_test_result'] = [
                 'data' => $record,
-                'replayed' => $result['replayed'],
+                'replayed' => $result['replayed'] ?? false,
                 'duplicate_test' => true,
+                'duplicate_sent' => $sendToPegPay,
                 'status_checked' => $result['status_checked'] ?? false,
             ];
             $_SESSION['pegasus_last_transaction_id'] = $record['vendor_transaction_id'];
             $_SESSION['pegasus_last_payout_id'] = $record['vendor_transaction_id'];
             $_SESSION['pegasus_active_tab'] = 'duplicate';
-            $this->flash('success', $result['replayed']
-                ? 'Duplicate payout protected. The original transaction was returned without a second payout request.'
-                : 'PegPay requested a documented retry for this payout.');
+            $this->flash('success', $sendToPegPay
+                ? 'Duplicate UAT request sent to PegPay. Review its response below and in the Log tab.'
+                : ($result['replayed']
+                    ? 'Duplicate payout protected. The original transaction was returned without a second payout request.'
+                    : 'PegPay requested a documented retry for this payout.'));
         } catch (\Throwable $e) {
             $_SESSION['pegasus_active_tab'] = 'duplicate';
             $this->flash('error', $e->getMessage());
@@ -141,6 +147,107 @@ final class PegasusSimulatorController extends Controller
             $this->flash('error', $e->getMessage());
         }
         $this->redirect('/pegasus-tester');
+    }
+
+    public function payouts(): void
+    {
+        View::renderModule('pegasus', 'payouts', [
+            'title' => 'Payouts',
+            'active_nav' => 'payouts',
+            'topbar_action' => ['label' => 'PegPay test', 'href' => '/pegasus-tester'],
+            'staff' => $this->staff(),
+            'review' => null,
+            'flash' => $_SESSION['flash'] ?? null,
+        ]);
+        unset($_SESSION['flash']);
+    }
+
+    public function reviewPayouts(array $input): void
+    {
+        try {
+            $review = $this->payoutReview($input);
+            $_SESSION['pegasus_payout_review'] = $review;
+            View::renderModule('pegasus', 'payouts', [
+                'title' => 'Review payouts',
+                'active_nav' => 'payouts',
+                'topbar_action' => ['label' => 'PegPay test', 'href' => '/pegasus-tester'],
+                'staff' => $this->staff(),
+                'review' => $review,
+                'flash' => null,
+            ]);
+        } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+            $this->redirect('/pegasus-payouts');
+        }
+    }
+
+    public function sendPayouts(): void
+    {
+        $review = $_SESSION['pegasus_payout_review'] ?? null;
+        if (!is_array($review) || empty($review['items'])) {
+            $this->flash('error', 'Choose staff and review the payout batch first.');
+            $this->redirect('/pegasus-payouts');
+        }
+
+        $results = [];
+        try {
+            foreach ($review['items'] as $item) {
+                $id = sprintf('%s-%s-%s', $review['type'] === 'salary' ? 'SALARY' : 'ALLOW', gmdate('YmdHis'), $item['id']);
+                $response = $this->pegasus->createTransaction([
+                    'transaction_type' => 'PUSH',
+                    'vendor_transaction_id' => $id,
+                    'amount' => $item['amount'],
+                    'from_account' => '256702685176',
+                    'from_network' => 'AIRTEL',
+                    'to_account' => $item['phone'],
+                    'to_network' => 'AIRTEL',
+                    'customer_name' => $item['name'],
+                    'customer_reference' => strtoupper($review['type']) . '-' . $item['id'],
+                    'narration' => $review['type'] === 'salary' ? 'Monthly salary UAT' : 'Daily allowance UAT',
+                ]);
+                $record = $this->pegasus->resource($response['record']);
+                $results[] = $item + ['transaction' => $record];
+                $_SESSION['pegasus_last_payout_id'] = $record['vendor_transaction_id'];
+            }
+            unset($_SESSION['pegasus_payout_review']);
+            View::renderModule('pegasus', 'payout-results', [
+                'title' => 'Payout results',
+                'active_nav' => 'payouts',
+                'topbar_action' => ['label' => 'PegPay test', 'href' => '/pegasus-tester'],
+                'review' => $review,
+                'results' => $results,
+                'flash' => null,
+            ]);
+        } catch (\Throwable $e) {
+            $this->flash('error', 'PegPay stopped the payout batch: ' . $e->getMessage());
+            $this->redirect('/pegasus-payouts');
+        }
+    }
+
+    private function payoutReview(array $input): array
+    {
+        $type = strtolower(trim((string) ($input['payout_type'] ?? 'allowance')));
+        if (!in_array($type, ['allowance', 'salary'], true)) {
+            throw new \InvalidArgumentException('Choose daily allowance or monthly salary.');
+        }
+        $selected = array_flip(array_map('strval', (array) ($input['staff'] ?? [])));
+        $items = [];
+        foreach ($this->staff() as $person) {
+            if (isset($selected[$person['id']])) {
+                $items[] = $person + ['amount' => $type === 'salary' ? '5000' : '500'];
+            }
+        }
+        if ($items === []) throw new \InvalidArgumentException('Select at least one staff member.');
+        return ['type' => $type, 'items' => $items];
+    }
+
+    private function staff(): array
+    {
+        return [
+            ['id' => 'AMINA', 'name' => 'Amina N.', 'department' => 'Finance', 'phone' => '256702685176'],
+            ['id' => 'DAVID', 'name' => 'David O.', 'department' => 'Field team', 'phone' => '256702685176'],
+            ['id' => 'GRACE', 'name' => 'Grace K.', 'department' => 'Operations', 'phone' => '256702685176'],
+        ];
     }
 
     private function samples(): array
