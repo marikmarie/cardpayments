@@ -232,6 +232,12 @@ foreach ($bank_test_accounts as $code => $recipient) {
       <p><?= !empty($result['duplicate_test']) ? 'Duplicate scenario: the original payout record was returned.' : 'Check a PENDING transaction with the PegPay status API after the provider\'s required wait time.' ?></p>
       </div>
     </div>
+    <?php if (!empty($result['duplicate_test'])): ?>
+      <div class="warning">
+        <strong><?= !empty($result['replayed']) ? 'Duplicate protected' : 'Documented retry sent' ?></strong>
+        <p><?= !empty($result['replayed']) ? 'replayed: true — the original payout was returned and no second request was sent to PegPay.' : 'PegPay response code 22 requires a retry using the same vendor transaction ID.' ?></p>
+      </div>
+    <?php endif; ?>
     <pre class="code-block"><?= \App\View::e(json_encode($result['data']['provider_response'] ?? $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
   </section>
 <?php endif; ?>
