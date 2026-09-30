@@ -567,7 +567,7 @@ textarea { min-height: 72px; resize: vertical; }
 .toggle small { display: block; color: var(--muted); font-size: 14px; font-weight: 400; }
 .form-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; }
 .pegasus-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
-.pegasus-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--text); }
+.pegasus-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--text); text-decoration: none; }
 .pegasus-tab:hover, .pegasus-tab.is-active { border-color: var(--blue); background: var(--blue); color: #fff; }
 .efris-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .efris-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
