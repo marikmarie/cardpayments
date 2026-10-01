@@ -53,6 +53,30 @@ final class PegasusWebController extends Controller
         }
     }
 
+    /** Render the same server-signed checkout hand-off for Vault web and mobile clients. */
+    public function pay(string $id): never
+    {
+        try {
+            $collection = $this->gateway->collection($id);
+            if (in_array(strtoupper((string) ($collection['status'] ?? 'PENDING')), ['SUCCESS', 'FAILED'], true)) {
+                throw new \InvalidArgumentException('This card collection has already finished. Start a new payment to try again.');
+            }
+            View::renderPublic('checkout/pegasus-redirect', [
+                'title' => 'Continue to PegPay',
+                'collection' => $collection,
+                'gateway_url' => $this->gateway->gatewayUrl(),
+                'fields' => $this->gateway->formFields($collection),
+            ]);
+        } catch (\Throwable $e) {
+            http_response_code($e instanceof \InvalidArgumentException ? 404 : 500);
+            View::renderPublic('checkout/not-found', [
+                'title' => 'Payment unavailable',
+                'message' => $e->getMessage(),
+            ]);
+        }
+        exit;
+    }
+
     public function returned(array $input): never
     {
         $this->gateway->logReturnRequest($input);

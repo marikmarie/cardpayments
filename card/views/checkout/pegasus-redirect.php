@@ -2,7 +2,7 @@
 <section class="checkout-card">
   <p class="eyebrow">PegPay secure checkout</p>
   <h1>Continue to payment</h1>
-  <p class="checkout-copy">You are being taken to PegPay's secure page to complete this payment.</p>
+  <p class="checkout-copy">You are being taken to PegPay's secure page to complete this payment. When you finish, return to Vault to confirm the result.</p>
   <div class="checkout-summary">
     <div><span>Amount</span><strong><?= \App\View::e($collection['currency']) ?> <?= \App\View::e($collection['amount']) ?></strong></div>
     <div><span>Reference</span><strong><?= \App\View::e($collection['id']) ?></strong></div>
@@ -13,6 +13,6 @@
     <?php endforeach; ?>
     <button class="primary-action checkout-button">Continue to PegPay</button>
   </form>
-  <p class="checkout-note">Card details are entered on PegPay, not on CissyTech.</p>
+  <p class="checkout-note">Card details are entered on PegPay, not on CissyTech or Vault.</p>
 </section>
 <script>document.getElementById('pegpay-card-checkout').submit();</script>

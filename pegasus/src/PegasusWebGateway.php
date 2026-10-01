@@ -40,7 +40,10 @@ final class PegasusWebGateway
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \InvalidArgumentException('Enter a valid customer email address.');
 
         $record = [
-            'id' => 'CARD-' . gmdate('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(3))),
+            // This reference becomes part of a public hosted-checkout URL. Keep it
+            // unguessable as well as unique so only the customer who receives the
+            // checkout URL can start that payment session.
+            'id' => 'CARD-' . gmdate('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(12))),
             'amount' => $amount,
             'currency' => $currency,
             'description' => $description,
@@ -202,6 +205,32 @@ final class PegasusWebGateway
     public function gatewayUrl(): string
     {
         return $this->config()['gateway_url'];
+    }
+
+    /** Retrieve a locally-created card collection without exposing gateway secrets. */
+    public function collection(string $id): array
+    {
+        $id = trim($id);
+        if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
+            throw new \InvalidArgumentException('Enter a valid card collection reference.');
+        }
+        $record = $this->find($id);
+        if (!$record) throw new \InvalidArgumentException('Card collection was not found.');
+        return $record;
+    }
+
+    /**
+     * A short-lived-looking, opaque-enough hosted route used by mobile and SPA
+     * clients. It renders the signed PegPay HTML form server-side, so neither
+     * client needs (or sees) PegPay credentials or signatures.
+     */
+    public function checkoutUrl(array $collection): string
+    {
+        $baseUrl = rtrim((string) Config::get('APP_URL', ''), '/');
+        if (!filter_var($baseUrl, FILTER_VALIDATE_URL)) {
+            throw new \LogicException('Set APP_URL to a complete URL before creating card collections.');
+        }
+        return $baseUrl . '/pegasus-card/pay/' . rawurlencode((string) $collection['id']);
     }
 
     private function requireConfiguration(): void

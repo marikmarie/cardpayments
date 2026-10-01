@@ -64,6 +64,33 @@ Run `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql` on 
 
 Set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` address supplied by Pegasus. It is separate from the Payments and Collections API. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, use `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`; the guide's older `TestPegasusPaymentsGateway` example returns 404. The Card collections **Status** tab sends the documented `MerchantId`, `VendorCode`, HMAC password, and original `VendorTranId` query; it verifies PegPay's signed response before changing the local collection. Pending collections cannot be queried more often than every five seconds.
 
+## Vault card checkout API
+
+Vault web and mobile clients should call their own server-side integration, not this
+API directly. That server sends its dashboard-generated `X-API-Key` to create a
+hosted collection:
+
+```http
+POST /api/v1/pegasus/card-collections
+X-API-Key: plk_test_...
+Content-Type: application/json
+
+{
+  "amount": "25000",
+  "currency": "UGX",
+  "description": "Collecto Vault wallet top-up",
+  "customer_name": "Mariam Tukas"
+}
+```
+
+The response includes `data.id` and `data.checkout_url`. Open `checkout_url` in the
+customer's browser or secure in-app browser. It is a CissyTech page that creates the
+signed PegPay form server-side, then forwards the customer to PegPay; clients never
+receive PegPay credentials, signatures, or card data. Retrieve the result with
+`GET /api/v1/pegasus/card-collections/{id}?refresh=true`. The `refresh` query asks
+PegPay for a verified status and is rate-limited to one pending check every five
+seconds.
+
 ## Webhooks
 
 Set CyberSource's webhook callback URL to:
