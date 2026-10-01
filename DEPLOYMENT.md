@@ -25,7 +25,7 @@ Use separate production REST and webhook credentials from `https://businesscente
 
 For PegPay, add the test or production API URL, vendor code, password and the server-only private-key path to `.env`. Send Pegasus the matching public `.cer` or `.crt` file. If you generated `pegasus-public.crt`, send that file to Pegasus; it matches `private.key`. Never upload the private key to Git or place it in the web-accessible project folder.
 
-For hosted PegPay Web card collections, also set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` endpoint supplied by Pegasus. It is separate from both the hosted checkout URL and the Payments and Collections API URL. The dashboard uses it to check only its own card collection references and waits at least five seconds before repeating a pending-status check.
+For hosted PegPay Web card collections, also set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` endpoint supplied by Pegasus. It is separate from the Payments and Collections API URL. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, the matching status endpoint is `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`. The dashboard uses it to check only its own card collection references and waits at least five seconds before repeating a pending-status check.
 
 ## 2. Upload with WinSCP
 
