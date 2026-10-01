@@ -10,10 +10,12 @@ use App\Store;
 final class PegasusWebGateway
 {
     private PegasusCardLogger $logger;
+    private PegasusCardRepository $cards;
 
     public function __construct(private Store $store)
     {
         $this->logger = new PegasusCardLogger($store);
+        $this->cards = new PegasusCardRepository($store);
     }
 
     public function configured(): bool
@@ -49,9 +51,7 @@ final class PegasusWebGateway
             'status' => 'PENDING',
             'created_at' => gmdate('c'),
         ];
-        $this->store->transaction(function (array &$state) use ($record): void {
-            $state['pegasus_card_collections'][$record['id']] = $record;
-        });
+        if (!$this->cards->save($record)) $this->saveLegacy($record);
         $this->logger->checkoutCreated($record);
         return $record;
     }
@@ -192,7 +192,9 @@ final class PegasusWebGateway
     /** @return list<array> */
     public function recent(): array
     {
-        $rows = array_values($this->store->read('pegasus_card_collections'));
+        $stored = $this->cards->recent();
+        $legacy = array_values($this->store->read('pegasus_card_collections'));
+        $rows = $stored === null ? $legacy : $this->mergeCollections($legacy, $stored);
         usort($rows, static fn(array $a, array $b): int => strcmp($b['created_at'], $a['created_at']));
         return array_slice($rows, 0, 8);
     }
@@ -246,16 +248,35 @@ final class PegasusWebGateway
 
     private function find(string $id): ?array
     {
+        $record = $this->cards->find($id);
+        if ($record !== null) return $record;
         return $this->store->transaction(fn(array $state): ?array => $state['pegasus_card_collections'][$id] ?? null, false);
     }
 
     private function update(string $id, array $changes): array
     {
-        return $this->store->transaction(function (array &$state) use ($id, $changes): array {
-            $record = $state['pegasus_card_collections'][$id] ?? null;
-            if (!$record) throw new \RuntimeException('Card collection was not found.');
-            return $state['pegasus_card_collections'][$id] = array_merge($record, $changes, ['updated_at' => gmdate('c')]);
+        $record = $this->find($id);
+        if (!$record) throw new \RuntimeException('Card collection was not found.');
+        $record = array_merge($record, $changes, ['updated_at' => gmdate('c')]);
+        if ($this->cards->save($record)) return $record;
+        $this->saveLegacy($record);
+        return $record;
+    }
+
+    private function saveLegacy(array $record): void
+    {
+        $this->store->transaction(function (array &$state) use ($record): void {
+            $state['pegasus_card_collections'][$record['id']] = $record;
         });
+    }
+
+    /** Merge existing JSON cards with MySQL cards during the one-time migration. */
+    private function mergeCollections(array $legacy, array $stored): array
+    {
+        $collections = [];
+        foreach ($legacy as $record) $collections[$record['id']] = $record;
+        foreach ($stored as $record) $collections[$record['id']] = $record;
+        return array_values($collections);
     }
 
     private function sign(string $data): string

@@ -1,6 +1,36 @@
 -- Pegasus transaction history and redacted provider activity.
 -- Import this after card/database/schema.mysql.sql on MySQL 8+.
 
+-- Hosted-card collections use this dedicated table. It replaces the former
+-- pegasus_card_collections object inside tbl_app_state.state.
+CREATE TABLE IF NOT EXISTS tbl_pegasus_cards (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  vendor_transaction_id VARCHAR(60) NOT NULL,
+  amount DECIMAL(15, 2) NOT NULL,
+  currency CHAR(3) NOT NULL,
+  description VARCHAR(200) NOT NULL,
+  customer_name VARCHAR(120) NULL,
+  customer_email VARCHAR(160) NULL,
+  return_url VARCHAR(500) NOT NULL,
+  source_ip VARCHAR(45) NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  gateway_status VARCHAR(20) NULL,
+  gateway_reason VARCHAR(1000) NULL,
+  pegpay_transaction_id VARCHAR(100) NULL,
+  response_signature_valid TINYINT(1) NULL,
+  status_query_response JSON NULL,
+  status_query_http_status SMALLINT UNSIGNED NULL,
+  status_query_requested_at DATETIME(6) NULL,
+  status_queried_at DATETIME(6) NULL,
+  returned_at DATETIME(6) NULL,
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_tbl_pegasus_cards_vendor_reference (vendor_transaction_id),
+  KEY ix_tbl_pegasus_cards_status_created (status, created_at),
+  KEY ix_tbl_pegasus_cards_provider_transaction (pegpay_transaction_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS tbl_pegasus_transactions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   vendor_transaction_id VARCHAR(60) NOT NULL,
