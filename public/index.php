@@ -12,6 +12,7 @@ use Efris\Http\EfrisController;
 use Efris\Http\EfrisSimulatorController;
 use Pegasus\PegasusController;
 use Pegasus\PegasusSimulatorController;
+use Pegasus\PegasusWebController;
 
 require dirname(__DIR__) . '/bootstrap.php';
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -77,6 +78,9 @@ try {
     if ($method === 'GET' && $path === '/pegasus-payouts') { (new PegasusSimulatorController())->payouts(); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }
+    if ($method === 'GET' && $path === '/pegasus-card') { (new PegasusWebController())->index(); exit; }
+    if ($method === 'POST' && $path === '/pegasus-card/checkout') { (new PegasusWebController())->checkout($_POST); }
+    if (in_array($method, ['GET', 'POST'], true) && $path === '/pegasus-card/return') { (new PegasusWebController())->returned($method === 'POST' ? $_POST : $_GET); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
 
