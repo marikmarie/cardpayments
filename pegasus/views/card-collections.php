@@ -1,4 +1,4 @@
-<?php /** @var bool $configured */ /** @var array $collections */ /** @var array $log */ ?>
+<?php /** @var bool $configured */ /** @var array $collections */ /** @var array $log */ /** @var string $last_collection_id */ /** @var array|null $status_result */ /** @var string $active_tab */ ?>
 <section class="create-heading">
   <p class="eyebrow">PegPay Web</p>
   <h1>Card collections</h1>
@@ -10,8 +10,9 @@
   <a class="pegasus-tab is-active" href="<?= $url('/pegasus-card') ?>">Card collections</a>
 </nav>
 
-<nav class="pegasus-tabs" aria-label="Card collection functions" data-card-default-tab="collections">
+<nav class="pegasus-tabs" aria-label="Card collection functions" data-card-default-tab="<?= \App\View::e($active_tab) ?>">
   <button type="button" class="pegasus-tab" data-card-tab="collections">Collections</button>
+  <button type="button" class="pegasus-tab" data-card-tab="status">Status</button>
   <button type="button" class="pegasus-tab" data-card-tab="log">Log</button>
 </nav>
 
@@ -66,6 +67,29 @@
   <?php endif; ?>
 </section>
 </div>
+
+<section class="panel form-section" data-card-panel="status" hidden>
+  <div class="section-title">
+    <span>↻</span>
+    <div>
+      <h3>Check card collection status</h3>
+      <p>Query PegPay Web's QueryStatus endpoint using a card reference created here. A pending payment can be checked again after five seconds.</p>
+    </div>
+  </div>
+  <form class="form-grid" action="<?= $url('/pegasus-card/status') ?>" method="post">
+    <label>
+      Card collection reference
+      <input name="vendor_transaction_id" value="<?= \App\View::e($last_collection_id) ?>" maxlength="60" required>
+    </label>
+    <div class="form-actions compact-actions">
+      <button class="secondary-action">Check status</button>
+    </div>
+  </form>
+  <?php if ($status_result): ?>
+    <p><strong>Latest status: <?= \App\View::e($status_result['record']['status'] ?? 'PENDING') ?></strong></p>
+    <pre class="code-block"><?= \App\View::e(json_encode($status_result['provider_response'] ?? $status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+  <?php endif; ?>
+</section>
 
 <section class="panel form-section" data-card-panel="log" hidden>
   <div class="section-title">

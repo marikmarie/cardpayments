@@ -60,6 +60,10 @@ The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from ca
 
 Run `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql` on MySQL 8+ when you deploy, enable `pdo_mysql`, and set `DB_DSN` (for example `mysql:host=127.0.0.1;dbname=paylink_lab;charset=utf8mb4`), `DB_USER`, and `DB_PASSWORD` in `.env`. The repository layer automatically switches from local JSON storage to MySQL; no controller or API changes are needed. Every physical application table uses the `tbl_` prefix: `tbl_app_state`, `tbl_pegasus_transactions`, and `tbl_pegasus_api_logs`. PegPay card collection events are recorded in `tbl_pegasus_api_logs` and, by default, in the redacted `storage/pegasus-card.log` file. For an existing installation that has `app_state`, run `card/database/migrate-to-tbl-prefix.mysql.sql` once before deploying this version; it copies the existing state, then removes the old unprefixed table. This PHP runtime reports `PDO drivers =>` empty, so it correctly uses the local JSON store for immediate testing.
 
+## PegPay Web card status
+
+Set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` address supplied by Pegasus. It is separate from the Payments and Collections API and the hosted checkout address. The Card collections **Status** tab sends the documented `MerchantId`, `VendorCode`, HMAC password, and original `VendorTranId` query; it verifies PegPay's signed response before changing the local collection. Pending collections cannot be queried more often than every five seconds.
+
 ## Webhooks
 
 Set CyberSource's webhook callback URL to:

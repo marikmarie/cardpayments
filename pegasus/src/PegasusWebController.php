@@ -19,15 +19,19 @@ final class PegasusWebController extends Controller
 
     public function index(): void
     {
+        $collections = $this->gateway->recent();
         View::renderModule('pegasus', 'card-collections', [
             'title' => 'Card collections',
             'active_nav' => 'pegasus-card',
             'configured' => $this->gateway->configured(),
-            'collections' => $this->gateway->recent(),
+            'collections' => $collections,
+            'last_collection_id' => $collections[0]['id'] ?? '',
+            'status_result' => $_SESSION['pegasus_card_status_result'] ?? null,
+            'active_tab' => $_SESSION['pegasus_card_active_tab'] ?? 'collections',
             'log' => $this->gateway->logDetails(),
             'flash' => $_SESSION['flash'] ?? null,
         ]);
-        unset($_SESSION['flash']);
+        unset($_SESSION['pegasus_card_status_result'], $_SESSION['pegasus_card_active_tab'], $_SESSION['flash']);
     }
 
     public function checkout(array $input): never
@@ -67,5 +71,19 @@ final class PegasusWebController extends Controller
             ]);
         }
         exit;
+    }
+
+    public function status(array $input): never
+    {
+        try {
+            $result = $this->gateway->queryStatus($input);
+            $_SESSION['pegasus_card_status_result'] = $result;
+            $status = $result['record']['status'] ?? 'PENDING';
+            $this->flash($status === 'FAILED' ? 'error' : 'success', "PegPay returned {$status} for this card collection.");
+        } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+        }
+        $_SESSION['pegasus_card_active_tab'] = 'status';
+        $this->redirect('/pegasus-card');
     }
 }

@@ -125,6 +125,59 @@ final class PegasusWebGateway
         $this->logger->returnReceived($input);
     }
 
+    /** Query PegPay Web's QueryStatus.aspx endpoint for a locally created card collection. */
+    public function queryStatus(array $input): array
+    {
+        $reference = $input['vendor_transaction_id'] ?? '';
+        $id = is_scalar($reference) ? trim((string) $reference) : '';
+        $this->logger->statusRequested($id);
+        try {
+            if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
+                throw new \InvalidArgumentException('Enter a valid card collection reference.');
+            }
+            $record = $this->find($id);
+            if (!$record) throw new \InvalidArgumentException('Choose a card collection created in this dashboard.');
+            $this->requireStatusQueryInterval($record);
+            $this->requireStatusConfiguration();
+
+            $endpoint = $this->statusEndpoint();
+            $query = $this->statusQuery($id);
+            $this->update($id, ['status_query_requested_at' => gmdate('c')]);
+            $this->logger->statusQuerySent($id, $endpoint, $query);
+            [$response, $httpStatus] = $this->sendStatusQuery($endpoint, $query);
+
+            $status = strtoupper(trim($this->responseValue($response, ['Status', 'STATUS'])));
+            $reason = trim($this->responseValue($response, ['Reason', 'REASON']));
+            $vendorId = trim($this->responseValue($response, ['VendorID', 'VendorTranId', 'VENDOR_TRANID']));
+            $transactionId = trim($this->responseValue($response, ['TranID', 'TransactionId', 'TRANSACTION_ID']));
+            $signature = trim($this->responseValue($response, ['DigitalSignature', 'DIGITAL_SIGNATURE']));
+            $signatureValid = $status !== '' && $reason !== '' && $vendorId === $id && $signature !== ''
+                && hash_equals($this->sign($status . $reason . $vendorId), strtolower($signature));
+            $outcome = $this->status($status);
+            $this->logger->statusReturned($id, $endpoint, $httpStatus, $response, $signatureValid ? $outcome : 'FAILED', $signatureValid);
+
+            if ($httpStatus >= 400) throw new \RuntimeException('PegPay Web returned HTTP ' . $httpStatus . ' while checking this collection.');
+            if ($status === '' || $reason === '' || $vendorId === '') throw new \RuntimeException('PegPay Web returned an invalid status response.');
+            if ($vendorId !== $id) throw new \RuntimeException('PegPay Web returned a status for a different card collection.');
+            if (!$signatureValid) throw new \RuntimeException('PegPay Web status response could not be verified.');
+
+            $record = $this->update($id, [
+                'status' => $outcome,
+                'gateway_status' => $status,
+                'gateway_reason' => $reason,
+                'pegpay_transaction_id' => $transactionId,
+                'response_signature_valid' => true,
+                'status_query_response' => $this->safeStatusResponse($response),
+                'status_query_http_status' => $httpStatus,
+                'status_queried_at' => gmdate('c'),
+            ]);
+            return ['record' => $record, 'provider_response' => $this->safeStatusResponse($response), 'http_status' => $httpStatus];
+        } catch (\Throwable $e) {
+            $this->logger->statusFailed($id, $e);
+            throw $e;
+        }
+    }
+
     public function logFailure(string $operation, \Throwable $error, array $input = []): void
     {
         $this->logger->error($operation, $error, $input);
@@ -158,10 +211,24 @@ final class PegasusWebGateway
         }
     }
 
+    private function requireStatusConfiguration(): void
+    {
+        foreach (['status_url', 'vendor_code', 'password', 'secret_code', 'merchant_code'] as $key) {
+            if ($this->config()[$key] === '') {
+                throw new \LogicException('PegPay Web status is not configured. Add PEGASUS_WEB_STATUS_URL and the PegPay Web credentials to .env.');
+            }
+        }
+        $endpoint = $this->statusEndpoint();
+        if (!filter_var($endpoint, FILTER_VALIDATE_URL) || !str_starts_with($endpoint, 'https://')) {
+            throw new \LogicException('PEGASUS_WEB_STATUS_URL must be an HTTPS QueryStatus.aspx URL.');
+        }
+    }
+
     private function config(): array
     {
         return [
             'gateway_url' => trim((string) Config::get('PEGASUS_WEB_GATEWAY_URL', '')),
+            'status_url' => trim((string) Config::get('PEGASUS_WEB_STATUS_URL', '')),
             'vendor_code' => trim((string) Config::get('PEGASUS_WEB_VENDOR_CODE', '')),
             'password' => (string) Config::get('PEGASUS_WEB_PASSWORD', ''),
             'secret_code' => (string) Config::get('PEGASUS_WEB_SECRET_CODE', ''),
@@ -217,6 +284,67 @@ final class PegasusWebGateway
         return '';
     }
 
+    /** PegPay Web documents this exact query format; it is separate from GetTransactionDetails. */
+    private function statusQuery(string $vendorTransactionId): array
+    {
+        $config = $this->config();
+        return [
+            'MerchantId' => $config['merchant_code'],
+            'VendorCode' => $config['vendor_code'],
+            'Pswd' => $this->sign($config['password']),
+            'VendorTranId' => $vendorTransactionId,
+        ];
+    }
+
+    private function statusEndpoint(): string
+    {
+        return rtrim($this->config()['status_url'], '?&');
+    }
+
+    /** @return array{0: array, 1: int} */
+    private function sendStatusQuery(string $endpoint, array $query): array
+    {
+        if (!function_exists('curl_init')) throw new \RuntimeException('PHP cURL is required for PegPay Web status checks.');
+        $url = $endpoint . (str_contains($endpoint, '?') ? '&' : '?') . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [
+            CURLOPT_HTTPGET => true,
+            CURLOPT_HTTPHEADER => ['Accept: text/plain, application/x-www-form-urlencoded'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        $raw = curl_exec($curl);
+        $error = curl_error($curl);
+        $httpStatus = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        if ($raw === false) throw new \RuntimeException('PegPay Web status transport error: ' . $error);
+
+        parse_str(trim((string) $raw), $response);
+        if ($response === []) $response = ['_invalid_response' => true];
+        return [$response, $httpStatus];
+    }
+
+    private function requireStatusQueryInterval(array $record): void
+    {
+        if (strtoupper((string) ($record['status'] ?? 'PENDING')) !== 'PENDING') return;
+        $lastQuery = strtotime((string) ($record['status_query_requested_at'] ?? ''));
+        if ($lastQuery !== false && time() - $lastQuery < 5) {
+            throw new \RuntimeException('Wait at least 5 seconds before checking a pending card collection again.');
+        }
+    }
+
+    private function safeStatusResponse(array $response): array
+    {
+        return array_filter([
+            'Status' => $this->responseValue($response, ['Status', 'STATUS']),
+            'Reason' => $this->responseValue($response, ['Reason', 'REASON']),
+            'TranID' => $this->responseValue($response, ['TranID', 'TransactionId', 'TRANSACTION_ID']),
+            'VendorID' => $this->responseValue($response, ['VendorID', 'VendorTranId', 'VENDOR_TRANID']),
+            'DigitalSignature' => $this->responseValue($response, ['DigitalSignature', 'DIGITAL_SIGNATURE']) === '' ? null : '[redacted]',
+        ], static fn(mixed $value): bool => $value !== null && $value !== '');
+    }
+
     private function status(string $status): string
     {
         return match ($status) {
@@ -225,4 +353,5 @@ final class PegasusWebGateway
             default => 'PENDING',
         };
     }
+
 }

@@ -80,6 +80,7 @@ try {
     if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }
     if ($method === 'GET' && $path === '/pegasus-card') { (new PegasusWebController())->index(); exit; }
     if ($method === 'POST' && $path === '/pegasus-card/checkout') { (new PegasusWebController())->checkout($_POST); }
+    if ($method === 'POST' && $path === '/pegasus-card/status') { (new PegasusWebController())->status($_POST); }
     if (in_array($method, ['GET', 'POST'], true) && $path === '/pegasus-card/return') { (new PegasusWebController())->returned($method === 'POST' ? $_POST : $_GET); }
     if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); }
     if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $m)) { (new ApiController())->show(rawurldecode($m[1])); }
