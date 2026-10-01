@@ -19,19 +19,24 @@ final class PegasusWebController extends Controller
 
     public function index(): void
     {
+        $collections = $this->gateway->recent();
         View::renderModule('pegasus', 'card-collections', [
             'title' => 'Card collections',
             'active_nav' => 'pegasus-card',
             'configured' => $this->gateway->configured(),
-            'collections' => $this->gateway->recent(),
+            'collections' => $collections,
+            'last_collection_id' => $collections[0]['id'] ?? '',
+            'status_result' => $_SESSION['pegasus_card_status_result'] ?? null,
+            'active_tab' => $_SESSION['pegasus_card_active_tab'] ?? 'collections',
             'log' => $this->gateway->logDetails(),
             'flash' => $_SESSION['flash'] ?? null,
         ]);
-        unset($_SESSION['flash']);
+        unset($_SESSION['pegasus_card_status_result'], $_SESSION['pegasus_card_active_tab'], $_SESSION['flash']);
     }
 
     public function checkout(array $input): never
     {
+        $this->gateway->logCheckoutRequest($input);
         try {
             $collection = $this->gateway->prepare($input);
             View::renderPublic('checkout/pegasus-redirect', [
@@ -42,7 +47,7 @@ final class PegasusWebController extends Controller
             ]);
             exit;
         } catch (\Throwable $e) {
-            $this->gateway->logFailure('CARD_CHECKOUT_ERROR', $e);
+            $this->gateway->logFailure('CARD_CHECKOUT_FAILED', $e, $input);
             $this->flash('error', $e->getMessage());
             $this->redirect('/pegasus-card');
         }
@@ -50,6 +55,7 @@ final class PegasusWebController extends Controller
 
     public function returned(array $input): never
     {
+        $this->gateway->logReturnRequest($input);
         try {
             $result = $this->gateway->receive($input);
             View::renderPublic('checkout/pegasus-return', [
@@ -57,7 +63,7 @@ final class PegasusWebController extends Controller
                 'result' => $result,
             ]);
         } catch (\Throwable $e) {
-            $this->gateway->logFailure('CARD_RETURN_ERROR', $e);
+            $this->gateway->logFailure('CARD_RETURN_FAILED', $e, $input);
             http_response_code(400);
             View::renderPublic('checkout/pegasus-return', [
                 'title' => 'PegPay payment result',
@@ -65,5 +71,19 @@ final class PegasusWebController extends Controller
             ]);
         }
         exit;
+    }
+
+    public function status(array $input): never
+    {
+        try {
+            $result = $this->gateway->queryStatus($input);
+            $_SESSION['pegasus_card_status_result'] = $result;
+            $status = $result['record']['status'] ?? 'PENDING';
+            $this->flash($status === 'FAILED' ? 'error' : 'success', "PegPay returned {$status} for this card collection.");
+        } catch (\Throwable $e) {
+            $this->flash('error', $e->getMessage());
+        }
+        $_SESSION['pegasus_card_active_tab'] = 'status';
+        $this->redirect('/pegasus-card');
     }
 }

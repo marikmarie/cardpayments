@@ -18,41 +18,117 @@ final class PegasusCardLogger
 
     public function checkoutCreated(array $collection): void
     {
-        $this->write('REQUEST', 'CARD_CHECKOUT_CREATED', (string) $collection['id'], '/pegasus-card/checkout', 201, [
+        $this->write('RESPONSE', 'CARD_CHECKOUT_CREATED', (string) $collection['id'], '/pegasus-card/checkout', 201, [
             'source_ip' => $collection['source_ip'] ?? null,
+            'outcome' => 'SUCCESS',
+            'status' => 'PENDING',
             'amount' => $collection['amount'],
             'currency' => $collection['currency'],
             'description' => $collection['description'],
-        ]);
+        ], true);
+    }
+
+    public function checkoutReceived(array $input): void
+    {
+        $this->write('REQUEST', 'CARD_CHECKOUT_RECEIVED', null, '/pegasus-card/checkout', null, $this->checkoutPayload($input));
     }
 
     public function redirected(array $collection, string $gatewayUrl, array $formFields): void
     {
         $this->write('REQUEST', 'CARD_CHECKOUT_REDIRECTED', (string) $collection['id'], $gatewayUrl, 302, [
             'source_ip' => $collection['source_ip'] ?? null,
+            'outcome' => 'PENDING',
             'form_fields' => $this->redactFormFields($formFields),
         ]);
     }
 
+    public function returnReceived(array $input): void
+    {
+        $payload = $this->returnPayload($input);
+        $this->write('REQUEST', 'CARD_RETURN_RECEIVED', ($payload['VendorID'] ?? '') ?: null, '/pegasus-card/return', null, $payload);
+    }
+
     public function returned(array $result): void
     {
+        $signatureValid = (bool) ($result['signature_valid'] ?? false);
+        $status = strtoupper((string) ($result['gateway_status'] ?? ''));
+        $outcome = !$signatureValid ? 'FAILED' : match ($status) {
+            'SUCCESS' => 'SUCCESS',
+            'FAILED' => 'FAILED',
+            default => 'PENDING',
+        };
         $this->write('RESPONSE', 'CARD_CHECKOUT_RETURNED', $result['vendor_transaction_id'] ?? null, '/pegasus-card/return', 200, [
             'source_ip' => $result['source_ip'] ?? null,
-            'Status' => $result['gateway_status'] ?? '',
+            'Status' => $status,
             'StatusDescription' => $result['gateway_reason'] ?? '',
             'PegpayId' => $result['pegpay_transaction_id'] ?? '',
-            'signature_valid' => (bool) ($result['signature_valid'] ?? false),
+            'signature_valid' => $signatureValid,
             'collection_found' => (bool) ($result['collection_found'] ?? false),
+            'outcome' => $outcome,
         ], true);
     }
 
-    public function error(string $operation, \Throwable $error): void
+    public function statusRequested(string $vendorTransactionId): void
     {
-        $this->write('ERROR', $operation, null, '/pegasus-card', 500, [
+        $this->write('REQUEST', 'CARD_STATUS_REQUESTED', $vendorTransactionId, '/pegasus-card/status', null, [
             'source_ip' => $this->sourceIp(),
+            'VendorTranId' => $vendorTransactionId,
+        ]);
+    }
+
+    /** Log the redacted HTTPS query that is sent to PegPay Web's QueryStatus.aspx endpoint. */
+    public function statusQuerySent(string $vendorTransactionId, string $endpoint, array $query): void
+    {
+        $this->write('REQUEST', 'CARD_STATUS_QUERY_SENT', $vendorTransactionId, $endpoint, null, [
+            'source_ip' => $this->sourceIp(),
+            'query' => $this->statusQueryPayload($query),
+        ], false, null, 'GET');
+    }
+
+    public function statusReturned(
+        string $vendorTransactionId,
+        string $endpoint,
+        int $httpStatus,
+        array $response,
+        string $outcome,
+        bool $signatureValid,
+    ): void
+    {
+        $this->write('RESPONSE', 'CARD_STATUS_RETURNED', $vendorTransactionId, $endpoint, $httpStatus, [
+            'source_ip' => $this->sourceIp(),
+            'Status' => (string) ($response['Status'] ?? ''),
+            'Reason' => (string) ($response['Reason'] ?? ''),
+            'TranID' => $response['TranID'] ?? $response['TransactionId'] ?? null,
+            'VendorID' => $response['VendorID'] ?? $response['VendorTranId'] ?? $vendorTransactionId,
+            'DigitalSignature' => isset($response['DigitalSignature']) || isset($response['DIGITAL_SIGNATURE']) ? '[redacted]' : null,
+            'signature_valid' => $signatureValid,
+            'outcome' => $outcome,
+            'response_format' => isset($response['_invalid_response']) ? 'invalid' : 'query_string',
+        ], true);
+    }
+
+    public function statusFailed(string $vendorTransactionId, \Throwable $error): void
+    {
+        $this->write('RESPONSE', 'CARD_STATUS_FAILED', $vendorTransactionId, '/pegasus-card/status', $this->failureStatus($error), [
+            'source_ip' => $this->sourceIp(),
+            'VendorTranId' => $vendorTransactionId,
+            'outcome' => 'FAILED',
             'error_class' => $error::class,
             'error_message' => $error->getMessage(),
-        ], false, $error->getMessage());
+        ], true, $error->getMessage());
+    }
+
+    public function error(string $operation, \Throwable $error, array $input = []): void
+    {
+        $isReturn = str_contains($operation, 'RETURN');
+        $request = $isReturn ? $this->returnPayload($input) : $this->checkoutPayload($input);
+        $this->write('RESPONSE', $operation, $request['VendorID'] ?? null, $isReturn ? '/pegasus-card/return' : '/pegasus-card/checkout', $this->failureStatus($error), [
+            'source_ip' => $this->sourceIp(),
+            'outcome' => 'FAILED',
+            'error_class' => $error::class,
+            'error_message' => $error->getMessage(),
+            'request' => $request,
+        ], true, $error->getMessage());
     }
 
     /** @return array{writable: bool, entries: list<array>} */
@@ -86,15 +162,16 @@ final class PegasusCardLogger
         string $operation,
         ?string $vendorTransactionId,
         string $url,
-        int $httpStatus,
+        ?int $httpStatus,
         array $payload,
         bool $response = false,
         ?string $error = null,
+        ?string $method = null,
     ): void {
         $data = array_filter([
             'operation' => $operation,
             'vendor_transaction_id' => $vendorTransactionId,
-            'method' => $response ? null : 'POST',
+            'method' => $response ? null : ($method ?? 'POST'),
             'url' => $url,
             'http_status' => $httpStatus,
             'body' => $response ? null : $payload,
@@ -145,5 +222,55 @@ final class PegasusCardLogger
             $fields[$key] = is_array($value) ? $this->redactFormFields($value) : $value;
         }
         return $fields;
+    }
+
+    private function checkoutPayload(array $input): array
+    {
+        return array_filter([
+            'source_ip' => $this->sourceIp(),
+            'amount' => $this->inputValue($input, ['amount']),
+            'currency' => $this->inputValue($input, ['currency']),
+            'description' => $this->inputValue($input, ['description']),
+            'customer_name' => $this->inputValue($input, ['customer_name']) === '' ? null : '[redacted]',
+            'customer_email' => $this->inputValue($input, ['customer_email']) === '' ? null : '[redacted]',
+        ], static fn(mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    private function returnPayload(array $input): array
+    {
+        $signature = $this->inputValue($input, ['DigitalSignature', 'DIGITAL_SIGNATURE']);
+        return array_filter([
+            'source_ip' => $this->sourceIp(),
+            'Status' => $this->inputValue($input, ['Status', 'STATUS']),
+            'Reason' => $this->inputValue($input, ['Reason', 'REASON']),
+            'VendorID' => $this->inputValue($input, ['VendorID', 'VendorTranId', 'VENDOR_TRANID']),
+            'TransactionId' => $this->inputValue($input, ['TransactionId', 'TranID', 'TRANSACTION_ID']),
+            'DigitalSignature' => $signature === '' ? null : '[redacted]',
+        ], static fn(mixed $value): bool => $value !== null && $value !== '');
+    }
+
+    private function statusQueryPayload(array $query): array
+    {
+        foreach ($query as $key => $value) {
+            $query[$key] = strtolower((string) $key) === 'pswd' ? '[redacted]' : $value;
+        }
+        return $query;
+    }
+
+    private function inputValue(array $input, array $keys): string
+    {
+        foreach ($keys as $key) {
+            if (isset($input[$key]) && is_scalar($input[$key])) return trim((string) $input[$key]);
+        }
+        return '';
+    }
+
+    private function failureStatus(\Throwable $error): int
+    {
+        return match (true) {
+            $error instanceof \InvalidArgumentException => 422,
+            $error instanceof \LogicException => 503,
+            default => 500,
+        };
     }
 }

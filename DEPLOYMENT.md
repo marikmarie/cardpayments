@@ -25,6 +25,8 @@ Use separate production REST and webhook credentials from `https://businesscente
 
 For PegPay, add the test or production API URL, vendor code, password and the server-only private-key path to `.env`. Send Pegasus the matching public `.cer` or `.crt` file. If you generated `pegasus-public.crt`, send that file to Pegasus; it matches `private.key`. Never upload the private key to Git or place it in the web-accessible project folder.
 
+For hosted PegPay Web card collections, also set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` endpoint supplied by Pegasus. It is separate from both the hosted checkout URL and the Payments and Collections API URL. The dashboard uses it to check only its own card collection references and waits at least five seconds before repeating a pending-status check.
+
 ## 2. Upload with WinSCP
 
 Upload the entire contents of this project into the folder served as the Collecto domain root, including the hidden `.htaccess` file. Do not upload `.env` from your computer if it contains development-only values; create the server `.env` in step 1 instead.
