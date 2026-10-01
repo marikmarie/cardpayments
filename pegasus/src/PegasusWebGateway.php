@@ -115,9 +115,19 @@ final class PegasusWebGateway
     }
 
     /** Record a handled card-flow failure without exposing checkout fields or secrets. */
-    public function logFailure(string $operation, \Throwable $error): void
+    public function logCheckoutRequest(array $input): void
     {
-        $this->logger->error($operation, $error);
+        $this->logger->checkoutReceived($input);
+    }
+
+    public function logReturnRequest(array $input): void
+    {
+        $this->logger->returnReceived($input);
+    }
+
+    public function logFailure(string $operation, \Throwable $error, array $input = []): void
+    {
+        $this->logger->error($operation, $error, $input);
     }
 
     /** @return array{writable: bool, entries: list<array>} */
@@ -203,7 +213,7 @@ final class PegasusWebGateway
 
     private function responseValue(array $input, array $keys): string
     {
-        foreach ($keys as $key) if (isset($input[$key])) return (string) $input[$key];
+        foreach ($keys as $key) if (isset($input[$key]) && is_scalar($input[$key])) return (string) $input[$key];
         return '';
     }
 

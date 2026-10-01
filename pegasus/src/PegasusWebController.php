@@ -32,6 +32,7 @@ final class PegasusWebController extends Controller
 
     public function checkout(array $input): never
     {
+        $this->gateway->logCheckoutRequest($input);
         try {
             $collection = $this->gateway->prepare($input);
             View::renderPublic('checkout/pegasus-redirect', [
@@ -42,7 +43,7 @@ final class PegasusWebController extends Controller
             ]);
             exit;
         } catch (\Throwable $e) {
-            $this->gateway->logFailure('CARD_CHECKOUT_ERROR', $e);
+            $this->gateway->logFailure('CARD_CHECKOUT_FAILED', $e, $input);
             $this->flash('error', $e->getMessage());
             $this->redirect('/pegasus-card');
         }
@@ -50,6 +51,7 @@ final class PegasusWebController extends Controller
 
     public function returned(array $input): never
     {
+        $this->gateway->logReturnRequest($input);
         try {
             $result = $this->gateway->receive($input);
             View::renderPublic('checkout/pegasus-return', [
@@ -57,7 +59,7 @@ final class PegasusWebController extends Controller
                 'result' => $result,
             ]);
         } catch (\Throwable $e) {
-            $this->gateway->logFailure('CARD_RETURN_ERROR', $e);
+            $this->gateway->logFailure('CARD_RETURN_FAILED', $e, $input);
             http_response_code(400);
             View::renderPublic('checkout/pegasus-return', [
                 'title' => 'PegPay payment result',
