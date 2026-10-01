@@ -1,4 +1,4 @@
-<?php /** @var bool $configured */ /** @var array $collections */ ?>
+<?php /** @var bool $configured */ /** @var array $collections */ /** @var array $log */ ?>
 <section class="create-heading">
   <p class="eyebrow">PegPay Web</p>
   <h1>Card collections</h1>
@@ -10,6 +10,12 @@
   <a class="pegasus-tab is-active" href="<?= $url('/pegasus-card') ?>">Card collections</a>
 </nav>
 
+<nav class="pegasus-tabs" aria-label="Card collection functions" data-card-default-tab="collections">
+  <button type="button" class="pegasus-tab" data-card-tab="collections">Collections</button>
+  <button type="button" class="pegasus-tab" data-card-tab="log">Log</button>
+</nav>
+
+<div data-card-panel="collections">
 <?php if (!$configured): ?>
   <section class="warning"><strong>Card gateway needs setup</strong><p>Add the PegPay Web URL, vendor code, password, secret code, and merchant code to <code>.env</code>.</p></section>
 <?php endif; ?>
@@ -59,3 +65,32 @@
     </table></div>
   <?php endif; ?>
 </section>
+</div>
+
+<section class="panel form-section" data-card-panel="log" hidden>
+  <div class="section-title">
+    <span>≡</span>
+    <div>
+      <h3>PegPay card activity log</h3>
+      <p><?= $log['writable'] ? 'Showing the latest redacted checkout and return events from the card log.' : 'The card log file is not writable. Database events are shown when available.' ?></p>
+    </div>
+  </div>
+  <?php if ($log['entries']): ?>
+    <pre class="code-block"><?= \App\View::e(json_encode($log['entries'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+  <?php else: ?>
+    <p>No card checkout events have been logged yet. Start a card payment to create UAT evidence.</p>
+  <?php endif; ?>
+</section>
+
+<script>
+(() => {
+  const tabs = document.querySelector('[data-card-default-tab]');
+  if (!tabs) return;
+  const showTab = (name) => {
+    document.querySelectorAll('[data-card-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.cardTab === name));
+    document.querySelectorAll('[data-card-panel]').forEach((panel) => { panel.hidden = panel.dataset.cardPanel !== name; });
+  };
+  tabs.querySelectorAll('[data-card-tab]').forEach((button) => button.addEventListener('click', () => showTab(button.dataset.cardTab)));
+  showTab(tabs.dataset.cardDefaultTab || 'collections');
+})();
+</script>

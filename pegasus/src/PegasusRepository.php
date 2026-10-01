@@ -79,6 +79,40 @@ final class PegasusRepository
         }
     }
 
+    /** @return list<array> */
+    public function recentCardLogs(int $limit = 12): array
+    {
+        $pdo = $this->database();
+        if (!$pdo) return [];
+
+        try {
+            $query = $pdo->prepare(
+                'SELECT * FROM tbl_pegasus_api_logs WHERE LEFT(request_type, 5) = ? ORDER BY id DESC LIMIT ?'
+            );
+            $query->bindValue(1, 'CARD_');
+            $query->bindValue(2, $limit, \PDO::PARAM_INT);
+            $query->execute();
+            return array_map(fn(array $row): array => [
+                'time' => $row['created_at'],
+                'type' => $row['log_type'],
+                'data' => array_filter([
+                    'operation' => $row['request_type'],
+                    'vendor_transaction_id' => $row['vendor_transaction_id'],
+                    'method' => $row['http_method'],
+                    'url' => $row['endpoint'],
+                    'http_status' => $row['http_status'],
+                    'provider_status_code' => $row['provider_status_code'],
+                    'provider_status_description' => $row['provider_status_description'],
+                    'payload' => $this->decode($row['payload']),
+                    'error' => $row['error_message'],
+                ], static fn(mixed $value): bool => $value !== null && $value !== ''),
+            ], $query->fetchAll());
+        } catch (\PDOException $e) {
+            $this->disable('PegPay activity table is unavailable. Import pegasus/database/schema.mysql.sql.');
+            return [];
+        }
+    }
+
     public function recordLog(array $entry): void
     {
         $pdo = $this->database();

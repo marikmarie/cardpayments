@@ -24,6 +24,7 @@ final class PegasusWebController extends Controller
             'active_nav' => 'pegasus-card',
             'configured' => $this->gateway->configured(),
             'collections' => $this->gateway->recent(),
+            'log' => $this->gateway->logDetails(),
             'flash' => $_SESSION['flash'] ?? null,
         ]);
         unset($_SESSION['flash']);
