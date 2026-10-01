@@ -55,6 +55,25 @@ final class PegasusCardLogger
         ], false, $error->getMessage());
     }
 
+    /** @return array{writable: bool, entries: list<array>} */
+    public function details(): array
+    {
+        $directory = $this->logDirectory();
+        $path = $directory . '/pegasus-card.log';
+        $entries = [];
+        if (is_readable($path)) {
+            $size = filesize($path) ?: 0;
+            $contents = (string) file_get_contents($path, false, null, max(0, $size - 65536));
+            foreach (array_reverse(array_filter(explode(PHP_EOL, $contents))) as $line) {
+                $entry = json_decode($line, true);
+                if (is_array($entry)) $entries[] = $entry;
+                if (count($entries) === 12) break;
+            }
+        }
+        if ($entries === []) $entries = $this->repository->recentCardLogs();
+        return ['writable' => is_dir($directory) && is_writable($directory), 'entries' => $entries];
+    }
+
     /** Use the direct remote peer address; forwarded headers need trusted-proxy configuration. */
     public function sourceIp(): ?string
     {

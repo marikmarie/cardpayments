@@ -120,6 +120,12 @@ final class PegasusWebGateway
         $this->logger->error($operation, $error);
     }
 
+    /** @return array{writable: bool, entries: list<array>} */
+    public function logDetails(): array
+    {
+        return $this->logger->details();
+    }
+
     /** @return list<array> */
     public function recent(): array
     {
