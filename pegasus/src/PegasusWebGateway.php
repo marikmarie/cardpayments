@@ -9,7 +9,12 @@ use App\Store;
 /** Hosted PegPay Web card-collection form and signed browser-return handling. */
 final class PegasusWebGateway
 {
-    public function __construct(private Store $store) {}
+    private PegasusCardLogger $logger;
+
+    public function __construct(private Store $store)
+    {
+        $this->logger = new PegasusCardLogger($store);
+    }
 
     public function configured(): bool
     {
@@ -40,12 +45,14 @@ final class PegasusWebGateway
             'customer_name' => $name,
             'customer_email' => $email,
             'return_url' => $this->returnUrl(),
+            'source_ip' => $this->logger->sourceIp(),
             'status' => 'PENDING',
             'created_at' => gmdate('c'),
         ];
         $this->store->transaction(function (array &$state) use ($record): void {
             $state['pegasus_card_collections'][$record['id']] = $record;
         });
+        $this->logger->checkoutCreated($record);
         return $record;
     }
 
@@ -70,6 +77,7 @@ final class PegasusWebGateway
         ];
         if ($collection['customer_email'] !== '') $fields['EMAILADDRESS'] = $collection['customer_email'];
         if ($collection['customer_name'] !== '') $fields['NAME'] = $collection['customer_name'];
+        $this->logger->redirected($collection, $config['gateway_url'], $fields);
         return $fields;
     }
 
@@ -84,6 +92,15 @@ final class PegasusWebGateway
         $valid = $status !== '' && $reason !== '' && $vendorId !== '' && $signature !== ''
             && hash_equals($this->sign($status . $reason . $vendorId), strtolower($signature));
         $record = $vendorId === '' ? null : $this->find($vendorId);
+        $this->logger->returned([
+            'source_ip' => $this->logger->sourceIp(),
+            'gateway_status' => $status,
+            'gateway_reason' => $reason,
+            'vendor_transaction_id' => $vendorId,
+            'pegpay_transaction_id' => $transactionId,
+            'signature_valid' => $valid,
+            'collection_found' => $record !== null,
+        ]);
         if ($record) {
             $record = $this->update($vendorId, [
                 'status' => $valid ? $this->status($status) : 'UNVERIFIED',
@@ -95,6 +112,12 @@ final class PegasusWebGateway
             ]);
         }
         return compact('record', 'status', 'reason', 'vendorId', 'transactionId', 'valid');
+    }
+
+    /** Record a handled card-flow failure without exposing checkout fields or secrets. */
+    public function logFailure(string $operation, \Throwable $error): void
+    {
+        $this->logger->error($operation, $error);
     }
 
     /** @return list<array> */

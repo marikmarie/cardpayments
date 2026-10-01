@@ -46,7 +46,7 @@ The supplied root `.htaccess` routes public requests through `public/index.php`.
 
 ## 3. Set permissions
 
-The PHP user must be able to write to `storage/`. Set that folder to `755` first; use `775` only if your host requires group write access. Do not make it world-writable unless your host specifically requires it.
+The PHP user must be able to write to `storage/`. Set that folder to `755` first; use `775` only if your host requires group write access. Do not make it world-writable unless your host specifically requires it. Hosted PegPay card checkout creates a redacted `storage/pegasus-card.log` file and mirrors its events into the database log table. Set `PEGASUS_CARD_LOG_DIRECTORY` only when your host requires another protected, writable directory.
 
 ## 4. Database (recommended)
 
