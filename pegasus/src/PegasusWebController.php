@@ -41,6 +41,7 @@ final class PegasusWebController extends Controller
             ]);
             exit;
         } catch (\Throwable $e) {
+            $this->gateway->logFailure('CARD_CHECKOUT_ERROR', $e);
             $this->flash('error', $e->getMessage());
             $this->redirect('/pegasus-card');
         }
@@ -55,6 +56,7 @@ final class PegasusWebController extends Controller
                 'result' => $result,
             ]);
         } catch (\Throwable $e) {
+            $this->gateway->logFailure('CARD_RETURN_ERROR', $e);
             http_response_code(400);
             View::renderPublic('checkout/pegasus-return', [
                 'title' => 'PegPay payment result',
