@@ -7,7 +7,9 @@ use App\Controllers\CheckoutController;
 use App\Controllers\LinkController;
 use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
+use App\DashboardAccess;
 use App\Url;
+use App\View;
 use Efris\Http\EfrisController;
 use Efris\Http\EfrisSimulatorController;
 use Pegasus\PegasusController;
@@ -35,6 +37,50 @@ if ($method === 'GET' && $path === '/assets/app.css') {
         readfile($stylesheet);
         exit;
     }
+}
+
+if ($method === 'GET' && $path === '/access') {
+    if (DashboardAccess::granted()) {
+        header('Location: ' . Url::path('/links'));
+        exit;
+    }
+
+    $flash = $_SESSION['dashboard_access_flash'] ?? null;
+    unset($_SESSION['dashboard_access_flash']);
+    View::renderAccess([
+        'title' => 'Dashboard access',
+        'configured' => DashboardAccess::configured(),
+        'flash' => $flash,
+    ]);
+    exit;
+}
+
+if ($method === 'POST' && $path === '/access') {
+    if (DashboardAccess::authenticate($_POST['token'] ?? null)) {
+        $next = $_SESSION['dashboard_next'] ?? '/links';
+        unset($_SESSION['dashboard_next']);
+        header('Location: ' . Url::path(is_string($next) ? $next : '/links'));
+        exit;
+    }
+
+    $_SESSION['dashboard_access_flash'] = [
+        'type' => 'error',
+        'message' => 'The access token is not valid.',
+    ];
+    header('Location: ' . Url::path('/access'));
+    exit;
+}
+
+if ($method === 'POST' && $path === '/access/logout') {
+    DashboardAccess::signOut();
+    header('Location: ' . Url::path('/access'));
+    exit;
+}
+
+if (DashboardAccess::needsToken($path) && !DashboardAccess::granted()) {
+    $_SESSION['dashboard_next'] = $path === '/' ? '/links' : $path;
+    header('Location: ' . Url::path('/access'));
+    exit;
 }
 
 try {

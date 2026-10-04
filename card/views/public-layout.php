@@ -11,11 +11,11 @@
 </head>
 <body class="checkout-body">
   <header class="checkout-header">
-    <a class="brand" href="<?= $url('/links') ?>">
+    <a class="brand" href="<?= $url('/access') ?>">
       <span class="brand-mark">▯</span>
       <span>Cissy<span>Tech</span><small>Payments</small></span>
     </a>
-    <span>Secure checkout</span>
+    <span><?= \App\View::e($public_label ?? 'Secure checkout') ?></span>
   </header>
   <main class="checkout-main">
     <?php if (!empty($flash)): ?>
