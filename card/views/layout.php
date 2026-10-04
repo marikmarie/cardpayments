@@ -50,7 +50,12 @@
     <header class="topbar">
       <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
       <?php $action = $topbar_action ?? ['label' => 'New invoice', 'href' => '/links/create']; ?>
-      <a class="primary-action" href="<?= $url($action['href']) ?>"><?= \App\View::e($action['label']) ?></a>
+      <div class="topbar-actions">
+        <a class="primary-action" href="<?= $url($action['href']) ?>"><?= \App\View::e($action['label']) ?></a>
+        <form action="<?= $url('/access/logout') ?>" method="post">
+          <button class="outline-action sign-out" type="submit">Sign out</button>
+        </form>
+      </div>
     </header>
 
     <main class="content">

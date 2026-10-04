@@ -7,7 +7,9 @@ use App\Controllers\CheckoutController;
 use App\Controllers\LinkController;
 use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
+use App\DashboardAccess;
 use App\Url;
+use App\View;
 use Efris\Http\EfrisController;
 use Efris\Http\EfrisSimulatorController;
 use Pegasus\PegasusController;
@@ -37,6 +39,50 @@ if ($method === 'GET' && $path === '/assets/app.css') {
     }
 }
 
+if ($method === 'GET' && $path === '/access') {
+    if (DashboardAccess::granted()) {
+        header('Location: ' . Url::path('/links'));
+        exit;
+    }
+
+    $flash = $_SESSION['dashboard_access_flash'] ?? null;
+    unset($_SESSION['dashboard_access_flash']);
+    View::renderAccess([
+        'title' => 'Dashboard access',
+        'configured' => DashboardAccess::configured(),
+        'flash' => $flash,
+    ]);
+    exit;
+}
+
+if ($method === 'POST' && $path === '/access') {
+    if (DashboardAccess::authenticate($_POST['token'] ?? null)) {
+        $next = $_SESSION['dashboard_next'] ?? '/links';
+        unset($_SESSION['dashboard_next']);
+        header('Location: ' . Url::path(is_string($next) ? $next : '/links'));
+        exit;
+    }
+
+    $_SESSION['dashboard_access_flash'] = [
+        'type' => 'error',
+        'message' => 'The access token is not valid.',
+    ];
+    header('Location: ' . Url::path('/access'));
+    exit;
+}
+
+if ($method === 'POST' && $path === '/access/logout') {
+    DashboardAccess::signOut();
+    header('Location: ' . Url::path('/access'));
+    exit;
+}
+
+if (DashboardAccess::needsToken($path) && !DashboardAccess::granted()) {
+    $_SESSION['dashboard_next'] = $path === '/' ? '/links' : $path;
+    header('Location: ' . Url::path('/access'));
+    exit;
+}
+
 try {
     if ($method === 'GET' && $path === '/') { header('Location: ' . Url::path('/links')); exit; }
 
@@ -64,6 +110,10 @@ try {
     if ($method === 'POST' && $path === '/efris-tester/status') { (new EfrisSimulatorController())->status($_POST); }
     if ($method === 'GET' && $path === '/api/v1/pegasus/openapi.json') { (new PegasusController())->openApi(); }
     if ($method === 'GET' && $path === '/api/v1/pegasus/balance') { (new PegasusController())->balance(); }
+    if ($method === 'POST' && $path === '/api/v1/pegasus/card-collections') { (new PegasusController())->createCardCollection(); }
+    if ($method === 'GET' && preg_match('#^/api/v1/pegasus/card-collections/([^/]+)$#', $path, $m)) {
+        (new PegasusController())->cardCollection(rawurldecode($m[1]));
+    }
     if ($method === 'POST' && $path === '/api/v1/pegasus/validate-recipient') { (new PegasusController())->validateRecipient(); }
     if ($method === 'POST' && $path === '/api/v1/pegasus/transactions') { (new PegasusController())->createTransaction(); }
     if ($method === 'GET' && preg_match('#^/api/v1/pegasus/transactions/([^/]+)$#', $path, $m)) {
@@ -79,6 +129,7 @@ try {
     if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }
     if ($method === 'GET' && $path === '/pegasus-card') { (new PegasusWebController())->index(); exit; }
+    if ($method === 'GET' && preg_match('#^/pegasus-card/pay/([A-Za-z0-9_-]{1,60})$#', $path, $m)) { (new PegasusWebController())->pay($m[1]); }
     if ($method === 'POST' && $path === '/pegasus-card/checkout') { (new PegasusWebController())->checkout($_POST); }
     if ($method === 'POST' && $path === '/pegasus-card/status') { (new PegasusWebController())->status($_POST); }
     if (in_array($method, ['GET', 'POST'], true) && $path === '/pegasus-card/return') { (new PegasusWebController())->returned($method === 'POST' ? $_POST : $_GET); }

@@ -12,6 +12,7 @@ Set these values in `.env`:
 APP_URL="https://collecto.cissytech.com"
 APP_DEBUG="false"
 STORAGE_PATH="storage/data.json"
+DASHBOARD_ACCESS_TOKEN="set_a_private_random_token"
 
 CYBERSOURCE_ENV="live"
 CYBERSOURCE_MERCHANT_ID="your_production_mid"
@@ -20,6 +21,8 @@ CYBERSOURCE_SHARED_SECRET="your_rest_shared_secret"
 CYBERSOURCE_WEBHOOK_KEY_ID="your_webhook_key_id"
 CYBERSOURCE_WEBHOOK_SHARED_SECRET="your_webhook_shared_secret"
 ```
+
+`DASHBOARD_ACCESS_TOKEN` is the shared token required before browser users can open the dashboard. Generate a strong private value and share it only with authorized dashboard users. Customer checkout pages, provider return URLs, webhooks, and API endpoints retain their normal access paths.
 
 Use separate production REST and webhook credentials from `https://businesscenter.cybersource.com`. The application accepts `live` (and maps `production` to `live` for compatibility).
 

@@ -25,6 +25,11 @@ final class View
         require dirname(__DIR__) . '/card/views/public-layout.php';
     }
 
+    public static function renderAccess(array $data = []): void
+    {
+        self::renderPublic('access/token', $data + ['public_label' => 'Dashboard access']);
+    }
+
     /** Render a separate integration module inside the shared dashboard. */
     public static function renderModule(string $module, string $name, array $data = []): void
     {

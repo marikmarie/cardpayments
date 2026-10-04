@@ -162,6 +162,10 @@ body {
 
 .topbar h2 { margin: 0; font-size: 19px; line-height: 1.2; }
 
+.topbar-actions { display: flex; align-items: center; gap: 10px; }
+.topbar-actions form { margin: 0; }
+.sign-out { padding: 9px 12px; font-size: 13px; }
+
 .content { max-width: 1240px; margin: 0 auto; padding: 24px 32px 38px; }
 
 .primary-action, .outline-action, button {
@@ -594,6 +598,9 @@ textarea { min-height: 72px; resize: vertical; }
 .checkout-card { padding: 32px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px rgba(35, 64, 75, .07); }
 .checkout-card h1 { margin: 4px 0 7px; font-size: 27px; line-height: 1.22; }
 .checkout-copy { margin: 0; color: var(--muted); font-size: 15px; }
+.access-card { display: grid; gap: 18px; }
+.access-card .flash { margin: 0; }
+.access-form { display: grid; gap: 18px; margin-top: 4px; }
 .checkout-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 24px 0 18px; padding: 18px; border-radius: 8px; background: #f7fbfc; }
 .checkout-summary div { display: grid; gap: 2px; }
 .checkout-summary span, .checkout-status-row > span:first-child { color: #71858d; font-size: 12px; }
