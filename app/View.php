@@ -25,9 +25,14 @@ final class View
         require dirname(__DIR__) . '/card/views/public-layout.php';
     }
 
-    public static function renderAccess(array $data = []): void
+    public static function renderLogin(array $data = []): void
     {
-        self::renderPublic('access/token', $data + ['public_label' => 'Dashboard access']);
+        $data['url'] ??= [Url::class, 'path'];
+        extract($data, EXTR_SKIP);
+        ob_start();
+        require dirname(__DIR__) . '/card/views/auth/login.php';
+        $content = ob_get_clean();
+        require dirname(__DIR__) . '/card/views/login-layout.php';
     }
 
     /** Render a separate integration module inside the shared dashboard. */

@@ -22,7 +22,7 @@ CYBERSOURCE_WEBHOOK_KEY_ID="your_webhook_key_id"
 CYBERSOURCE_WEBHOOK_SHARED_SECRET="your_webhook_shared_secret"
 ```
 
-`DASHBOARD_ACCESS_TOKEN` is the shared token required before browser users can open the dashboard. Generate a strong private value and share it only with authorized dashboard users. Customer checkout pages, provider return URLs, webhooks, and API endpoints retain their normal access paths.
+`DASHBOARD_ACCESS_TOKEN` is the shared token used to sign in before any dashboard page or sidebar is displayed. Generate a strong private value and share it only with authorized dashboard users. Customer checkout pages, provider return URLs, webhooks, and API endpoints retain their normal access paths.
 
 Use separate production REST and webhook credentials from `https://businesscenter.cybersource.com`. The application accepts `live` (and maps `production` to `live` for compatibility).
 
@@ -97,6 +97,6 @@ Create and configure a **separate Webhooks Digital Signature Key**. It is differ
 
 ## Important security notes
 
-- The dashboard is intentionally open right now, as requested. Before accepting real payments, put it behind authentication or restrict it by IP address in the host panel.
+- The dashboard requires the configured `DASHBOARD_ACCESS_TOKEN` before it is displayed. You can also restrict dashboard access by IP address in the host panel.
 - Keep the `.env` file, log files, backups, and database credentials private.
 - Use CyberSource-hosted checkout for third-party integrations. Do not enable direct-card handling unless the calling system and this server meet PCI DSS requirements.
