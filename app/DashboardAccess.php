@@ -40,9 +40,13 @@ final class DashboardAccess
         session_regenerate_id(true);
     }
 
-    public static function needsToken(string $path): bool
+    /**
+     * Everything is private by default. Only customer payment routes and
+     * machine-to-machine endpoints remain available outside the dashboard.
+     */
+    public static function requiresLogin(string $path): bool
     {
-        if ($path === '/access' || $path === '/access/logout' || $path === '/assets/app.css') {
+        if ($path === '/login' || $path === '/assets/app.css') {
             return false;
         }
 

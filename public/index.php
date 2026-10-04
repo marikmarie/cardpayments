@@ -39,23 +39,23 @@ if ($method === 'GET' && $path === '/assets/app.css') {
     }
 }
 
-if ($method === 'GET' && $path === '/access') {
+if ($method === 'GET' && $path === '/login') {
     if (DashboardAccess::granted()) {
         header('Location: ' . Url::path('/links'));
         exit;
     }
 
-    $flash = $_SESSION['dashboard_access_flash'] ?? null;
-    unset($_SESSION['dashboard_access_flash']);
-    View::renderAccess([
-        'title' => 'Dashboard access',
+    $flash = $_SESSION['dashboard_login_flash'] ?? null;
+    unset($_SESSION['dashboard_login_flash']);
+    View::renderLogin([
+        'title' => 'Sign in',
         'configured' => DashboardAccess::configured(),
         'flash' => $flash,
     ]);
     exit;
 }
 
-if ($method === 'POST' && $path === '/access') {
+if ($method === 'POST' && $path === '/login') {
     if (DashboardAccess::authenticate($_POST['token'] ?? null)) {
         $next = $_SESSION['dashboard_next'] ?? '/links';
         unset($_SESSION['dashboard_next']);
@@ -63,23 +63,23 @@ if ($method === 'POST' && $path === '/access') {
         exit;
     }
 
-    $_SESSION['dashboard_access_flash'] = [
+    $_SESSION['dashboard_login_flash'] = [
         'type' => 'error',
         'message' => 'The access token is not valid.',
     ];
-    header('Location: ' . Url::path('/access'));
+    header('Location: ' . Url::path('/login'));
     exit;
 }
 
-if ($method === 'POST' && $path === '/access/logout') {
+if ($method === 'POST' && $path === '/login/logout') {
     DashboardAccess::signOut();
-    header('Location: ' . Url::path('/access'));
+    header('Location: ' . Url::path('/login'));
     exit;
 }
 
-if (DashboardAccess::needsToken($path) && !DashboardAccess::granted()) {
+if (DashboardAccess::requiresLogin($path) && !DashboardAccess::granted()) {
     $_SESSION['dashboard_next'] = $path === '/' ? '/links' : $path;
-    header('Location: ' . Url::path('/access'));
+    header('Location: ' . Url::path('/login'));
     exit;
 }
 

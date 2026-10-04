@@ -4,7 +4,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 
 ## What is included
 
-- Open local dashboard for creating, sending, and refreshing payment links.
+- Token-protected dashboard for creating, sending, and refreshing payment links.
 - `POST /api/v1/payment-links` JSON API for other systems.
 - Dashboard-issued API keys, passed as `X-API-Key`.
 - Signed `POST /webhooks/cybersource` receiver for CyberSource invoice status events.
@@ -14,7 +14,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 
 ## Local setup
 
-1. The dashboard is open for local testing. Protect it with authentication before putting it on a public server.
+1. Set a private `DASHBOARD_ACCESS_TOKEN` in `.env`. The login page requires it before displaying any dashboard page or sidebar.
 2. Start the application:
 
    ```powershell
