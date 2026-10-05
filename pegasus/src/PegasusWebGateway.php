@@ -11,6 +11,7 @@ final class PegasusWebGateway
 {
     private PegasusCardLogger $logger;
     private PegasusCardRepository $cards;
+    private ?array $lastStatusRequest = null;
 
     public function __construct(private Store $store)
     {
@@ -133,6 +134,7 @@ final class PegasusWebGateway
     {
         $reference = $input['vendor_transaction_id'] ?? '';
         $id = is_scalar($reference) ? trim((string) $reference) : '';
+        $this->lastStatusRequest = null;
         $this->logger->statusRequested($id);
         try {
             if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
@@ -145,8 +147,13 @@ final class PegasusWebGateway
 
             $endpoint = $this->statusEndpoint();
             $query = $this->statusQuery($id);
+            $this->lastStatusRequest = [
+                'method' => 'GET',
+                'url' => $this->statusQueryUrl($endpoint, $this->redactedStatusQuery($query)),
+                'password_format' => 'HMAC-SHA256(PEGASUS_WEB_PASSWORD, PEGASUS_WEB_SECRET_CODE)',
+            ];
             $this->update($id, ['status_query_requested_at' => gmdate('c')]);
-            $this->logger->statusQuerySent($id, $endpoint, $query);
+            $this->logger->statusQuerySent($id, $this->lastStatusRequest['url'], $query);
             [$response, $httpStatus] = $this->sendStatusQuery($endpoint, $query);
 
             $status = strtoupper(trim($this->responseValue($response, ['Status', 'STATUS'])));
@@ -157,7 +164,7 @@ final class PegasusWebGateway
             $signatureValid = $status !== '' && $reason !== '' && $vendorId === $id && $signature !== ''
                 && hash_equals($this->sign($status . $reason . $vendorId), strtolower($signature));
             $outcome = $this->status($status);
-            $this->logger->statusReturned($id, $endpoint, $httpStatus, $response, $signatureValid ? $outcome : 'FAILED', $signatureValid);
+            $this->logger->statusReturned($id, $this->lastStatusRequest['url'], $httpStatus, $response, $signatureValid ? $outcome : 'FAILED', $signatureValid);
 
             if ($httpStatus >= 400) throw new \RuntimeException('PegPay Web returned HTTP ' . $httpStatus . ' while checking this collection.');
             if ($status === '' || $reason === '' || $vendorId === '') throw new \RuntimeException('PegPay Web returned an invalid status response.');
@@ -174,11 +181,22 @@ final class PegasusWebGateway
                 'status_query_http_status' => $httpStatus,
                 'status_queried_at' => gmdate('c'),
             ]);
-            return ['record' => $record, 'provider_response' => $this->safeStatusResponse($response), 'http_status' => $httpStatus];
+            return [
+                'record' => $record,
+                'provider_response' => $this->safeStatusResponse($response),
+                'http_status' => $httpStatus,
+                'status_request' => $this->lastStatusRequest,
+            ];
         } catch (\Throwable $e) {
-            $this->logger->statusFailed($id, $e);
+            $this->logger->statusFailed($id, $e, $this->lastStatusRequest['url'] ?? null);
             throw $e;
         }
+    }
+
+    /** Returns the redacted QueryStatus request generated during the latest check. */
+    public function lastStatusRequest(): ?array
+    {
+        return $this->lastStatusRequest;
     }
 
     public function logFailure(string $operation, \Throwable $error, array $input = []): void
@@ -252,6 +270,10 @@ final class PegasusWebGateway
         $endpoint = $this->statusEndpoint();
         if (!filter_var($endpoint, FILTER_VALIDATE_URL) || !str_starts_with($endpoint, 'https://')) {
             throw new \LogicException('PEGASUS_WEB_STATUS_URL must be an HTTPS QueryStatus.aspx URL.');
+        }
+        $endpointPath = strtolower((string) parse_url($endpoint, PHP_URL_PATH));
+        if (!str_ends_with($endpointPath, '/querystatus.aspx')) {
+            throw new \LogicException('PEGASUS_WEB_STATUS_URL must point to the PegPay Web QueryStatus.aspx endpoint.');
         }
     }
 
@@ -351,11 +373,25 @@ final class PegasusWebGateway
         return rtrim($this->config()['status_url'], '?&');
     }
 
+    private function statusQueryUrl(string $endpoint, array $query): string
+    {
+        return $endpoint
+            . (str_contains($endpoint, '?') ? '&' : '?')
+            . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    /** A log-safe representation of the documented query fields. */
+    private function redactedStatusQuery(array $query): array
+    {
+        $query['Pswd'] = 'REDACTED_HMAC_SHA256';
+        return $query;
+    }
+
     /** @return array{0: array, 1: int} */
     private function sendStatusQuery(string $endpoint, array $query): array
     {
         if (!function_exists('curl_init')) throw new \RuntimeException('PHP cURL is required for PegPay Web status checks.');
-        $url = $endpoint . (str_contains($endpoint, '?') ? '&' : '?') . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        $url = $this->statusQueryUrl($endpoint, $query);
         $curl = curl_init($url);
         curl_setopt_array($curl, [
             CURLOPT_HTTPGET => true,

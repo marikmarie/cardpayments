@@ -76,25 +76,26 @@ final class PegasusCardLogger
         ]);
     }
 
-    /** Log the redacted HTTPS query that is sent to PegPay Web's QueryStatus.aspx endpoint. */
-    public function statusQuerySent(string $vendorTransactionId, string $endpoint, array $query): void
+    /** Log the full, redacted QueryStatus URL sent to PegPay Web. */
+    public function statusQuerySent(string $vendorTransactionId, string $requestUrl, array $query): void
     {
-        $this->write('REQUEST', 'CARD_STATUS_QUERY_SENT', $vendorTransactionId, $endpoint, null, [
+        $this->write('REQUEST', 'CARD_STATUS_QUERY_SENT', $vendorTransactionId, $requestUrl, null, [
             'source_ip' => $this->sourceIp(),
             'query' => $this->statusQueryPayload($query),
+            'password_format' => 'HMAC-SHA256(PASSWORD, SECRET_KEY)',
         ], false, null, 'GET');
     }
 
     public function statusReturned(
         string $vendorTransactionId,
-        string $endpoint,
+        string $requestUrl,
         int $httpStatus,
         array $response,
         string $outcome,
         bool $signatureValid,
     ): void
     {
-        $this->write('RESPONSE', 'CARD_STATUS_RETURNED', $vendorTransactionId, $endpoint, $httpStatus, [
+        $this->write('RESPONSE', 'CARD_STATUS_RETURNED', $vendorTransactionId, $requestUrl, $httpStatus, [
             'source_ip' => $this->sourceIp(),
             'Status' => (string) ($response['Status'] ?? ''),
             'Reason' => (string) ($response['Reason'] ?? ''),
@@ -107,9 +108,9 @@ final class PegasusCardLogger
         ], true);
     }
 
-    public function statusFailed(string $vendorTransactionId, \Throwable $error): void
+    public function statusFailed(string $vendorTransactionId, \Throwable $error, ?string $requestUrl = null): void
     {
-        $this->write('RESPONSE', 'CARD_STATUS_FAILED', $vendorTransactionId, '/pegasus-card/status', $this->failureStatus($error), [
+        $this->write('RESPONSE', 'CARD_STATUS_FAILED', $vendorTransactionId, $requestUrl ?? '/pegasus-card/status', $this->failureStatus($error), [
             'source_ip' => $this->sourceIp(),
             'VendorTranId' => $vendorTransactionId,
             'outcome' => 'FAILED',
@@ -252,7 +253,7 @@ final class PegasusCardLogger
     private function statusQueryPayload(array $query): array
     {
         foreach ($query as $key => $value) {
-            $query[$key] = strtolower((string) $key) === 'pswd' ? '[redacted]' : $value;
+            $query[$key] = strtolower((string) $key) === 'pswd' ? '[HMAC-SHA256 redacted]' : $value;
         }
         return $query;
     }
