@@ -105,6 +105,13 @@ final class PegasusWebController extends Controller
             $status = $result['record']['status'] ?? 'PENDING';
             $this->flash($status === 'FAILED' ? 'error' : 'success', "PegPay returned {$status} for this card collection.");
         } catch (\Throwable $e) {
+            $request = $this->gateway->lastStatusRequest();
+            if ($request !== null) {
+                $_SESSION['pegasus_card_status_result'] = [
+                    'status_request' => $request,
+                    'error' => $e->getMessage(),
+                ];
+            }
             $this->flash('error', $e->getMessage());
         }
         $_SESSION['pegasus_card_active_tab'] = 'status';

@@ -86,8 +86,15 @@
     </div>
   </form>
   <?php if ($status_result): ?>
-    <p><strong>Latest status: <?= \App\View::e($status_result['record']['status'] ?? 'PENDING') ?></strong></p>
-    <pre class="code-block"><?= \App\View::e(json_encode($status_result['provider_response'] ?? $status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+    <?php if (!empty($status_result['status_request']['url'])): ?>
+      <p><strong>PegPay QueryStatus request</strong></p>
+      <pre class="code-block"><?= \App\View::e(($status_result['status_request']['method'] ?? 'GET') . ' ' . $status_result['status_request']['url']) ?></pre>
+      <p><small>The <code>Pswd</code> value is generated as HMAC-SHA256 of the configured PegPay Web password using the secret key. It is redacted here and in every log.</small></p>
+    <?php endif; ?>
+    <?php if (!empty($status_result['record'])): ?>
+      <p><strong>Latest status: <?= \App\View::e($status_result['record']['status'] ?? 'PENDING') ?></strong></p>
+      <pre class="code-block"><?= \App\View::e(json_encode($status_result['provider_response'] ?? $status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
+    <?php endif; ?>
   <?php endif; ?>
 </section>
 
@@ -96,7 +103,7 @@
     <span>≡</span>
     <div>
       <h3>PegPay card activity log</h3>
-      <p><?= $log['writable'] ? 'Showing the latest redacted checkout and return events from the card log.' : 'The card log file is not writable. Database events are shown when available.' ?></p>
+      <p><?= $log['writable'] ? 'Showing the latest redacted checkout, QueryStatus, and return events from the card log.' : 'The card log file is not writable. Database events are shown when available.' ?></p>
     </div>
   </div>
   <?php if ($log['entries']): ?>

@@ -62,7 +62,7 @@ Run `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql` on 
 
 ## PegPay Web card status
 
-Set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` address supplied by Pegasus. It is separate from the Payments and Collections API. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, use `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`; the guide's older `TestPegasusPaymentsGateway` example returns 404. The Card collections **Status** tab sends the documented `MerchantId`, `VendorCode`, HMAC password, and original `VendorTranId` query; it verifies PegPay's signed response before changing the local collection. Pending collections cannot be queried more often than every five seconds.
+Set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` address supplied by Pegasus. It is separate from the Payments and Collections API. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, use `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`; the guide's older `TestPegasusPaymentsGateway` example returns 404. The Card collections **Status** tab sends the documented `MerchantId`, `VendorCode`, `Pswd`, and original `VendorTranId` query. `Pswd` is `HMAC-SHA256(PEGASUS_WEB_PASSWORD, PEGASUS_WEB_SECRET_CODE)`, never the plaintext password. The status screen and card log show the complete request URL with that value redacted, plus the PegPay response. Pending collections cannot be queried more often than every five seconds.
 
 ## Vault card checkout API
 
