@@ -44,7 +44,7 @@ final class PegasusWebGateway
             // This reference becomes part of a public hosted-checkout URL. Keep it
             // unguessable as well as unique so only the customer who receives the
             // checkout URL can start that payment session.
-            'id' => 'CARD-' . gmdate('YmdHis') . '-' . strtoupper(bin2hex(random_bytes(12))),
+            'id' => $this->collectionId(),
             'amount' => $amount,
             'currency' => $currency,
             'description' => $description,
@@ -341,6 +341,12 @@ final class PegasusWebGateway
         $value = trim((string) $value);
         if (!preg_match('/^[1-9]\d*(?:\.\d{1,2})?$/', $value)) throw new \InvalidArgumentException('Amount must be a positive number with at most two decimal places.');
         return $value;
+    }
+
+    /** A compact 80-bit opaque reference for the public card checkout route. */
+    private function collectionId(): string
+    {
+        return 'C' . strtoupper(bin2hex(random_bytes(10)));
     }
 
     private function text(mixed $value, int $length, string $field): string
