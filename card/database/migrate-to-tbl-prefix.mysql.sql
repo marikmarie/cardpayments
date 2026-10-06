@@ -25,3 +25,4 @@ SET @drop_statement = IF(@has_old_table = 1, 'DROP TABLE app_state', 'SELECT 1')
 PREPARE tbl_prefix_drop FROM @drop_statement;
 EXECUTE tbl_prefix_drop;
 DEALLOCATE PREPARE tbl_prefix_drop;
+
