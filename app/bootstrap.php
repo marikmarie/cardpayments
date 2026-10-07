@@ -27,6 +27,13 @@ spl_autoload_register(static function (string $class): void {
             require $file;
         }
     }
+
+    if (str_starts_with($class, 'GoDigital\\')) {
+        $file = dirname(__DIR__) . '/godigital/src/' . str_replace('\\', '/', substr($class, strlen('GoDigital\\'))) . '.php';
+        if (is_file($file)) {
+            require $file;
+        }
+    }
 });
 
 \App\Config::load(dirname(__DIR__) . '/.env');

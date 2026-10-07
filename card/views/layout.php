@@ -29,6 +29,9 @@
       <a class="<?= ($active_nav ?? '') === 'pegasus' ? 'active' : '' ?>" href="<?= $url('/pegasus-tester') ?>">
         <span>⇄</span> PegPay test
       </a>
+      <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
+        <span>◉</span> GoDigital test
+      </a>
       <a class="<?= ($active_nav ?? '') === 'pegasus-card' ? 'active' : '' ?>" href="<?= $url('/pegasus-card') ?>">
         <span>▣</span> Card collections
       </a>

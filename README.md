@@ -9,6 +9,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 - Dashboard-issued API keys, passed as `X-API-Key`.
 - Signed `POST /webhooks/cybersource` receiver for CyberSource invoice status events.
 - A separate `efris/` gateway module and OpenAPI contract for tenant-scoped POS/ERP fiscalisation testing.
+- A separate `godigital/` gateway module for GoDigital Tanzania mobile-money collections, payouts, callbacks, and UAT testing.
 - MySQL production schemas in `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql`.
 - Local JSON store in `storage/data.json` because this PHP installation has no PDO driver enabled.
 
@@ -55,6 +56,10 @@ The `201` response contains only `invoice_number` and `payment_url`. Keep the in
 ## EFRIS gateway
 
 The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from card-payment code. It provides a tenant-scoped API contract at `/api/v1/efris/openapi.json` and a safe mock mode for vendor integration tests. It does not create a URA fiscal document until URA test onboarding and the current encrypted/signed protocol implementation have been completed.
+
+## GoDigital gateway
+
+The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). Its dashboard tester is at `/godigital-tester`; it has separate tabs for connection, C2B collections, B2C payouts, status, wallet balance, callback setup, and activity. Configure its credentials only in `.env`, allow-list the deployed server's public outbound IP with GoDigital, and use the public HTTPS callback `/webhooks/godigital`.
 
 ## Database deployment
 

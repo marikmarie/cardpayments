@@ -30,6 +30,8 @@ For PegPay, add the test or production API URL, vendor code, password and the se
 
 For hosted PegPay Web card collections, also set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` endpoint supplied by Pegasus. It is separate from the Payments and Collections API URL. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, the matching status endpoint is `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`. The dashboard uses it to check only its own card collection references and waits at least five seconds before repeating a pending-status check.
 
+For GoDigital, obtain separate UAT and production values for `GODIGITAL_BASE_URL`, `GODIGITAL_CLIENT_ID`, `GODIGITAL_CLIENT_SECRET`, and `GODIGITAL_MERCHANT_ID`. Set `GODIGITAL_CALLBACK_URL` to `https://collecto.cissytech.com/webhooks/godigital` (or leave it blank to derive that value from `APP_URL`). Give GoDigital the server's public **outbound** IP address for their allow-list before testing OAuth; without that, their gateway returns `PGW-1009`. The callback must stay public HTTPS and reply promptly with HTTP 200.
+
 ## 2. Upload with WinSCP
 
 Upload the entire contents of this project into the folder served as the Collecto domain root, including the hidden `.htaccess` file. Do not upload `.env` from your computer if it contains development-only values; create the server `.env` in step 1 instead.
@@ -43,6 +45,7 @@ public_html/
 ├── app/                     # shared foundation
 ├── card/                    # payment dashboard, CyberSource, views, assets and schema
 ├── efris/                   # separate EFRIS gateway module
+├── godigital/               # GoDigital mobile-money gateway module
 ├── public/
 └── storage/
 ```
@@ -80,6 +83,9 @@ https://collecto.cissytech.com/api/v1/openapi.json
 https://collecto.cissytech.com/webhooks/cybersource/health
 https://collecto.cissytech.com/payment/return
 https://collecto.cissytech.com/api/v1/pegasus/openapi.json
+https://collecto.cissytech.com/godigital-tester
+https://collecto.cissytech.com/api/v1/godigital/openapi.json
+https://collecto.cissytech.com/webhooks/godigital/health
 ```
 
 The health URL must return a success JSON response over valid HTTPS before CyberSource can validate the webhook subscription.

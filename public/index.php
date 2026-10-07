@@ -12,6 +12,9 @@ use App\Url;
 use App\View;
 use Efris\Http\EfrisController;
 use Efris\Http\EfrisSimulatorController;
+use GoDigital\GoDigitalController;
+use GoDigital\GoDigitalTesterController;
+use GoDigital\GoDigitalWebhookController;
 use Pegasus\PegasusController;
 use Pegasus\PegasusSimulatorController;
 use Pegasus\PegasusWebController;
@@ -96,7 +99,18 @@ try {
         if ($method === 'POST') $webhook->receive();
         $webhook->information();
     }
+    if ($method === 'GET' && $path === '/webhooks/godigital/health') { (new GoDigitalWebhookController())->health(); }
+    if ($method === 'POST' && $path === '/webhooks/godigital') { (new GoDigitalWebhookController())->receive(); }
     if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); }
+    if ($method === 'GET' && $path === '/api/v1/godigital/openapi.json') { (new GoDigitalController())->openApi(); }
+    if ($method === 'POST' && $path === '/api/v1/godigital/collections') { (new GoDigitalController())->createCollection(); }
+    if ($method === 'POST' && $path === '/api/v1/godigital/disbursements') { (new GoDigitalController())->createDisbursement(); }
+    if ($method === 'GET' && preg_match('#^/api/v1/godigital/payments/([^/]+)$#', $path, $m)) {
+        (new GoDigitalController())->status(rawurldecode($m[1]));
+    }
+    if ($method === 'GET' && preg_match('#^/api/v1/godigital/wallets/balance/([^/]+)$#', $path, $m)) {
+        (new GoDigitalController())->balance(rawurldecode($m[1]));
+    }
     if ($method === 'GET' && $path === '/api/v1/efris/openapi.json') { (new EfrisController())->openApi(); }
     if ($method === 'GET' && $path === '/api/v1/efris/health') { (new EfrisController())->health(); }
     if ($method === 'GET' && $path === '/api/v1/efris/branches') { (new EfrisController())->branches(); }
@@ -125,6 +139,12 @@ try {
     if ($method === 'POST' && $path === '/pegasus-tester/status') { (new PegasusSimulatorController())->status($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/duplicate') { (new PegasusSimulatorController())->duplicate($_POST); }
     if ($method === 'POST' && $path === '/pegasus-tester/balance') { (new PegasusSimulatorController())->balance(); }
+    if ($method === 'GET' && $path === '/godigital-tester') { (new GoDigitalTesterController())->index(); exit; }
+    if ($method === 'POST' && $path === '/godigital-tester/token') { (new GoDigitalTesterController())->token(); }
+    if ($method === 'POST' && $path === '/godigital-tester/collection') { (new GoDigitalTesterController())->collection($_POST); }
+    if ($method === 'POST' && $path === '/godigital-tester/disbursement') { (new GoDigitalTesterController())->disbursement($_POST); }
+    if ($method === 'POST' && $path === '/godigital-tester/status') { (new GoDigitalTesterController())->status($_POST); }
+    if ($method === 'POST' && $path === '/godigital-tester/balance') { (new GoDigitalTesterController())->balance($_POST); }
     if ($method === 'GET' && $path === '/pegasus-payouts') { (new PegasusSimulatorController())->payouts(); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }

@@ -573,6 +573,20 @@ textarea { min-height: 72px; resize: vertical; }
 .pegasus-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .pegasus-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--text); text-decoration: none; }
 .pegasus-tab:hover, .pegasus-tab.is-active { border-color: var(--blue); background: var(--blue); color: #fff; }
+
+.godigital-hero { margin-bottom: 18px; }
+.godigital-check-grid { margin-bottom: 18px; }
+.godigital-workspace { margin-bottom: 22px; }
+.godigital-payment-form { margin-top: 12px; }
+.godigital-payment-form .warning { margin-top: 0; }
+.godigital-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+.godigital-summary-grid > div { padding: 13px 15px; border: 1px solid #c7e6f0; border-radius: 8px; background: #f3fbfe; }
+.godigital-summary-grid span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .35px; }
+.godigital-summary-grid strong { display: block; overflow-wrap: anywhere; color: var(--ink); font-size: 14px; }
+.godigital-summary-grid.one-column { grid-template-columns: 1fr; }
+.copyable-value { font-family: Consolas, "Courier New", monospace; }
+.godigital-result { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+.godigital-events { max-height: 385px; overflow-y: auto; }
 .efris-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .efris-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
 .efris-tab:hover, .efris-tab.is-active { border-color: var(--blue); background: var(--blue); color: #fff; }
@@ -623,7 +637,7 @@ textarea { min-height: 72px; resize: vertical; }
   .topbar { height: 74px; padding: 0 18px; }
   .topbar h2 { font-size: 19px; }
   .content { padding: 28px 18px 50px; }
-  .metric-grid, .form-grid, .compact-form-grid { grid-template-columns: 1fr; }
+  .metric-grid, .form-grid, .compact-form-grid, .godigital-summary-grid { grid-template-columns: 1fr; }
   .check-grid, .test-detail-grid { grid-template-columns: 1fr; }
   .welcome-row, .api-band { align-items: flex-start; flex-direction: column; }
   .key-form { width: 100%; flex-wrap: wrap; }
