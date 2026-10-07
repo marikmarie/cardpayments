@@ -2,11 +2,11 @@
 <section class="create-heading">
   <p class="eyebrow">PegPay Web</p>
   <h1>Card collections</h1>
-  <p>Create a secure payment session. PegPay collects the customer's card details; CissyTech never receives or stores them.</p>
+  <p>Create a secure collection and check its status.</p>
 </section>
 
 <nav class="pegasus-tabs" aria-label="PegPay collection type">
-  <a class="pegasus-tab" href="<?= $url('/pegasus-tester') ?>">Mobile money and payouts</a>
+  <a class="pegasus-tab" href="<?= $url('/pegasus-tester') ?>">PegPay</a>
   <a class="pegasus-tab is-active" href="<?= $url('/pegasus-card') ?>">Card collections</a>
 </nav>
 
@@ -24,7 +24,7 @@
 <section class="panel form-section">
   <div class="section-title">
     <span>1</span>
-    <div><h3>Start a card payment</h3><p>The customer is redirected to PegPay's secure page to choose card or mobile money.</p></div>
+    <div><h3>Start a collection</h3><p>PegPay collects the payment details.</p></div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-card/checkout') ?>" method="post">
     <label>Amount
@@ -49,10 +49,10 @@
 <section class="panel form-section">
   <div class="section-title">
     <span>2</span>
-    <div><h3>Recent card collections</h3><p>The return status is accepted only after its PegPay digital signature is verified.</p></div>
+    <div><h3>Recent collections</h3><p>Signed return statuses only.</p></div>
   </div>
   <?php if (!$collections): ?>
-    <p>No card payment sessions have been created yet.</p>
+    <p>No collections yet.</p>
   <?php else: ?>
     <div class="table-wrap"><table>
       <thead><tr><th>Reference</th><th>Payment</th><th>Customer</th><th>Status</th><th>PegPay ID</th></tr></thead>
@@ -73,7 +73,7 @@
     <span>↻</span>
     <div>
       <h3>Check card collection status</h3>
-      <p>Query PegPay Web's QueryStatus endpoint using a card reference created here. A pending payment can be checked again after five seconds.</p>
+      <p>For pending payments, query again after five seconds.</p>
     </div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-card/status') ?>" method="post">
@@ -89,7 +89,7 @@
     <?php if (!empty($status_result['status_request']['url'])): ?>
       <p><strong>PegPay QueryStatus request</strong></p>
       <pre class="code-block"><?= \App\View::e(($status_result['status_request']['method'] ?? 'GET') . ' ' . $status_result['status_request']['url']) ?></pre>
-      <p><small>The <code>Pswd</code> value is generated as HMAC-SHA256 of the configured PegPay Web password using the secret key. It is redacted here and in every log.</small></p>
+      <p><small><code>Pswd</code> is generated with the configured password and secret, then redacted.</small></p>
     <?php endif; ?>
     <?php if (!empty($status_result['record'])): ?>
       <p><strong>Latest status: <?= \App\View::e($status_result['record']['status'] ?? 'PENDING') ?></strong></p>
@@ -103,13 +103,13 @@
     <span>≡</span>
     <div>
       <h3>PegPay card activity log</h3>
-      <p><?= $log['writable'] ? 'Showing the latest redacted checkout, QueryStatus, and return events from the card log.' : 'The card log file is not writable. Database events are shown when available.' ?></p>
+      <p><?= $log['writable'] ? 'Safe checkout, status, and return events.' : 'The card log file is not writable.' ?></p>
     </div>
   </div>
   <?php if ($log['entries']): ?>
     <pre class="code-block"><?= \App\View::e(json_encode($log['entries'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
   <?php else: ?>
-    <p>No card checkout events have been logged yet. Start a card payment to create UAT evidence.</p>
+    <p>No card activity yet.</p>
   <?php endif; ?>
 </section>
 

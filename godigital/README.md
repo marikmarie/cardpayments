@@ -12,7 +12,7 @@ This module connects CissyTech Payments to the GoDigital Payments API v1. It is 
 - Recipient name check (v1.1.4): `GET /payments/name-check?providerCode={providerCode}&msisdn={msisdn}`.
 - GoDigital-required request headers: bearer token, client ID, request ID, idempotency key, timestamp, nonce, and Base64 SHA-256 content hash.
 - Public callback receiver at `/webhooks/godigital`, including duplicate callback and duplicate transaction protection.
-- A dashboard tester at `/godigital-tester` with separate Connection, C2B collection, B2C payout, Status, Wallet, Name check, Callbacks, and Logs tabs.
+- A dashboard tester at `/godigital-tester` with OAuth, collection, payout, status, balance, name check, callback, and Logs tabs.
 
 The integration does not return OAuth access tokens, client secrets, or provider credentials to browsers or API callers.
 
@@ -23,7 +23,7 @@ The v1.1.4 name-check endpoint is intentionally separate from payment creation: 
 1. Ask GoDigital for the **UAT** base URL, client ID, client secret, merchant ID, enabled mobile-money providers, wallet funding requirements, and any per-operation limits.
 2. Give GoDigital the deployed server's public **outbound IP address**. Their OAuth endpoint and payment endpoints are IP allow-listed. `PGW-1009` means the IP is missing from the allow-list.
 3. Create a public HTTPS callback URL and give it to GoDigital. The default is `https://your-domain/webhooks/godigital` when `APP_URL` is set.
-4. Confirm the exact callback signature algorithm and signed content if GoDigital enables callback signing for the merchant. The supplied guide calls signatures optional but does not define an unambiguous canonical input, so this module does not guess. It verifies the optional callback content hash when GoDigital sends one.
+4. If GoDigital enables callback signatures, set the callback secret they issue. The receiver verifies the Base64 HMAC-SHA256 of the raw callback body, as described in the supplied guide. It also verifies the optional callback content hash when present.
 5. Use only GoDigital-approved UAT MSISDNs and providers during UAT. Do not run payout tests against a live customer number.
 
 ## Configuration
@@ -39,6 +39,8 @@ GODIGITAL_MERCHANT_ID=""
 
 # Leave blank to derive APP_URL/webhooks/godigital.
 GODIGITAL_CALLBACK_URL="https://your-public-domain/webhooks/godigital"
+# Leave blank unless GoDigital enables callback signatures for your merchant.
+GODIGITAL_CALLBACK_SECRET=""
 GODIGITAL_TIMEOUT_SECONDS="30"
 ```
 
@@ -46,7 +48,7 @@ Keep UAT and production values separate. Changing between environments requires 
 
 ## Dashboard test workflow
 
-1. Sign in to the CissyTech dashboard, open **GoDigital test** in the sidebar, then open **Connection**.
+1. Sign in to the CissyTech dashboard, open **GoDigital** in the sidebar, then open **OAuth**.
 2. Verify the three readiness cards: gateway URL, OAuth credentials, and HTTPS callback.
 3. Select **Check OAuth connection**. Fix missing configuration, invalid credentials (`PGW-1001`), or IP allow-list errors (`PGW-1009`) before continuing.
 4. In **C2B collection**, enter a unique reference, an approved test MSISDN in `2557XXXXXXXX` format, provider, and TZS amount. Submit it, then wait for the callback or use **Status**.

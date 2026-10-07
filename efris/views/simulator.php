@@ -12,13 +12,13 @@ $selectedKey = (string) ($setup['api_key_id'] ?? '');
 $branch = (string) ($setup['branch_code'] ?? 'KAMPALA-01');
 $invoice = $invoice ?? [];
 $invoiceKey = (string) ($invoice['api_key_id'] ?? $selectedKey);
-$reference = (string) ($invoice['external_reference'] ?? "POS-INV-{$stamp}");
-$idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
+$reference = (string) ($invoice['external_reference'] ?? "POSINV{$stamp}");
+$idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS{$stamp}");
 ?>
 <section class="create-heading">
   <p class="eyebrow">EFRIS test workspace</p>
-  <h1>Test your EFRIS API flow</h1>
-  <p>Set up a local test tenant, submit one invoice, then check its stored status.</p>
+  <h1>EFRIS</h1>
+  <p>Set up, submit an invoice, and check its status.</p>
 </section>
 
 <section class="efris-status">
@@ -30,16 +30,16 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
 </section>
 
 <section class="warning">
-  <strong>Use this for CissyTech API testing now</strong>
-  <p>It exercises the same validation, tenant selection and idempotency as your EFRIS API. It cannot issue a URA receipt until URA provides and approves the test connection, device and signed/encrypted interface setup.</p>
+  <strong>Local test mode</strong>
+  <p>It validates requests and records test invoices. It does not submit to URA.</p>
 </section>
 
 <nav class="efris-tabs" aria-label="EFRIS tester functions" data-default-tab="<?= \App\View::e($active_tab) ?>">
-  <button type="button" class="efris-tab" data-efris-tab="setup">1. Test setup</button>
-  <button type="button" class="efris-tab" data-efris-tab="invoice">2. Submit invoice</button>
-  <button type="button" class="efris-tab" data-efris-tab="status">3. Check status</button>
+  <button type="button" class="efris-tab" data-efris-tab="setup">Setup</button>
+  <button type="button" class="efris-tab" data-efris-tab="invoice">Invoice</button>
+  <button type="button" class="efris-tab" data-efris-tab="status">Status</button>
   <button type="button" class="efris-tab" data-efris-tab="logs">Logs</button>
-  <button type="button" class="efris-tab" data-efris-tab="readiness">URA readiness</button>
+  <button type="button" class="efris-tab" data-efris-tab="readiness">URA</button>
 </nav>
 
 <section class="panel compact-form-section" data-efris-panel="setup">
@@ -47,11 +47,11 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
     <span>1</span>
     <div>
       <h3>Local test tenant</h3>
-      <p>Use a CissyTech Integration ID from Overview. These are test identifiers only; never enter URA private keys here.</p>
+      <p>Choose an Integration ID from Overview.</p>
     </div>
   </div>
   <?php if (!$api_keys): ?>
-    <div class="warning"><strong>Create an integration key first</strong><p>Go to Overview, create an API key, then return here and choose its Integration ID.</p></div>
+    <div class="warning"><strong>Create an integration key first</strong><p>Create it in Overview, then return here.</p></div>
   <?php else: ?>
     <form class="compact-form-grid" action="<?= $url('/efris-tester/setup') ?>" method="post">
       <label>Integration ID
@@ -78,7 +78,7 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
     <span>2</span>
     <div>
       <h3>Submit a test invoice</h3>
-      <p>To test idempotency, submit the same form again with the same reference and idempotency key.</p>
+      <p>Reuse the reference and key only to test idempotency.</p>
     </div>
   </div>
   <form class="compact-form-grid" action="<?= $url('/efris-tester/invoices') ?>" method="post">
@@ -120,7 +120,7 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
 <section class="panel compact-form-section" data-efris-panel="status" hidden>
   <div class="section-title">
     <span>3</span>
-    <div><h3>Check invoice status</h3><p>Retrieve a mock invoice created by this integration.</p></div>
+    <div><h3>Invoice status</h3><p>Check a stored test invoice.</p></div>
   </div>
   <form class="compact-form-grid" action="<?= $url('/efris-tester/status') ?>" method="post">
     <label>Integration ID
@@ -140,7 +140,7 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
 <section class="panel compact-form-section" data-efris-panel="logs" hidden>
   <div class="section-title">
     <span>≡</span>
-    <div><h3>EFRIS activity log</h3><p>Shows local tenant setup, mock invoice acceptance, and status checks. No URA credentials or private keys are recorded.</p></div>
+    <div><h3>EFRIS activity</h3><p>Setup, invoices, and status checks.</p></div>
   </div>
   <?php if ($activity): ?>
     <div class="event-list">
@@ -149,12 +149,12 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
       <?php endforeach; ?>
     </div>
   <?php else: ?>
-    <div class="event-empty"><span>◌</span><p>No EFRIS events yet. Save a test tenant or submit a mock invoice to begin the audit trail.</p></div>
+    <div class="event-empty"><span>◌</span><p>No EFRIS activity yet.</p></div>
   <?php endif; ?>
 </section>
 
 <section class="panel compact-form-section" data-efris-panel="readiness" hidden>
-  <div class="section-title"><span>!</span><div><h3>Before real URA UAT</h3><p>The tester will become a real UAT tool after URA enables the following for CissyTech and the pilot taxpayer.</p></div></div>
+  <div class="section-title"><span>!</span><div><h3>Before URA UAT</h3><p>URA must enable these items for CissyTech and the pilot taxpayer.</p></div></div>
   <ul class="efris-list">
     <li>Test-environment taxpayer TIN, branch and registered device.</li>
     <li>URA test connection details and the approved current Interface Design.</li>

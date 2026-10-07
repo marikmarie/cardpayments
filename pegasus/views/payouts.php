@@ -2,14 +2,14 @@
 <?php if (!$review): ?>
   <section class="create-heading">
     <p class="eyebrow">Payouts</p>
-    <h1>Prepare staff payments</h1>
-    <p>Select staff, choose the payment type, and review the batch before sending it to PegPay.</p>
+    <h1>Staff payouts</h1>
+    <p>Select, review, and send a batch.</p>
   </section>
 
   <form class="panel form-section" action="<?= $url('/pegasus-payouts/review') ?>" method="post">
     <div class="section-title">
       <span>1</span>
-      <div><h3>Select payment type</h3><p>Use the supplied Airtel UAT wallet while testing.</p></div>
+      <div><h3>Payment type</h3><p>Use the supplied UAT wallet.</p></div>
     </div>
     <div class="form-grid">
       <label>Payment type
@@ -18,7 +18,7 @@
     </div>
     <div class="section-title" style="margin-top:22px">
       <span>2</span>
-      <div><h3>Select staff</h3><p>These are sample staff records for the UAT journey.</p></div>
+      <div><h3>Staff</h3><p>Sample UAT staff records.</p></div>
     </div>
     <div class="table-wrap"><table>
       <thead><tr><th>Select</th><th>Staff member</th><th>Department</th><th>Payment wallet</th></tr></thead>
@@ -48,16 +48,16 @@
         <td><?= \App\View::e($review['type'] === 'salary' ? 'Monthly salary' : 'Daily allowance') ?></td>
       </tr><?php endforeach; ?></tbody>
     </table></div>
-    <div class="warning"><strong>UAT only</strong><p>Sending this batch creates one PegPay payout request per selected staff member using the supplied UAT wallet.</p></div>
+    <div class="warning"><strong>UAT only</strong><p>One payout request is sent per selected staff member.</p></div>
     <div class="form-actions"><a class="outline-action" href="<?= $url('/pegasus-payouts') ?>">Back</a><form action="<?= $url('/pegasus-payouts/send') ?>" method="post"><button class="primary-action">Send <?= count($review['items']) ?> payouts</button></form></div>
   </section>
 <?php endif; ?>
 
 <section class="panel provider-log-panel">
-  <div class="panel-header"><div><p class="eyebrow">Logs</p><h3>PegPay payout activity</h3><p>Latest redacted requests and responses for the PegPay payment rail.</p></div><a class="outline-action" href="<?= $url('/pegasus-tester') ?>">Open PegPay tester</a></div>
+  <div class="panel-header"><div><p class="eyebrow">Logs</p><h3>Payout activity</h3><p>Safe PegPay request and response events.</p></div><a class="outline-action" href="<?= $url('/pegasus-tester') ?>">Open PegPay</a></div>
   <?php if ($log['entries']): ?>
     <pre class="code-block"><code><?= \App\View::e(json_encode($log['entries'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></code></pre>
   <?php else: ?>
-    <div class="event-empty"><span>◌</span><p>No payout activity has been logged yet.</p></div>
+    <div class="event-empty"><span>◌</span><p>No payout activity yet.</p></div>
   <?php endif; ?>
 </section>

@@ -13,7 +13,7 @@ $volume = array_sum(array_map(
   <div>
     <p class="eyebrow">Payment operations</p>
     <h1>Payments overview</h1>
-    <p>Card payment links, settlement progress, and the latest provider activity.</p>
+    <p>Card links, settlement progress, and activity.</p>
   </div>
   <a class="outline-action" href="<?= $url('/links/create') ?>">Create payment</a>
 </section>
@@ -36,20 +36,20 @@ $volume = array_sum(array_map(
 <section class="panel checkout-setting">
   <form action="<?= $url('/settings/checkout-type') ?>" method="post">
     <label>
-      Customer checkout route
+      Checkout
       <select name="checkout_type">
-        <option value="cissytech" <?= $checkout_type === 'cissytech' ? 'selected' : '' ?>>CissyTech-branded checkout</option>
-        <option value="cybersource" <?= $checkout_type === 'cybersource' ? 'selected' : '' ?>>Direct secure card checkout</option>
+        <option value="cissytech" <?= $checkout_type === 'cissytech' ? 'selected' : '' ?>>CissyTech checkout</option>
+        <option value="cybersource" <?= $checkout_type === 'cybersource' ? 'selected' : '' ?>>Direct card checkout</option>
       </select>
     </label>
     <button class="primary-action">Save</button>
   </form>
-  <small><?= $checkout_type === 'cissytech' ? 'Customers see your CissyTech page before secure card checkout.' : 'Customers open secure card checkout directly.' ?></small>
+  <small><?= $checkout_type === 'cissytech' ? 'CissyTech page first.' : 'Provider checkout first.' ?></small>
 </section>
 
 <section class="panel provider-log-panel">
   <div class="panel-header">
-    <div><p class="eyebrow">Card payments</p><h3>Absa / CyberSource activity</h3><p>Recent card gateway requests and responses. Authentication signatures, card data, and customer fields are never displayed here.</p></div>
+    <div><p class="eyebrow">Card payments</p><h3>Absa / CyberSource activity</h3><p>Recent safe request and response events.</p></div>
     <a class="outline-action" href="<?= $url('/absa-cards') ?>">Open card workspace</a>
   </div>
   <?php if ($card_log['entries']): ?>
@@ -59,7 +59,7 @@ $volume = array_sum(array_map(
       <?php endforeach; ?>
     </div>
   <?php else: ?>
-    <div class="event-empty"><span>◌</span><p>No card gateway activity yet. Create or refresh a card payment link to populate this log.</p></div>
+    <div class="event-empty"><span>◌</span><p>No card activity yet.</p></div>
   <?php endif; ?>
 </section>
 
@@ -129,7 +129,7 @@ $volume = array_sum(array_map(
 <section id="api" class="api-band">
   <div>
     <h3>API keys</h3>
-    <p>Create a key for each system that connects to your API.</p>
+    <p>Create a key for a connected system.</p>
     <a class="docs-link" href="<?= $url('/developers/api') ?>">API reference</a>
   </div>
   <form action="<?= $url('/api-keys') ?>" method="post" class="key-form">
@@ -168,7 +168,7 @@ $volume = array_sum(array_map(
       <tbody>
         <?php if (empty($api_keys)): ?>
           <tr>
-            <td colspan="4"><small>No API keys yet. Create one above for your first connected system.</small></td>
+            <td colspan="4"><small>No API keys yet.</small></td>
           </tr>
         <?php else: ?>
           <?php foreach ($api_keys as $key): ?>

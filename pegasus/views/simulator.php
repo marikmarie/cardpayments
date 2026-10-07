@@ -18,17 +18,17 @@ foreach ($bank_test_accounts as $code => $recipient) {
 ?>
 <section class="create-heading">
   <p class="eyebrow">PegPay UAT</p>
-  <h1>Test collections and payouts</h1>
-  <p>Use Pegasus test accounts only. The examples include mobile-money collections, mobile payouts, and bank payouts.</p>
+  <h1>PegPay</h1>
+  <p>Collections, payouts, status, balance, and logs.</p>
 </section>
 
 
 <nav class="pegasus-tabs" aria-label="PegPay tester functions" data-default-tab="<?= \App\View::e($active_tab) ?>">
   <button type="button" class="pegasus-tab" data-pegasus-tab="verify">Verify</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="collect">Collect</button>
-  <button type="button" class="pegasus-tab" data-pegasus-tab="mobile-payout">Mobile payout</button>
-  <button type="button" class="pegasus-tab" data-pegasus-tab="bank-payout">Bank payout</button>
-  <button type="button" class="pegasus-tab" data-pegasus-tab="duplicate">Duplicate payout</button>
+  <button type="button" class="pegasus-tab" data-pegasus-tab="mobile-payout">Payout</button>
+  <button type="button" class="pegasus-tab" data-pegasus-tab="bank-payout">Bank</button>
+  <button type="button" class="pegasus-tab" data-pegasus-tab="duplicate">Retry</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="status">Status</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="balance">Balance</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="log">Log</button>
@@ -39,7 +39,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>✓</span>
     <div>
       <h3>Verify recipient</h3>
-      <p>Document test examples: <code>256702685176</code> with AIRTEL, or <code>60001256421</code> with ABSA.</p>
+      <p>Use a supplied UAT account and network.</p>
     </div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-tester/verify') ?>" method="post">
@@ -70,7 +70,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>↻</span>
     <div>
       <h3>Check transaction status</h3>
-      <p>Check a payout from this tester, or let PegPay respond for an unknown reference. For a pending payout, wait at least five seconds.</p>
+      <p>For pending payments, wait at least five seconds.</p>
     </div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-tester/status') ?>" method="post">
@@ -95,11 +95,11 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>≡</span>
     <div>
       <h3>Duplicate payout test</h3>
-      <p>Repeat the exact same allowance or salary payout. The tester returns the original result and prevents a second payout request.</p>
+      <p>Retry an existing payout with the same ID.</p>
     </div>
   </div>
   <?php if ($last_payout_id === ''): ?>
-    <p>Create a mobile or bank payout first. Its transaction ID will appear here for the duplicate test.</p>
+    <p>Create a payout first.</p>
   <?php else: ?>
     <form class="form-grid" action="<?= $url('/pegasus-tester/duplicate') ?>" method="post">
       <label>
@@ -111,7 +111,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
         <button class="outline-action" name="send_to_pegpay" value="1">Send duplicate to PegPay</button>
       </div>
     </form>
-    <p><small>Use “Send duplicate to PegPay” only with their UAT account. It sends the original request again with the same transaction ID and logs the provider response.</small></p>
+    <p><small>Use this only with a UAT account.</small></p>
   <?php endif; ?>
 </section>
 
@@ -120,7 +120,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>₵</span>
     <div>
       <h3>Get balance</h3>
-      <p>Retrieve the current PegPay vendor-account balance.</p>
+      <p>Check the vendor account balance.</p>
     </div>
   </div>
   <form class="form-actions compact-actions" action="<?= $url('/pegasus-tester/balance') ?>" method="post">
@@ -142,7 +142,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
         <span><?= $sample['type'] === 'PULL' ? '↓' : '↑' ?></span>
         <div>
           <h3><?= \App\View::e($sample['title']) ?> <small>(<?= \App\View::e($sample['type']) ?>)</small></h3>
-          <p><?= $sample['type'] === 'PULL' ? 'Collect from an MTN or Airtel mobile wallet.' : ($sample['channel'] === 'bank' ? 'Send to a bank account using its PegPay bank code.' : 'Send from your account to a mobile-money recipient.') ?></p>
+          <p><?= $sample['type'] === 'PULL' ? 'Collect from a mobile wallet.' : ($sample['channel'] === 'bank' ? 'Send to a bank account.' : 'Send to a mobile-money recipient.') ?></p>
         </div>
       </div>
 
@@ -226,13 +226,13 @@ foreach ($bank_test_accounts as $code => $recipient) {
       <span>✓</span>
       <div>
         <h3>Latest PegPay response</h3>
-      <p><?= !empty($result['duplicate_test']) ? 'Duplicate scenario: the original payout record was returned.' : 'Check a PENDING transaction with the PegPay status API after the provider\'s required wait time.' ?></p>
+      <p><?= !empty($result['duplicate_test']) ? 'The original payout record was returned.' : 'Check PENDING payments again after five seconds.' ?></p>
       </div>
     </div>
     <?php if (!empty($result['duplicate_test'])): ?>
       <div class="warning">
         <strong><?= !empty($result['duplicate_sent']) ? 'Duplicate request sent to PegPay' : (!empty($result['replayed']) ? 'Duplicate protected' : 'Documented retry sent') ?></strong>
-        <p><?= !empty($result['duplicate_sent']) ? 'The original payout request was sent to PegPay again. Review the provider response and Log tab.' : (!empty($result['replayed']) ? 'replayed: true — the original payout was returned and no second request was sent to PegPay.' : 'PegPay response code 22 requires a retry using the same vendor transaction ID.') ?></p>
+        <p><?= !empty($result['duplicate_sent']) ? 'The request was sent again. Review the log.' : (!empty($result['replayed']) ? 'The original payout was returned.' : 'Response code 22 requires the same transaction ID.') ?></p>
       </div>
     <?php endif; ?>
     <pre class="code-block"><?= \App\View::e(json_encode($result['data']['provider_response'] ?? $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
@@ -244,13 +244,13 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>≡</span>
     <div>
       <h3>PegPay activity log</h3>
-      <p><?= $log['writable'] ? 'Writing redacted requests and responses to storage/pegasus.log.' : 'The server cannot write storage/pegasus.log. Make the storage folder writable.' ?></p>
+      <p><?= $log['writable'] ? 'Safe requests and responses are recorded.' : 'The server cannot write the PegPay log.' ?></p>
     </div>
   </div>
   <?php if ($log['entries']): ?>
     <pre class="code-block"><?= \App\View::e(json_encode($log['entries'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
   <?php else: ?>
-    <p>No PegPay requests have been logged yet.</p>
+    <p>No PegPay activity yet.</p>
   <?php endif; ?>
 </section>
 

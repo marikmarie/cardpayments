@@ -15,33 +15,36 @@
       <span>Cissy<span>Tech</span><small>Payments</small></span>
     </a>
 
-    <p class="workspace-label">Workspace</p>
+    <p class="workspace-label">Dashboard</p>
     <nav class="side-nav">
       <a class="<?= ($active_nav ?? 'overview') === 'overview' ? 'active' : '' ?>" href="<?= $url('/links') ?>">
         <span>▦</span> Overview
       </a>
       <a class="<?= ($active_nav ?? '') === 'absa' ? 'active' : '' ?>" href="<?= $url('/absa-cards') ?>">
-        <span>▣</span> Absa card payments
+        <span>▣</span> Absa cards
       </a>
     </nav>
 
-    <p class="workspace-label nav-section-label">Payment rails</p>
+    <p class="workspace-label nav-section-label">Payments</p>
     <nav class="side-nav">
       <a class="<?= ($active_nav ?? '') === 'pegasus' ? 'active' : '' ?>" href="<?= $url('/pegasus-tester') ?>">
-        <span>⇄</span> PegPay money
+        <span>⇄</span> PegPay
       </a>
       <a class="<?= ($active_nav ?? '') === 'pegasus-card' ? 'active' : '' ?>" href="<?= $url('/pegasus-card') ?>">
-        <span>▤</span> PegPay cards
+        <span>▤</span> Card collections
+      </a>
+      <a class="<?= ($active_nav ?? '') === 'payouts' ? 'active' : '' ?>" href="<?= $url('/pegasus-payouts') ?>">
+        <span>↗</span> Payouts
       </a>
       <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
-        <span>◉</span> GoDigital money
+        <span>◉</span> GoDigital
       </a>
     </nav>
 
     <p class="workspace-label nav-section-label">Compliance</p>
     <nav class="side-nav">
       <a class="<?= ($active_nav ?? '') === 'efris' ? 'active' : '' ?>" href="<?= $url('/efris-tester') ?>">
-        <span>✓</span> EFRIS UAT
+        <span>✓</span> EFRIS
       </a>
     </nav>
 

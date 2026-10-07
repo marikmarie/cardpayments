@@ -35,7 +35,10 @@ final class GoDigitalGateway
             'merchant_id_configured' => trim((string) Config::get('GODIGITAL_MERCHANT_ID', '')) !== '',
             'callback_url' => $callbackUrl,
             'callback_is_https' => str_starts_with(strtolower($callbackUrl), 'https://'),
-            'signature_note' => 'Callback signature validation is off until GoDigital confirms the exact signed value for this merchant.',
+            'callback_secret_configured' => trim((string) Config::get('GODIGITAL_CALLBACK_SECRET', '')) !== '',
+            'signature_note' => trim((string) Config::get('GODIGITAL_CALLBACK_SECRET', '')) !== ''
+                ? 'Callback signature validation is active.'
+                : 'Add GODIGITAL_CALLBACK_SECRET only if GoDigital enables callback signatures for this merchant.',
         ];
     }
 
@@ -127,7 +130,7 @@ final class GoDigitalGateway
             $response = $this->http('GET', $this->apiUrl('/payments/name-check') . '?' . $query, [
                 'Accept: application/json',
                 'X-Client-Id: ' . $this->config('GODIGITAL_CLIENT_ID'),
-                'X-Request-Id: ' . $this->uuid(),
+                'X-Request-Id: ' . $this->requestId(''),
             ], '');
             $this->activity('name_check', 'Name check completed for ' . $provider . '.', [
                 'provider_code' => $provider,
@@ -152,6 +155,7 @@ final class GoDigitalGateway
     {
         $payload = json_decode($rawBody, true);
         if (!is_array($payload)) {
+            $this->activity('callback_failed', 'GoDigital callback rejected: invalid JSON.');
             throw new GoDigitalException('Callback body must be valid JSON.', 400);
         }
 
@@ -159,7 +163,17 @@ final class GoDigitalGateway
         if ($contentHash !== '') {
             $expected = base64_encode(hash('sha256', $rawBody, true));
             if (!hash_equals($expected, $contentHash)) {
+                $this->activity('callback_failed', 'GoDigital callback content hash did not match.', ['request' => $payload]);
                 throw new GoDigitalException('Callback content hash did not match.', 400);
+            }
+        }
+        $callbackSecret = $this->config('GODIGITAL_CALLBACK_SECRET');
+        if ($callbackSecret !== '') {
+            $signature = trim((string) ($headers['x-callback-signature'] ?? ''));
+            $expected = base64_encode(hash_hmac('sha256', $rawBody, $callbackSecret, true));
+            if ($signature === '' || !hash_equals($expected, $signature)) {
+                $this->activity('callback_failed', 'GoDigital callback signature did not match.', ['request' => $payload]);
+                throw new GoDigitalException('Callback signature did not match.', 400);
             }
         }
 
@@ -168,6 +182,7 @@ final class GoDigitalGateway
         $transactionId = trim((string) ($data['transactionId'] ?? ''));
         $callbackId = trim((string) ($headers['x-callback-id'] ?? ''));
         if ($callbackId === '' && $transactionId === '') {
+            $this->activity('callback_failed', 'GoDigital callback is missing identifiers.', ['request' => $payload]);
             throw new GoDigitalException('Callback is missing both X-Callback-Id and data.transactionId.', 400);
         }
 
@@ -204,6 +219,7 @@ final class GoDigitalGateway
         $this->activity('callback', $duplicate ? 'Duplicate callback acknowledged.' : 'Callback accepted.', [
             'reference' => $reference,
             'transaction_id' => $transactionId,
+            'request' => $payload,
         ]);
 
         return ['status' => 'RECEIVED', 'message' => 'Callback accepted', 'duplicate' => $duplicate];
@@ -308,15 +324,13 @@ final class GoDigitalGateway
             'Authorization: Bearer ' . $token,
             'Accept: application/json',
             'X-Client-Id: ' . $this->config('GODIGITAL_CLIENT_ID'),
-            'X-Request-Id: ' . ($requestId ?: $this->uuid()),
-            'X-Idempotency-Key: ' . ($idempotencyKey ?: $this->uuid()),
+            'X-Request-Id: ' . ($requestId ?: $this->requestId('')),
+            'X-Idempotency-Key: ' . ($idempotencyKey ?: $this->idempotencyKey('')),
             'X-Timestamp: ' . time(),
             'X-Nonce: ' . bin2hex(random_bytes(16)),
             'X-Content-SHA256: ' . base64_encode(hash('sha256', $body, true)),
         ];
-        if ($payload !== null) {
-            $headers[] = 'Content-Type: application/json';
-        }
+        $headers[] = 'Content-Type: application/json';
 
         return $this->http($method, $this->apiUrl($endpoint), $headers, $body);
     }
@@ -336,7 +350,16 @@ final class GoDigitalGateway
 
     private function http(string $method, string $url, array $headers, string $body): array
     {
+        $request = [
+            'method' => strtoupper($method),
+            'url' => $this->safeUrl($url),
+            'headers' => $this->safeHeaders($headers),
+        ];
+        if ($body !== '') {
+            $request['body'] = $this->safeBody($body);
+        }
         if (!function_exists('curl_init')) {
+            $this->activity('http_failed', 'GoDigital request could not start.', $request + ['error' => 'PHP cURL is unavailable.']);
             throw new GoDigitalException('PHP cURL is required for the GoDigital integration.', 503);
         }
         $handle = curl_init($url);
@@ -355,18 +378,34 @@ final class GoDigitalGateway
         $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
         curl_close($handle);
         if ($raw === false) {
+            $this->activity('http_failed', 'GoDigital connection failed.', $request + [
+                'http_status' => $status ?: null,
+                'error' => $curlError ?: 'unknown cURL error.',
+            ]);
             throw new GoDigitalException('GoDigital connection failed: ' . ($curlError ?: 'unknown cURL error.'));
         }
 
         $decoded = json_decode($raw, true);
         if (!is_array($decoded)) {
+            $this->activity('http_failed', 'GoDigital returned a non-JSON response.', $request + [
+                'http_status' => $status,
+                'response' => $this->truncate($raw),
+            ]);
             throw new GoDigitalException('GoDigital returned a non-JSON response (HTTP ' . $status . ').');
         }
         if ($status < 200 || $status >= 300) {
+            $this->activity('http_failed', 'GoDigital returned HTTP ' . $status . '.', $request + [
+                'http_status' => $status,
+                'response' => $decoded,
+            ]);
             $message = (string) ($decoded['message'] ?? $decoded['error_description'] ?? $decoded['error'] ?? 'GoDigital rejected the request.');
             $code = isset($decoded['code']) ? ' (' . $decoded['code'] . ')' : '';
             throw new GoDigitalException($message . $code);
         }
+        $this->activity('http', 'GoDigital returned HTTP ' . $status . '.', $request + [
+            'http_status' => $status,
+            'response' => $decoded,
+        ]);
         return $decoded;
     }
 
@@ -531,12 +570,7 @@ final class GoDigitalGateway
 
     private function activity(string $type, string $message, array $context = []): void
     {
-        $context = array_filter($context, static function (mixed $value, string $key): bool {
-            return $key !== 'msisdn' || $value !== '';
-        }, ARRAY_FILTER_USE_BOTH);
-        if (isset($context['msisdn'])) {
-            $context['msisdn'] = '***' . substr((string) $context['msisdn'], -4);
-        }
+        $context = $this->safeLogValue($context);
         $this->store->transaction(function (array &$state) use ($type, $message, $context): void {
             $state['godigital_activity'] ??= [];
             $state['godigital_activity'][] = [
@@ -553,8 +587,66 @@ final class GoDigitalGateway
 
     private function uuid(): string
     {
-        $hex = bin2hex(random_bytes(16));
-        return substr($hex, 0, 8) . '-' . substr($hex, 8, 4) . '-4' . substr($hex, 13, 3)
-            . '-' . dechex((hexdec($hex[16]) & 0x3) | 0x8) . substr($hex, 17, 3) . '-' . substr($hex, 20);
+        return 'GD' . gmdate('ymdHis') . strtoupper(bin2hex(random_bytes(4)));
+    }
+
+    /** Keep browser-visible integration logs useful without persisting credentials or phone numbers. */
+    private function safeHeaders(array $headers): array
+    {
+        $safe = [];
+        foreach ($headers as $header) {
+            [$name, $value] = array_pad(explode(':', (string) $header, 2), 2, '');
+            $safe[trim($name)] = $this->safeLogValue(trim($value), trim($name));
+        }
+        return $safe;
+    }
+
+    private function safeBody(string $body): mixed
+    {
+        $decoded = json_decode($body, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        parse_str($body, $form);
+        return $form !== [] ? $form : $this->truncate($body);
+    }
+
+    private function safeUrl(string $url): string
+    {
+        $safe = preg_replace('#(/payments/wallets/balance/)[^?]+#', '$1[redacted]', $url) ?? $url;
+        $parts = parse_url($safe);
+        if (!is_array($parts) || !isset($parts['query'])) {
+            return $safe;
+        }
+        parse_str($parts['query'], $query);
+        foreach ($query as $key => $value) {
+            $query[$key] = $this->safeLogValue($value, (string) $key);
+        }
+        return strtok($safe, '?') . '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+    }
+
+    private function safeLogValue(mixed $value, string $key = ''): mixed
+    {
+        $key = strtolower($key);
+        if ($key !== '' && preg_match('/(?:authorization|token|secret|password|signature|client.?id|merchant.?id|idempotency)/', $key)) {
+            return '[redacted]';
+        }
+        if ($key !== '' && preg_match('/(?:msisdn|phone|mobile)/', $key)) {
+            $number = preg_replace('/\D+/', '', (string) $value);
+            return $number === '' ? '' : '***' . substr($number, -4);
+        }
+        if (is_array($value)) {
+            $safe = [];
+            foreach ($value as $childKey => $childValue) {
+                $safe[$childKey] = $this->safeLogValue($childValue, (string) $childKey);
+            }
+            return $safe;
+        }
+        return is_string($value) ? $this->truncate($value) : $value;
+    }
+
+    private function truncate(string $value): string
+    {
+        return strlen($value) > 2000 ? substr($value, 0, 2000) . '…' : $value;
     }
 }
