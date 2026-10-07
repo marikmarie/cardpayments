@@ -113,11 +113,24 @@ class CyberSource
             'body' => $this->redact($wirePayload),
         ]);
 
+        $responseHeaders = [];
         $ch = curl_init("https://{$this->host}{$path}");
         curl_setopt_array($ch, [
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_HEADERFUNCTION => static function ($handle, string $header) use (&$responseHeaders): int {
+                $length = strlen($header);
+                $separator = strpos($header, ':');
+                if ($separator === false) {
+                    return $length;
+                }
+                $name = strtolower(trim(substr($header, 0, $separator)));
+                if ($name !== '') {
+                    $responseHeaders[$name] = trim(substr($header, $separator + 1));
+                }
+                return $length;
+            },
             CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_TIMEOUT => $this->timeout,
             CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
@@ -150,7 +163,7 @@ class CyberSource
             return $response;
         }
 
-        $normalized = $this->normalize($code, $raw);
+        $normalized = $this->normalize($code, $raw, $responseHeaders);
         $normalized['operation'] = $operation;
         $normalized['invoice_status'] = $operation === 'invoice_status'
             ? ($normalized['data']['status'] ?? null)
@@ -214,6 +227,8 @@ class CyberSource
                 'status' => $data['invoice_status'] ?? $data['status'] ?? null,
                 'code' => $data['code'] ?? null,
                 'message' => $data['message'] ?? $data['error'] ?? null,
+                'correlation_id' => $data['correlation_id'] ?? null,
+                'diagnostic' => $data['diagnostic'] ?? null,
             ], static fn(mixed $value): bool => $value !== null && $value !== '');
             if (count($entries) >= max(1, $limit)) {
                 break;
@@ -319,7 +334,7 @@ class CyberSource
         return base64_encode($rawHmac);
     }
 
-    private function normalize(int $code, string $raw): array
+    private function normalize(int $code, string $raw, array $responseHeaders = []): array
     {
         $decoded = json_decode($raw, true);
         $data = is_array($decoded) ? $decoded : [];
@@ -333,6 +348,12 @@ class CyberSource
             ?? ($raw !== '' ? $raw : null)
             ?? ($ok ? 'OK' : 'Request failed');
         $error = $ok ? null : ($data['reason'] ?? $errorInformation['reason'] ?? $message);
+        $correlationId = $responseHeaders['v-c-correlation-id']
+            ?? $responseHeaders['correlation-id']
+            ?? null;
+        $diagnostic = $code === 401
+            ? 'The live REST credentials were rejected before the invoice could be read. Use a Production shared-secret REST key pair for this exact MID and confirm the Invoicing API is enabled. Unified Checkout is a separate Sessions API product.'
+            : null;
         return [
             'success' => $ok,
             'code' => $code,
@@ -342,6 +363,8 @@ class CyberSource
             'error' => $error,
             'data' => $data ?: null,
             'raw' => $raw,
+            'correlation_id' => $correlationId,
+            'diagnostic' => $diagnostic,
         ];
     }
 

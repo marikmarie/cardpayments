@@ -45,7 +45,7 @@
   <?php if ($log['entries']): ?>
     <div class="event-list provider-log-list">
       <?php foreach ($log['entries'] as $entry): ?>
-        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(trim(($entry['type'] ?? 'Event') . ' · ' . ($entry['operation'] ?? 'card gateway'))) ?></strong><small><?= \App\View::e((string) ($entry['time'] ?? '')) ?><?= !empty($entry['status']) ? ' · ' . \App\View::e((string) $entry['status']) : '' ?><?= !empty($entry['message']) ? ' · ' . \App\View::e((string) $entry['message']) : '' ?></small></div></div>
+        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(trim(($entry['type'] ?? 'Event') . ' · ' . ($entry['operation'] ?? 'card gateway'))) ?></strong><small><?= \App\View::e((string) ($entry['time'] ?? '')) ?><?= !empty($entry['status']) ? ' · ' . \App\View::e((string) $entry['status']) : '' ?><?= !empty($entry['message']) ? ' · ' . \App\View::e((string) $entry['message']) : '' ?><?= !empty($entry['correlation_id']) ? ' · Support ID ' . \App\View::e((string) $entry['correlation_id']) : '' ?><?= !empty($entry['diagnostic']) ? ' · ' . \App\View::e((string) $entry['diagnostic']) : '' ?></small></div></div>
       <?php endforeach; ?>
     </div>
   <?php else: ?>

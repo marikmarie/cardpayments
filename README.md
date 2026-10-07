@@ -120,6 +120,14 @@ Use **Refresh** on the invoice overview to retrieve the latest CyberSource payme
 - **Webhooks API** — configure it in CyberSource so completed, cancelled, partially paid, and sent invoices update automatically in CissyTech.
 - **Pay by Link API** — `/ipl/v2/payment-links`: consider it only after CyberSource confirms that Unified Checkout and Pay by Link are enabled for your MID. It is a separate CyberSource product from Invoicing.
 
+## Absa / CyberSource live 401
+
+The card-link flow currently calls CyberSource's **Invoicing API** (`/invoicing/v2/invoices`) using a Production shared-secret REST key pair. A `401 Unauthorized` is returned before CyberSource evaluates an invoice ID, amount, or customer data. Use a Production **shared-secret REST** key ID and Base64 secret created for the same transacting MID in `CYBERSOURCE_MERCHANT_ID`; webhook keys, JWT certificates, and keys from a different MID or test environment do not authenticate this request. Ask Absa/CyberSource to confirm that the Invoicing API is enabled for that MID.
+
+The supplied Unified Checkout guide describes a separate integration: it creates a capture-context JWT through `POST /uc/v1/sessions`, then renders CyberSource's browser SDK. It must be enabled for the MID, have card payment options configured, and use public HTTPS target origins. Enabling Unified Checkout does not grant access to the Invoicing API, and moving this project to that flow requires replacing its invoice-link lifecycle with the Sessions API and browser SDK.
+
+The dashboard now records CyberSource's response correlation ID when supplied, so include the **Support ID** shown in the Absa card log when escalating a rejected live request.
+
 ## Findings
 
 - Production requests go to `https://api.cybersource.com`; add production credentials from Production Business Center before creating an invoice.

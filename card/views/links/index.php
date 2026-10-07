@@ -55,7 +55,7 @@ $volume = array_sum(array_map(
   <?php if ($card_log['entries']): ?>
     <div class="event-list provider-log-list">
       <?php foreach ($card_log['entries'] as $entry): ?>
-        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(trim(($entry['type'] ?? 'Event') . ' · ' . ($entry['operation'] ?? 'card gateway'))) ?></strong><small><?= \App\View::e((string) ($entry['time'] ?? '')) ?><?= !empty($entry['status']) ? ' · ' . \App\View::e((string) $entry['status']) : '' ?><?= !empty($entry['message']) ? ' · ' . \App\View::e((string) $entry['message']) : '' ?></small></div></div>
+        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(trim(($entry['type'] ?? 'Event') . ' · ' . ($entry['operation'] ?? 'card gateway'))) ?></strong><small><?= \App\View::e((string) ($entry['time'] ?? '')) ?><?= !empty($entry['status']) ? ' · ' . \App\View::e((string) $entry['status']) : '' ?><?= !empty($entry['message']) ? ' · ' . \App\View::e((string) $entry['message']) : '' ?><?= !empty($entry['correlation_id']) ? ' · Support ID ' . \App\View::e((string) $entry['correlation_id']) : '' ?></small></div></div>
       <?php endforeach; ?>
     </div>
   <?php else: ?>

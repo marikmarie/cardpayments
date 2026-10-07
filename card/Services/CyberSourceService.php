@@ -28,9 +28,7 @@ final class CyberSourceService
             'currency' => $input['currency'],
             'send' => !empty($input['send']),
         ]);
-        if (!$result['success']) {
-            throw new \RuntimeException($result['message'] ?? 'Cybersource could not create the payment link.');
-        }
+        $this->throwIfFailed($result, 'Cybersource could not create the payment link.');
 
         $data = $result['data'] ?? [];
         return [
@@ -44,15 +42,30 @@ final class CyberSourceService
     public function send(string $invoiceId): array
     {
         $result = $this->client->sendInvoice($invoiceId);
-        if (!$result['success']) throw new \RuntimeException($result['message'] ?? 'Cybersource could not send the invoice.');
+        $this->throwIfFailed($result, 'Cybersource could not send the invoice.');
         return $result['data'] ?? [];
     }
 
     public function fetch(string $invoiceId): array
     {
         $result = $this->client->getInvoice($invoiceId);
-        if (!$result['success']) throw new \RuntimeException($result['message'] ?? 'Cybersource could not fetch the invoice.');
+        $this->throwIfFailed($result, 'Cybersource could not fetch the invoice.');
         return $result['data'] ?? [];
+    }
+
+    private function throwIfFailed(array $result, string $fallback): void
+    {
+        if (!empty($result['success'])) {
+            return;
+        }
+        $message = (string) ($result['message'] ?? $fallback);
+        if (!empty($result['diagnostic'])) {
+            $message .= ' ' . $result['diagnostic'];
+        }
+        if (!empty($result['correlation_id'])) {
+            $message .= ' Support ID: ' . $result['correlation_id'] . '.';
+        }
+        throw new \RuntimeException($message);
     }
 
 }
