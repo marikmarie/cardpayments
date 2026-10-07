@@ -15,34 +15,33 @@
       <span>Cissy<span>Tech</span><small>Payments</small></span>
     </a>
 
-    <p class="workspace-label">Menu</p>
+    <p class="workspace-label">Workspace</p>
     <nav class="side-nav">
       <a class="<?= ($active_nav ?? 'overview') === 'overview' ? 'active' : '' ?>" href="<?= $url('/links') ?>">
         <span>▦</span> Overview
       </a>
-      <a class="<?= ($active_nav ?? '') === 'create' ? 'active' : '' ?>" href="<?= $url('/links/create') ?>">
-        <span>＋</span> Create invoice
+      <a class="<?= ($active_nav ?? '') === 'absa' ? 'active' : '' ?>" href="<?= $url('/absa-cards') ?>">
+        <span>▣</span> Absa card payments
       </a>
-      <a class="<?= ($active_nav ?? '') === 'vendor' ? 'active' : '' ?>" href="<?= $url('/vendor-simulator') ?>">
-        <span>↗</span> Vendor simulator
-      </a>
+    </nav>
+
+    <p class="workspace-label nav-section-label">Payment rails</p>
+    <nav class="side-nav">
       <a class="<?= ($active_nav ?? '') === 'pegasus' ? 'active' : '' ?>" href="<?= $url('/pegasus-tester') ?>">
-        <span>⇄</span> PegPay test
-      </a>
-      <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
-        <span>◉</span> GoDigital test
+        <span>⇄</span> PegPay money
       </a>
       <a class="<?= ($active_nav ?? '') === 'pegasus-card' ? 'active' : '' ?>" href="<?= $url('/pegasus-card') ?>">
-        <span>▣</span> Card collections
+        <span>▤</span> PegPay cards
       </a>
-      <a class="<?= ($active_nav ?? '') === 'payouts' ? 'active' : '' ?>" href="<?= $url('/pegasus-payouts') ?>">
-        <span>▤</span> Payouts
+      <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
+        <span>◉</span> GoDigital money
       </a>
+    </nav>
+
+    <p class="workspace-label nav-section-label">Compliance</p>
+    <nav class="side-nav">
       <a class="<?= ($active_nav ?? '') === 'efris' ? 'active' : '' ?>" href="<?= $url('/efris-tester') ?>">
-        <span>▤</span> EFRIS UAT
-      </a>
-      <a class="<?= ($active_nav ?? '') === 'api' ? 'active' : '' ?>" href="<?= $url('/developers/api') ?>">
-        <span>⌘</span> API reference
+        <span>✓</span> EFRIS UAT
       </a>
     </nav>
 
@@ -52,7 +51,7 @@
   <div class="workspace">
     <header class="topbar">
       <h2><?= \App\View::e($title ?? 'Overview') ?></h2>
-      <?php $action = $topbar_action ?? ['label' => 'New invoice', 'href' => '/links/create']; ?>
+      <?php $action = $topbar_action ?? ['label' => 'Create payment', 'href' => '/links/create']; ?>
       <div class="topbar-actions">
         <a class="primary-action" href="<?= $url($action['href']) ?>"><?= \App\View::e($action['label']) ?></a>
         <form action="<?= $url('/login/logout') ?>" method="post">

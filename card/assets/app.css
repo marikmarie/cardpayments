@@ -72,13 +72,14 @@ body {
 }
 
 .workspace-label {
-  margin: 38px 12px 10px;
+  margin: 32px 12px 10px;
   color: #7a8e97;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.4px;
   text-transform: uppercase;
 }
+.nav-section-label { margin-top: 25px; }
 
 .side-nav { display: grid; gap: 6px; }
 
@@ -587,6 +588,13 @@ textarea { min-height: 72px; resize: vertical; }
 .copyable-value { font-family: Consolas, "Courier New", monospace; }
 .godigital-result { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
 .godigital-events { max-height: 385px; overflow-y: auto; }
+.provider-log-panel { margin-top: 20px; }
+.provider-log-panel .panel-header { align-items: flex-start; }
+.provider-log-panel .panel-header p:not(.eyebrow) { max-width: 720px; margin: 4px 0 0; color: var(--muted); }
+.provider-log-list { max-height: 340px; overflow-y: auto; }
+.card-workspace-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; padding: 20px 24px; border-color: #c6eaf7; background: #effaff; }
+.card-workspace-actions h3 { margin: 3px 0; font-size: 19px; }
+.card-workspace-actions p:not(.eyebrow) { max-width: 700px; margin: 0; color: var(--muted); }
 .efris-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .efris-tab { min-height: 34px; padding: 6px 11px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
 .efris-tab:hover, .efris-tab.is-active { border-color: var(--blue); background: var(--blue); color: #fff; }
@@ -639,7 +647,7 @@ textarea { min-height: 72px; resize: vertical; }
   .content { padding: 28px 18px 50px; }
   .metric-grid, .form-grid, .compact-form-grid, .godigital-summary-grid { grid-template-columns: 1fr; }
   .check-grid, .test-detail-grid { grid-template-columns: 1fr; }
-  .welcome-row, .api-band { align-items: flex-start; flex-direction: column; }
+  .welcome-row, .api-band, .card-workspace-actions { align-items: flex-start; flex-direction: column; }
   .key-form { width: 100%; flex-wrap: wrap; }
   .key-form input { min-width: 0; }
   .key-card { grid-template-columns: 1fr; }

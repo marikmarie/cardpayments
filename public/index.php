@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Controllers\ApiController;
 use App\Controllers\ApiDocsController;
+use App\Controllers\AbsaCardController;
 use App\Controllers\CheckoutController;
 use App\Controllers\LinkController;
 use App\Controllers\VendorSimulatorController;
@@ -111,6 +112,7 @@ try {
     if ($method === 'GET' && preg_match('#^/api/v1/godigital/wallets/balance/([^/]+)$#', $path, $m)) {
         (new GoDigitalController())->balance(rawurldecode($m[1]));
     }
+    if ($method === 'GET' && $path === '/api/v1/godigital/name-check') { (new GoDigitalController())->nameCheck(); }
     if ($method === 'GET' && $path === '/api/v1/efris/openapi.json') { (new EfrisController())->openApi(); }
     if ($method === 'GET' && $path === '/api/v1/efris/health') { (new EfrisController())->health(); }
     if ($method === 'GET' && $path === '/api/v1/efris/branches') { (new EfrisController())->branches(); }
@@ -145,6 +147,7 @@ try {
     if ($method === 'POST' && $path === '/godigital-tester/disbursement') { (new GoDigitalTesterController())->disbursement($_POST); }
     if ($method === 'POST' && $path === '/godigital-tester/status') { (new GoDigitalTesterController())->status($_POST); }
     if ($method === 'POST' && $path === '/godigital-tester/balance') { (new GoDigitalTesterController())->balance($_POST); }
+    if ($method === 'POST' && $path === '/godigital-tester/name-check') { (new GoDigitalTesterController())->nameCheck($_POST); }
     if ($method === 'GET' && $path === '/pegasus-payouts') { (new PegasusSimulatorController())->payouts(); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); exit; }
     if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); exit; }
@@ -159,6 +162,7 @@ try {
     $links = new LinkController();
     $vendor = new VendorSimulatorController();
     if ($method === 'GET' && $path === '/developers/api') { (new ApiDocsController())->index(); exit; }
+    if ($method === 'GET' && $path === '/absa-cards') { (new AbsaCardController())->index(); exit; }
     if ($method === 'GET' && $path === '/vendor-simulator') { $vendor->index(); exit; }
     if ($method === 'POST' && $path === '/vendor-simulator/payment-links') { $vendor->create($_POST); }
     if ($method === 'GET' && $path === '/links') { $links->index(); exit; }

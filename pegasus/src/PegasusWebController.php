@@ -23,6 +23,7 @@ final class PegasusWebController extends Controller
         View::renderModule('pegasus', 'card-collections', [
             'title' => 'Card collections',
             'active_nav' => 'pegasus-card',
+            'topbar_action' => ['label' => 'PegPay money', 'href' => '/pegasus-tester'],
             'configured' => $this->gateway->configured(),
             'collections' => $collections,
             'last_collection_id' => $collections[0]['id'] ?? '',

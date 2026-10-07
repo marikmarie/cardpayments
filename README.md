@@ -59,7 +59,7 @@ The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from ca
 
 ## GoDigital gateway
 
-The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). Its dashboard tester is at `/godigital-tester`; it has separate tabs for connection, C2B collections, B2C payouts, status, wallet balance, callback setup, and activity. Configure its credentials only in `.env`, allow-list the deployed server's public outbound IP with GoDigital, and use the public HTTPS callback `/webhooks/godigital`.
+The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). Its dashboard tester follows the v1.1.4 contract and has separate tabs for connection, C2B collections, B2C payouts, status, wallet balance, recipient name check, callback setup, and logs. Configure its credentials only in `.env`, allow-list the deployed server's public outbound IP with GoDigital, and use the public HTTPS callback `/webhooks/godigital`.
 
 ## Database deployment
 

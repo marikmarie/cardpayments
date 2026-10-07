@@ -1,4 +1,4 @@
-<?php /** @var array $staff */ /** @var array|null $review */ ?>
+<?php /** @var array $staff */ /** @var array|null $review */ /** @var array $log */ ?>
 <?php if (!$review): ?>
   <section class="create-heading">
     <p class="eyebrow">Payouts</p>
@@ -52,3 +52,12 @@
     <div class="form-actions"><a class="outline-action" href="<?= $url('/pegasus-payouts') ?>">Back</a><form action="<?= $url('/pegasus-payouts/send') ?>" method="post"><button class="primary-action">Send <?= count($review['items']) ?> payouts</button></form></div>
   </section>
 <?php endif; ?>
+
+<section class="panel provider-log-panel">
+  <div class="panel-header"><div><p class="eyebrow">Logs</p><h3>PegPay payout activity</h3><p>Latest redacted requests and responses for the PegPay payment rail.</p></div><a class="outline-action" href="<?= $url('/pegasus-tester') ?>">Open PegPay tester</a></div>
+  <?php if ($log['entries']): ?>
+    <pre class="code-block"><code><?= \App\View::e(json_encode($log['entries'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></code></pre>
+  <?php else: ?>
+    <div class="event-empty"><span>◌</span><p>No payout activity has been logged yet.</p></div>
+  <?php endif; ?>
+</section>

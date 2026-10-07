@@ -11,10 +11,11 @@ $volume = array_sum(array_map(
 
 <section class="welcome-row">
   <div>
-    <h1>Overview</h1>
-    <p>Invoices and payments.</p>
+    <p class="eyebrow">Payment operations</p>
+    <h1>Payments overview</h1>
+    <p>Card payment links, settlement progress, and the latest provider activity.</p>
   </div>
-  <a class="outline-action" href="<?= $url('/links/create') ?>">New invoice</a>
+  <a class="outline-action" href="<?= $url('/links/create') ?>">Create payment</a>
 </section>
 
 <section class="metric-grid">
@@ -35,15 +36,31 @@ $volume = array_sum(array_map(
 <section class="panel checkout-setting">
   <form action="<?= $url('/settings/checkout-type') ?>" method="post">
     <label>
-      Payment link used now
+      Customer checkout route
       <select name="checkout_type">
-        <option value="cissytech" <?= $checkout_type === 'cissytech' ? 'selected' : '' ?>>CissyTech payment link</option>
-        <option value="cybersource" <?= $checkout_type === 'cybersource' ? 'selected' : '' ?>>CyberSource payment link</option>
+        <option value="cissytech" <?= $checkout_type === 'cissytech' ? 'selected' : '' ?>>CissyTech-branded checkout</option>
+        <option value="cybersource" <?= $checkout_type === 'cybersource' ? 'selected' : '' ?>>Direct secure card checkout</option>
       </select>
     </label>
     <button class="primary-action">Save</button>
   </form>
-  <small><?= $checkout_type === 'cissytech' ? 'Customers see your CissyTech page before secure CyberSource checkout.' : 'Customers open CyberSource checkout directly.' ?></small>
+  <small><?= $checkout_type === 'cissytech' ? 'Customers see your CissyTech page before secure card checkout.' : 'Customers open secure card checkout directly.' ?></small>
+</section>
+
+<section class="panel provider-log-panel">
+  <div class="panel-header">
+    <div><p class="eyebrow">Card payments</p><h3>Absa / CyberSource activity</h3><p>Recent card gateway requests and responses. Authentication signatures, card data, and customer fields are never displayed here.</p></div>
+    <a class="outline-action" href="<?= $url('/absa-cards') ?>">Open card workspace</a>
+  </div>
+  <?php if ($card_log['entries']): ?>
+    <div class="event-list provider-log-list">
+      <?php foreach ($card_log['entries'] as $entry): ?>
+        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(trim(($entry['type'] ?? 'Event') . ' · ' . ($entry['operation'] ?? 'card gateway'))) ?></strong><small><?= \App\View::e((string) ($entry['time'] ?? '')) ?><?= !empty($entry['status']) ? ' · ' . \App\View::e((string) $entry['status']) : '' ?><?= !empty($entry['message']) ? ' · ' . \App\View::e((string) $entry['message']) : '' ?></small></div></div>
+      <?php endforeach; ?>
+    </div>
+  <?php else: ?>
+    <div class="event-empty"><span>◌</span><p>No card gateway activity yet. Create or refresh a card payment link to populate this log.</p></div>
+  <?php endif; ?>
 </section>
 
 <section class="panel recent-panel">

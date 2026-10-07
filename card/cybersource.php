@@ -189,6 +189,40 @@ class CyberSource
         }
     }
 
+    /** Safe, compact activity records for the dashboard; credentials and customer fields stay hidden. */
+    public static function logDetails(int $limit = 30): array
+    {
+        $path = dirname(__DIR__) . '/storage/cybersource.log';
+        if (!is_file($path)) {
+            return ['path' => 'storage/cybersource.log', 'entries' => []];
+        }
+
+        $blocks = preg_split('/\R\s*\R/', trim((string) file_get_contents($path))) ?: [];
+        $entries = [];
+        foreach (array_reverse($blocks) as $block) {
+            $entry = json_decode($block, true);
+            if (!is_array($entry) || !is_array($entry['data'] ?? null)) {
+                continue;
+            }
+            $data = $entry['data'];
+            $entries[] = array_filter([
+                'time' => $entry['time'] ?? null,
+                'type' => $entry['type'] ?? null,
+                'operation' => $data['operation'] ?? null,
+                'method' => $data['method'] ?? null,
+                'url' => $data['url'] ?? null,
+                'status' => $data['invoice_status'] ?? $data['status'] ?? null,
+                'code' => $data['code'] ?? null,
+                'message' => $data['message'] ?? $data['error'] ?? null,
+            ], static fn(mixed $value): bool => $value !== null && $value !== '');
+            if (count($entries) >= max(1, $limit)) {
+                break;
+            }
+        }
+
+        return ['path' => 'storage/cybersource.log', 'entries' => $entries];
+    }
+
     /** Keep request diagnostics useful without writing card data to disk. */
     private function redact($data)
     {

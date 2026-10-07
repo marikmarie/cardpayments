@@ -41,6 +41,24 @@ final class Gateway
         ];
     }
 
+    /** Compact, safe audit history for the EFRIS dashboard log tab. */
+    public function recentActivity(int $limit = 30): array
+    {
+        return $this->store->transaction(function (array $data) use ($limit): array {
+            $references = [];
+            foreach ($data['efris_invoices'] ?? [] as $invoice) {
+                $references[(string) ($invoice['id'] ?? '')] = $invoice['external_reference'] ?? null;
+            }
+            $events = array_reverse($data['efris_audit'] ?? []);
+            $events = array_slice($events, 0, max(1, $limit));
+            return array_map(static fn(array $event): array => [
+                'at' => $event['created_at'] ?? null,
+                'action' => $event['action'] ?? 'unknown',
+                'reference' => $references[(string) ($event['target_id'] ?? '')] ?? null,
+            ], $events);
+        }, false);
+    }
+
     /** Returns only the branches belonging to the API key's tenant. */
     public function branches(array $apiKey): array
     {
@@ -123,6 +141,7 @@ final class Gateway
         foreach ($this->store->read('efris_invoices') as $record) {
             if (($record['tenant_id'] ?? null) === $tenant['id']
                 && ($record['external_reference'] ?? null) === $externalReference) {
+                $this->recordAudit($tenant['id'], 'invoice.status_checked', (string) $record['id']);
                 return $this->presentInvoice($record, false, 200);
             }
         }
@@ -185,6 +204,13 @@ final class Gateway
             ));
             $assignments[] = ['api_key_id' => $apiKeyId, 'tenant_id' => $tenantId, 'created_at' => gmdate('c')];
             $data['efris_api_key_assignments'] = $assignments;
+            $data['efris_audit'][] = [
+                'id' => bin2hex(random_bytes(12)),
+                'tenant_id' => $tenantId,
+                'action' => 'tenant.test_configured',
+                'target_id' => $tenantId,
+                'created_at' => gmdate('c'),
+            ];
             return $tenant;
         });
 
@@ -220,6 +246,22 @@ final class Gateway
             }
         }
         throw new GatewayException(403, 'The EFRIS tenant assigned to this API key is unavailable.');
+    }
+
+    private function recordAudit(string $tenantId, string $action, string $targetId): void
+    {
+        $this->store->transaction(function (array &$data) use ($tenantId, $action, $targetId): void {
+            $data['efris_audit'][] = [
+                'id' => bin2hex(random_bytes(12)),
+                'tenant_id' => $tenantId,
+                'action' => $action,
+                'target_id' => $targetId,
+                'created_at' => gmdate('c'),
+            ];
+            if (count($data['efris_audit']) > 200) {
+                $data['efris_audit'] = array_slice($data['efris_audit'], -200);
+            }
+        });
     }
 
     private function validateInvoice(array $input, array $tenant): array

@@ -31,12 +31,14 @@ final class LinkController extends Controller
     public function index(): void
     {
         View::render('links/index', [
-            'title' => 'Invoices',
+            'title' => 'Overview',
+            'active_nav' => 'overview',
             'links' => $this->links->all(),
             'flash' => $_SESSION['flash'] ?? null,
             'api_key' => $_SESSION['new_api_key'] ?? null,
             'api_keys' => $this->keys->all(),
             'checkout_type' => $this->checkoutSettings->type(),
+            'card_log' => \CyberSource::logDetails(),
         ]);
         unset($_SESSION['flash'], $_SESSION['new_api_key']);
     }

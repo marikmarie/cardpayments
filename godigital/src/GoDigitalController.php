@@ -51,6 +51,19 @@ final class GoDigitalController extends Controller
         }
     }
 
+    public function nameCheck(): never
+    {
+        $this->apiKey($this->keys);
+        try {
+            $this->json(['data' => $this->gateway->nameCheck([
+                'provider_code' => $_GET['provider_code'] ?? $_GET['providerCode'] ?? '',
+                'msisdn' => $_GET['msisdn'] ?? '',
+            ])]);
+        } catch (GoDigitalException $e) {
+            $this->json(['error' => $e->getMessage()], $e->httpStatus);
+        }
+    }
+
     public function openApi(): never
     {
         $baseUrl = rtrim((string) Config::get('APP_URL', ''), '/');
@@ -104,6 +117,15 @@ final class GoDigitalController extends Controller
                     'summary' => 'Get the GoDigital wallet balance',
                     'parameters' => [['name' => 'clientId', 'in' => 'path', 'required' => true, 'schema' => ['type' => 'string']]],
                     'responses' => ['200' => ['description' => 'Wallet balance'], '401' => ['description' => 'Invalid API key'], '502' => ['description' => 'Provider error']],
+                ]],
+                '/api/v1/godigital/name-check' => ['get' => [
+                    'summary' => 'Verify a mobile-money recipient name',
+                    'description' => 'Uses the providerCode and MSISDN query parameters. This endpoint follows GoDigital v1.1.4 and does not use the OAuth payment headers.',
+                    'parameters' => [
+                        ['name' => 'provider_code', 'in' => 'query', 'required' => true, 'schema' => ['type' => 'string', 'enum' => ['YAS', 'VODACOM', 'HALOTEL', 'AIRTEL']]],
+                        ['name' => 'msisdn', 'in' => 'query', 'required' => true, 'schema' => ['type' => 'string', 'example' => '255754123456']],
+                    ],
+                    'responses' => ['200' => ['description' => 'Name-check result'], '401' => ['description' => 'Invalid API key'], '422' => ['description' => 'Invalid provider or MSISDN'], '502' => ['description' => 'Provider error']],
                 ]],
             ],
         ]);

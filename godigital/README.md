@@ -9,11 +9,14 @@ This module connects CissyTech Payments to the GoDigital Payments API v1. It is 
 - B2C disbursement: `POST /payments/disbursements`.
 - Payment status: `GET /payments/{reference}`.
 - Wallet balance: `GET /payments/wallets/balance/{clientId}`.
+- Recipient name check (v1.1.4): `GET /payments/name-check?providerCode={providerCode}&msisdn={msisdn}`.
 - GoDigital-required request headers: bearer token, client ID, request ID, idempotency key, timestamp, nonce, and Base64 SHA-256 content hash.
 - Public callback receiver at `/webhooks/godigital`, including duplicate callback and duplicate transaction protection.
-- A dashboard tester at `/godigital-tester` with separate Connection, C2B collection, B2C payout, Status, Wallet, Callbacks, and Activity tabs.
+- A dashboard tester at `/godigital-tester` with separate Connection, C2B collection, B2C payout, Status, Wallet, Name check, Callbacks, and Logs tabs.
 
 The integration does not return OAuth access tokens, client secrets, or provider credentials to browsers or API callers.
+
+The v1.1.4 name-check endpoint is intentionally separate from payment creation: GoDigital specifies `Accept`, `X-Client-Id`, and `X-Request-Id` for that lookup. The implementation follows that header set and does not add payment OAuth headers to the request.
 
 ## Before GoDigital testing
 
@@ -63,6 +66,7 @@ Create a dashboard API key and send it as `X-API-Key`. API callers should also s
 | `POST` | `/api/v1/godigital/disbursements` | Request a B2C payout |
 | `GET` | `/api/v1/godigital/payments/{reference}` | Check provider status |
 | `GET` | `/api/v1/godigital/wallets/balance/{clientId}` | Check wallet balance |
+| `GET` | `/api/v1/godigital/name-check?provider_code=VODACOM&msisdn=255754123456` | Verify a recipient name |
 | `GET` | `/api/v1/godigital/openapi.json` | OpenAPI document |
 | `POST` | `/webhooks/godigital` | GoDigital callback receiver |
 | `GET` | `/webhooks/godigital/health` | Callback health check |

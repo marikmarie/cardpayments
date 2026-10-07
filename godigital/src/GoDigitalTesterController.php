@@ -22,6 +22,7 @@ final class GoDigitalTesterController extends Controller
         View::renderModule('godigital', 'simulator', [
             'title' => 'GoDigital test',
             'active_nav' => 'godigital',
+            'topbar_action' => ['label' => 'GoDigital API', 'href' => '/api/v1/godigital/openapi.json'],
             'configuration' => $this->gateway->configuration(),
             'result' => $_SESSION['godigital_result'] ?? null,
             'active_tab' => $_SESSION['godigital_active_tab'] ?? 'connection',
@@ -56,6 +57,11 @@ final class GoDigitalTesterController extends Controller
     public function balance(array $input): never
     {
         $this->run('balance', fn() => $this->gateway->balance($this->value($input, 'client_id')), 'Wallet balance retrieved.');
+    }
+
+    public function nameCheck(array $input): never
+    {
+        $this->run('name-check', fn() => $this->gateway->nameCheck($input), 'Name check completed.');
     }
 
     private function run(string $tab, callable $operation, string $success, string $reference = ''): never

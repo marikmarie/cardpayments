@@ -42,16 +42,23 @@ final class GoDigitalGateway
     /** Requests an OAuth token but deliberately never returns the token itself. */
     public function tokenDetails(): array
     {
-        $this->requireConfiguration(false);
-        $response = $this->oauthToken();
-        $this->activity('oauth_token', 'OAuth token accepted by GoDigital.');
+        try {
+            $this->requireConfiguration(false);
+            $response = $this->oauthToken();
+            $this->activity('oauth_token', 'OAuth token accepted by GoDigital.', [
+                'expires_in' => $response['expires_in'] ?? null,
+            ]);
 
-        return [
-            'token_type' => (string) ($response['token_type'] ?? 'Bearer'),
-            'expires_in' => (int) ($response['expires_in'] ?? 0),
-            'scope' => $response['scope'] ?? null,
-            'received_at' => gmdate('c'),
-        ];
+            return [
+                'token_type' => (string) ($response['token_type'] ?? 'Bearer'),
+                'expires_in' => (int) ($response['expires_in'] ?? 0),
+                'scope' => $response['scope'] ?? null,
+                'received_at' => gmdate('c'),
+            ];
+        } catch (\Throwable $e) {
+            $this->activity('oauth_token_failed', 'OAuth token request failed: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     /** Submit a C2B mobile-money collection request. */
@@ -69,19 +76,24 @@ final class GoDigitalGateway
     /** Retrieve a GoDigital transaction by its merchant reference. */
     public function status(string $reference): array
     {
-        $this->requireConfiguration(false);
         $reference = $this->reference($reference);
-        $response = $this->authorizedRequest('GET', '/payments/' . rawurlencode($reference));
-        $data = is_array($response['data'] ?? null) ? $response['data'] : [];
-        $this->updateFromProvider($reference, $data, $response);
-        $this->activity('status', 'Status checked for ' . $reference . '.', ['reference' => $reference]);
+        try {
+            $this->requireConfiguration(false);
+            $response = $this->authorizedRequest('GET', '/payments/' . rawurlencode($reference));
+            $data = is_array($response['data'] ?? null) ? $response['data'] : [];
+            $this->updateFromProvider($reference, $data, $response);
+            $this->activity('status', 'Status checked for ' . $reference . '.', ['reference' => $reference]);
 
-        return [
-            'reference' => $reference,
-            'provider_status' => $data['transactionStatus'] ?? $response['status'] ?? null,
-            'transaction_id' => $data['transactionId'] ?? null,
-            'response' => $response,
-        ];
+            return [
+                'reference' => $reference,
+                'provider_status' => $data['transactionStatus'] ?? $response['status'] ?? null,
+                'transaction_id' => $data['transactionId'] ?? null,
+                'response' => $response,
+            ];
+        } catch (\Throwable $e) {
+            $this->activity('status_failed', 'Status check failed for ' . $reference . ': ' . $e->getMessage(), ['reference' => $reference]);
+            throw $e;
+        }
     }
 
     /** Retrieve a wallet balance for the configured or supplied GoDigital client ID. */
@@ -93,9 +105,43 @@ final class GoDigitalGateway
             throw new GoDigitalException('Use a valid GoDigital client ID.', 422);
         }
 
-        $response = $this->authorizedRequest('GET', '/payments/wallets/balance/' . rawurlencode($clientId));
-        $this->activity('balance', 'Wallet balance checked.');
-        return $response;
+        try {
+            $response = $this->authorizedRequest('GET', '/payments/wallets/balance/' . rawurlencode($clientId));
+            $this->activity('balance', 'Wallet balance checked.');
+            return $response;
+        } catch (\Throwable $e) {
+            $this->activity('balance_failed', 'Wallet balance check failed: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /** Verify the registered mobile-money recipient name before a payment. */
+    public function nameCheck(array $input): array
+    {
+        $this->requireNameCheckConfiguration();
+        $provider = $this->providerCode($input['provider_code'] ?? $input['providerCode'] ?? '');
+        $msisdn = $this->msisdn($input['msisdn'] ?? '');
+        $query = http_build_query(['providerCode' => $provider, 'msisdn' => $msisdn], '', '&', PHP_QUERY_RFC3986);
+
+        try {
+            $response = $this->http('GET', $this->apiUrl('/payments/name-check') . '?' . $query, [
+                'Accept: application/json',
+                'X-Client-Id: ' . $this->config('GODIGITAL_CLIENT_ID'),
+                'X-Request-Id: ' . $this->uuid(),
+            ], '');
+            $this->activity('name_check', 'Name check completed for ' . $provider . '.', [
+                'provider_code' => $provider,
+                'msisdn' => $msisdn,
+                'result' => $response['data']['resultCode'] ?? $response['code'] ?? null,
+            ]);
+            return $response;
+        } catch (\Throwable $e) {
+            $this->activity('name_check_failed', 'Name check failed: ' . $e->getMessage(), [
+                'provider_code' => $provider,
+                'msisdn' => $msisdn,
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -330,14 +376,8 @@ final class GoDigitalGateway
         if (!preg_match('/^(?:[1-9]\d*)(?:\.\d{1,2})?$/', $amount)) {
             throw new GoDigitalException('amount must be a positive TZS value with at most two decimal places.', 422);
         }
-        $provider = strtoupper(trim((string) ($input['provider_code'] ?? $input['providerCode'] ?? '')));
-        if (!in_array($provider, self::PROVIDERS, true)) {
-            throw new GoDigitalException('provider_code must be YAS, VODACOM, HALOTEL, or AIRTEL.', 422);
-        }
-        $msisdn = preg_replace('/\s+/', '', (string) ($input['msisdn'] ?? ''));
-        if (!preg_match('/^255\d{9}$/', $msisdn)) {
-            throw new GoDigitalException('msisdn must use Tanzania international format, for example 255754123456.', 422);
-        }
+        $provider = $this->providerCode($input['provider_code'] ?? $input['providerCode'] ?? '');
+        $msisdn = $this->msisdn($input['msisdn'] ?? '');
         $currency = strtoupper(trim((string) ($input['currency'] ?? 'TZS')));
         if ($currency !== 'TZS') {
             throw new GoDigitalException('GoDigital payment currency must be TZS.', 422);
@@ -382,6 +422,24 @@ final class GoDigitalGateway
         return $value;
     }
 
+    private function providerCode(mixed $value): string
+    {
+        $provider = strtoupper(trim((string) $value));
+        if (!in_array($provider, self::PROVIDERS, true)) {
+            throw new GoDigitalException('provider_code must be YAS, VODACOM, HALOTEL, or AIRTEL.', 422);
+        }
+        return $provider;
+    }
+
+    private function msisdn(mixed $value): string
+    {
+        $msisdn = preg_replace('/\s+/', '', (string) $value);
+        if (!preg_match('/^255\d{9}$/', $msisdn)) {
+            throw new GoDigitalException('msisdn must use Tanzania international format, for example 255754123456.', 422);
+        }
+        return $msisdn;
+    }
+
     private function idempotencyKey(string $value): string
     {
         $value = trim($value) ?: $this->uuid();
@@ -410,6 +468,15 @@ final class GoDigitalGateway
         if ($payment) {
             $keys[] = 'GODIGITAL_MERCHANT_ID';
         }
+        $missing = array_filter($keys, fn(string $key): bool => trim((string) Config::get($key, '')) === '');
+        if ($missing) {
+            throw new GoDigitalException('Missing GoDigital configuration: ' . implode(', ', $missing) . '.', 503);
+        }
+    }
+
+    private function requireNameCheckConfiguration(): void
+    {
+        $keys = ['GODIGITAL_BASE_URL', 'GODIGITAL_CLIENT_ID'];
         $missing = array_filter($keys, fn(string $key): bool => trim((string) Config::get($key, '')) === '');
         if ($missing) {
             throw new GoDigitalException('Missing GoDigital configuration: ' . implode(', ', $missing) . '.', 503);

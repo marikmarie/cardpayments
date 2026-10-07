@@ -22,6 +22,7 @@ final class PegasusSimulatorController extends Controller
         View::renderModule('pegasus', 'simulator', [
             'title' => 'PegPay test',
             'active_nav' => 'pegasus',
+            'topbar_action' => ['label' => 'Payout batches', 'href' => '/pegasus-payouts'],
             'samples' => $this->samples(),
             'mobile_networks' => ['MTN' => 'MTN Mobile Money', 'AIRTEL' => 'Airtel Money'],
             'payout_networks' => $this->payoutNetworks(),
@@ -157,6 +158,7 @@ final class PegasusSimulatorController extends Controller
             'topbar_action' => ['label' => 'PegPay test', 'href' => '/pegasus-tester'],
             'staff' => $this->staff(),
             'review' => null,
+            'log' => $this->pegasus->logDetails(),
             'flash' => $_SESSION['flash'] ?? null,
         ]);
         unset($_SESSION['flash']);
@@ -173,6 +175,7 @@ final class PegasusSimulatorController extends Controller
                 'topbar_action' => ['label' => 'PegPay test', 'href' => '/pegasus-tester'],
                 'staff' => $this->staff(),
                 'review' => $review,
+                'log' => $this->pegasus->logDetails(),
                 'flash' => null,
             ]);
         } catch (\Throwable $e) {

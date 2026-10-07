@@ -30,6 +30,7 @@ final class EfrisSimulatorController extends Controller
             'active_nav' => 'efris',
             'topbar_action' => ['label' => 'EFRIS API spec', 'href' => '/api/v1/efris/openapi.json'],
             'health' => $this->gateway->health(),
+            'activity' => $this->gateway->recentActivity(),
             'api_keys' => $this->keys->all(),
             'setup' => $_SESSION['efris_tester_setup'] ?? [],
             'invoice' => $_SESSION['efris_tester_invoice'] ?? [],

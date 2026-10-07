@@ -38,6 +38,7 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
   <button type="button" class="efris-tab" data-efris-tab="setup">1. Test setup</button>
   <button type="button" class="efris-tab" data-efris-tab="invoice">2. Submit invoice</button>
   <button type="button" class="efris-tab" data-efris-tab="status">3. Check status</button>
+  <button type="button" class="efris-tab" data-efris-tab="logs">Logs</button>
   <button type="button" class="efris-tab" data-efris-tab="readiness">URA readiness</button>
 </nav>
 
@@ -134,6 +135,22 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS-{$stamp}");
     <div class="form-actions compact-actions"><button class="secondary-action">Check status</button></div>
   </form>
   <?php if ($status_result): ?><p><strong>Stored test response</strong></p><pre class="code-block"><?= \App\View::e(json_encode($status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre><?php endif; ?>
+</section>
+
+<section class="panel compact-form-section" data-efris-panel="logs" hidden>
+  <div class="section-title">
+    <span>≡</span>
+    <div><h3>EFRIS activity log</h3><p>Shows local tenant setup, mock invoice acceptance, and status checks. No URA credentials or private keys are recorded.</p></div>
+  </div>
+  <?php if ($activity): ?>
+    <div class="event-list">
+      <?php foreach ($activity as $event): ?>
+        <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e(str_replace('.', ' · ', (string) ($event['action'] ?? '')) ) ?></strong><small><?= \App\View::e((string) ($event['at'] ?? '')) ?><?= !empty($event['reference']) ? ' · ' . \App\View::e((string) $event['reference']) : '' ?></small></div></div>
+      <?php endforeach; ?>
+    </div>
+  <?php else: ?>
+    <div class="event-empty"><span>◌</span><p>No EFRIS events yet. Save a test tenant or submit a mock invoice to begin the audit trail.</p></div>
+  <?php endif; ?>
 </section>
 
 <section class="panel compact-form-section" data-efris-panel="readiness" hidden>

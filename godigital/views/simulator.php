@@ -50,8 +50,9 @@ $lastReference = $last_reference ?: $newReference('GD-C2B');
     <button type="button" class="pegasus-tab" data-godigital-tab="disbursement">B2C payout</button>
     <button type="button" class="pegasus-tab" data-godigital-tab="status">Status</button>
     <button type="button" class="pegasus-tab" data-godigital-tab="balance">Wallet</button>
+    <button type="button" class="pegasus-tab" data-godigital-tab="name-check">Name check</button>
     <button type="button" class="pegasus-tab" data-godigital-tab="callbacks">Callbacks</button>
-    <button type="button" class="pegasus-tab" data-godigital-tab="activity">Activity</button>
+    <button type="button" class="pegasus-tab" data-godigital-tab="activity">Logs</button>
   </div>
 
   <div data-godigital-panel="connection">
@@ -113,6 +114,15 @@ $lastReference = $last_reference ?: $newReference('GD-C2B');
       <label class="wide">Client ID (optional)<input name="client_id" maxlength="120" placeholder="Configured client ID"></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check wallet balance</button></div>
+  </form>
+
+  <form method="post" action="<?= $url('/godigital-tester/name-check') ?>" class="godigital-payment-form" data-godigital-panel="name-check">
+    <p class="helper-copy">GoDigital v1.1.4 name check confirms the registered recipient before you start a payment. It uses the client ID and a request ID only.</p>
+    <div class="compact-form-grid">
+      <label>Provider<select name="provider_code" required><option value="VODACOM">Vodacom</option><option value="YAS">Yas</option><option value="AIRTEL">Airtel</option><option value="HALOTEL">Halotel</option></select></label>
+      <label>MSISDN<input name="msisdn" inputmode="numeric" value="255754123456" pattern="255[0-9]{9}" required></label>
+    </div>
+    <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check recipient name</button></div>
   </form>
 
   <div data-godigital-panel="callbacks">
