@@ -46,12 +46,23 @@ GODIGITAL_TIMEOUT_SECONDS="30"
 
 Keep UAT and production values separate. Changing between environments requires changing all four provider values together: base URL, client ID, client secret, and merchant ID.
 
+## UAT test MSISDNs
+
+The GoDigital tester fills in the matching number whenever a provider is selected. All UAT numbers use Tanzania's `255` country code without a leading zero.
+
+| Provider code | Network | UAT MSISDN |
+| --- | --- | --- |
+| `YAS` | Mixx | `255712691323` |
+| `VODACOM` | M-Pesa | `255766271010` |
+| `AIRTEL` | Airtel | `255692478295` |
+| `HALOTEL` | HaloPesa | `255622160766` |
+
 ## Dashboard test workflow
 
 1. Sign in to the CissyTech dashboard, open **GoDigital** in the sidebar, then open **OAuth**.
 2. Verify the three readiness cards: gateway URL, OAuth credentials, and HTTPS callback.
 3. Select **Check OAuth connection**. Fix missing configuration, invalid credentials (`PGW-1001`), or IP allow-list errors (`PGW-1009`) before continuing.
-4. In **C2B collection**, enter a unique reference, an approved test MSISDN in `2557XXXXXXXX` format, provider, and TZS amount. Submit it, then wait for the callback or use **Status**.
+4. In **C2B collection**, select the provider so its UAT MSISDN is filled in, enter a unique reference and TZS amount, then submit it. Wait for the callback or use **Status**.
 5. In **B2C payout**, use an approved test recipient and repeat the final-status check.
 6. Use **Wallet** to confirm the wallet balance before payout tests.
 7. In **Callbacks**, copy the shown endpoint into the GoDigital merchant configuration. It returns `200 {"status":"RECEIVED"}` when it accepts a delivery.

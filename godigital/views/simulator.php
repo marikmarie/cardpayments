@@ -78,8 +78,8 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($lastReference) ?>" maxlength="120" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
-      <label>Provider<select name="provider_code" required><option value="VODACOM">Vodacom</option><option value="YAS">Yas</option><option value="AIRTEL">Airtel</option><option value="HALOTEL">Halotel</option></select></label>
-      <label>Customer MSISDN<input name="msisdn" inputmode="numeric" value="255754123456" pattern="255[0-9]{9}" required></label>
+      <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
+      <label>Customer MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
       <label class="wide">Narration<input name="narration" value="GoDigital collection" maxlength="200"></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request collection</button></div>
@@ -93,8 +93,8 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($newReference('GDB2C')) ?>" maxlength="120" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
-      <label>Provider<select name="provider_code" required><option value="VODACOM">Vodacom</option><option value="YAS">Yas</option><option value="AIRTEL">Airtel</option><option value="HALOTEL">Halotel</option></select></label>
-      <label>Recipient MSISDN<input name="msisdn" inputmode="numeric" value="255754123456" pattern="255[0-9]{9}" required></label>
+      <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
+      <label>Recipient MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
       <label class="wide">Narration<input name="narration" value="GoDigital payout" maxlength="200"></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request payout</button></div>
@@ -119,8 +119,8 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
   <form method="post" action="<?= $url('/godigital-tester/name-check') ?>" class="godigital-payment-form" data-godigital-panel="name-check">
     <p class="helper-copy">Confirm the recipient before payment.</p>
     <div class="compact-form-grid">
-      <label>Provider<select name="provider_code" required><option value="VODACOM">Vodacom</option><option value="YAS">Yas</option><option value="AIRTEL">Airtel</option><option value="HALOTEL">Halotel</option></select></label>
-      <label>MSISDN<input name="msisdn" inputmode="numeric" value="255754123456" pattern="255[0-9]{9}" required></label>
+      <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
+      <label>MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check recipient name</button></div>
   </form>
@@ -169,6 +169,15 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
     document.querySelectorAll('[data-godigital-panel]').forEach((panel) => { panel.hidden = panel.dataset.godigitalPanel !== tab; });
   };
   tabs.querySelectorAll('[data-godigital-tab]').forEach((button) => button.addEventListener('click', () => show(button.dataset.godigitalTab)));
+  document.querySelectorAll('[data-godigital-provider]').forEach((provider) => {
+    const msisdn = provider.closest('form')?.querySelector('[data-godigital-msisdn]');
+    const setTestMsisdn = () => {
+      const value = provider.selectedOptions[0]?.dataset.testMsisdn;
+      if (msisdn && value) msisdn.value = value;
+    };
+    provider.addEventListener('change', setTestMsisdn);
+    setTestMsisdn();
+  });
   show(tabs.dataset.defaultTab || 'connection');
 })();
 </script>
