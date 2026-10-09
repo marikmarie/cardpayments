@@ -312,6 +312,7 @@ final class GoDigitalGateway
         });
     }
 
+    //auth request
     private function authorizedRequest(string $method, string $endpoint, ?array $payload = null, ?string $requestId = null, ?string $idempotencyKey = null): array
     {
         $token = $this->oauthToken()['access_token'] ?? '';

@@ -5,12 +5,11 @@
 $resultJson = $result ? json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : '';
 $ready = static fn(string $key): bool => !empty($configuration[$key]);
 $newReference = static fn(string $prefix): string => $prefix . gmdate('ymdHis') . strtoupper(bin2hex(random_bytes(2)));
-$lastReference = $last_reference ?: $newReference('GDC2B');
+$lastReference = $last_reference ?: $newReference('PMT');
 ?>
 
 <section class="test-hero godigital-hero">
   <div>
-    <p class="eyebrow">Tanzania mobile money</p>
     <h1>GoDigital</h1>
     <p>OAuth, collections, payouts, status, balance, and name checks.</p>
   </div>
@@ -68,10 +67,7 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
   </div>
 
   <form method="post" action="<?= $url('/godigital-tester/collection') ?>" class="godigital-payment-form" data-godigital-panel="collection">
-    <div class="warning">
-      <strong>Customer approval required</strong>
-      <p>Confirm the final result in Status or Logs.</p>
-    </div>
+ 
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($lastReference) ?>" maxlength="120" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
@@ -83,14 +79,15 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
   </form>
 
   <form method="post" action="<?= $url('/godigital-tester/disbursement') ?>" class="godigital-payment-form" data-godigital-panel="disbursement">
-    <div class="warning">
-      <strong>Use an approved recipient</strong>
-      <p>Check the final result in Status or Logs.</p>
-    </div>
+  
     <div class="compact-form-grid">
-      <label>Reference<input name="reference" value="<?= \App\View::e($newReference('GDB2C')) ?>" maxlength="120" required></label>
+      <label>Reference<input name="reference" value="<?= \App\View::e($newReference('PMT')) ?>" maxlength="120" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
-      <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
+      <label>Provider<select name="provider_code" data-godigital-provider required>
+        <option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option>
+        <option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option>
+        <option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option>
+      <option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
       <label>Recipient MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
       <label class="wide">Narration<input name="narration" value="GoDigital payout" maxlength="200"></label>
     </div>
@@ -100,7 +97,7 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
   <form method="post" action="<?= $url('/godigital-tester/status') ?>" class="godigital-payment-form" data-godigital-panel="status">
     <p class="helper-copy">Use the payment reference.</p>
     <div class="compact-form-grid">
-      <label class="wide">Payment reference<input name="reference" value="<?= \App\View::e($last_reference) ?>" placeholder="GDC2B..." maxlength="120" required></label>
+      <label class="wide">Payment reference<input name="reference" value="<?= \App\View::e($last_reference) ?>" placeholder="PMT..." maxlength="120" required></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check provider status</button></div>
   </form>
