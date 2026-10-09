@@ -34,6 +34,13 @@ spl_autoload_register(static function (string $class): void {
             require $file;
         }
     }
+
+    if (str_starts_with($class, 'Pesaway\\')) {
+        $file = dirname(__DIR__) . '/pesaway/src/' . str_replace('\\', '/', substr($class, strlen('Pesaway\\'))) . '.php';
+        if (is_file($file)) {
+            require $file;
+        }
+    }
 });
 
 \App\Config::load(dirname(__DIR__) . '/.env');

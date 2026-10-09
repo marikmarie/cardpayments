@@ -18,6 +18,9 @@ use GoDigital\GoDigitalWebhookController;
 use Pegasus\PegasusController;
 use Pegasus\PegasusSimulatorController;
 use Pegasus\PegasusWebController;
+use Pesaway\PesawayController;
+use Pesaway\PesawayTesterController;
+use Pesaway\PesawayWebhookController;
 
 /**
  * Application HTTP entrypoint.
@@ -123,6 +126,8 @@ final class Application
         if ($path === '/webhooks/cybersource') { $webhook = new WebhookController(); if ($method === 'POST') $webhook->receive(); $webhook->information(); return true; }
         if ($method === 'GET' && $path === '/webhooks/godigital/health') { (new GoDigitalWebhookController())->health(); return true; }
         if ($method === 'POST' && $path === '/webhooks/godigital') { (new GoDigitalWebhookController())->receive(); return true; }
+        if ($method === 'GET' && $path === '/webhooks/pesaway/health') { (new PesawayWebhookController())->health(); return true; }
+        if ($method === 'POST' && $path === '/webhooks/pesaway') { (new PesawayWebhookController())->receive(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); return true; }
         if ($method === 'GET' && $path === '/api/v1/godigital/openapi.json') { (new GoDigitalController())->openApi(); return true; }
@@ -131,6 +136,22 @@ final class Application
         if ($method === 'GET' && preg_match('#^/api/v1/godigital/payments/([^/]+)$#', $path, $match)) { (new GoDigitalController())->status(rawurldecode($match[1])); return true; }
         if ($method === 'GET' && preg_match('#^/api/v1/godigital/wallets/balance/([^/]+)$#', $path, $match)) { (new GoDigitalController())->balance(rawurldecode($match[1])); return true; }
         if ($method === 'GET' && $path === '/api/v1/godigital/name-check') { (new GoDigitalController())->nameCheck(); return true; }
+
+        if ($method === 'GET' && $path === '/api/v1/pesaway/openapi.json') { (new PesawayController())->openApi(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/channels') { (new PesawayController())->channels(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/mobile/b2c') { (new PesawayController())->mobileB2c(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/mobile/b2b') { (new PesawayController())->mobileB2b(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/mobile/c2b') { (new PesawayController())->mobileC2b(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/mobile/authorize') { (new PesawayController())->authorize(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/mobile/query') { (new PesawayController())->mobileQuery(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/bank/payout') { (new PesawayController())->bankPayout(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/bank/query') { (new PesawayController())->bankQuery(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/airtime') { (new PesawayController())->airtime(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/transactions/pull') { (new PesawayController())->pullTransactions(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/refunds') { (new PesawayController())->refund(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/balance') { (new PesawayController())->balance(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/sms') { (new PesawayController())->sendSms(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/pesaway/sms/balance') { (new PesawayController())->smsBalance(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/efris/openapi.json') { (new EfrisController())->openApi(); return true; }
         if ($method === 'GET' && $path === '/api/v1/efris/health') { (new EfrisController())->health(); return true; }
@@ -171,6 +192,23 @@ final class Application
         if ($method === 'POST' && $path === '/godigital-tester/status') { (new GoDigitalTesterController())->status($_POST); return true; }
         if ($method === 'POST' && $path === '/godigital-tester/balance') { (new GoDigitalTesterController())->balance($_POST); return true; }
         if ($method === 'POST' && $path === '/godigital-tester/name-check') { (new GoDigitalTesterController())->nameCheck($_POST); return true; }
+
+        if ($method === 'GET' && $path === '/pesaway-tester') { (new PesawayTesterController())->index(); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/token') { (new PesawayTesterController())->token(); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/channels') { (new PesawayTesterController())->channels($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/mobile-b2c') { (new PesawayTesterController())->mobileB2c($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/mobile-b2b') { (new PesawayTesterController())->mobileB2b($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/mobile-c2b') { (new PesawayTesterController())->mobileC2b($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/mobile-authorize') { (new PesawayTesterController())->authorize($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/mobile-query') { (new PesawayTesterController())->mobileQuery($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/bank-payout') { (new PesawayTesterController())->bankPayout($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/bank-query') { (new PesawayTesterController())->bankQuery($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/airtime') { (new PesawayTesterController())->airtime($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/pull') { (new PesawayTesterController())->pull($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/refund') { (new PesawayTesterController())->refund($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/balance') { (new PesawayTesterController())->balance($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/sms') { (new PesawayTesterController())->sendSms($_POST); return true; }
+        if ($method === 'POST' && $path === '/pesaway-tester/sms-balance') { (new PesawayTesterController())->smsBalance($_POST); return true; }
 
         if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); return true; }
         if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $match)) { (new ApiController())->show(rawurldecode($match[1])); return true; }

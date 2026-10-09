@@ -99,6 +99,23 @@ body {
 .side-nav a:hover { background: #f0fbff; color: var(--blue-dark); }
 .side-nav a.active { background: #e7f8fe; box-shadow: inset 3px 0 var(--blue); color: var(--blue-dark); }
 
+.side-nav-group { border-radius: 6px; color: #506670; }
+.side-nav-group summary { display: flex; align-items: center; gap: 10px; padding: 8px 10px; cursor: pointer; color: #506670; font-weight: 600; list-style: none; }
+.side-nav-group summary::-webkit-details-marker { display: none; }
+.side-nav-group summary:hover, .side-nav-group[open] summary { background: #f0fbff; color: var(--blue-dark); }
+.side-nav-group summary > span { width: 17px; text-align: center; font-size: 16px; }
+.side-nav-group summary b { margin-left: auto; font-size: 13px; transition: transform .15s ease; }
+.side-nav-group[open] summary b { transform: rotate(180deg); }
+.side-nav-children { display: grid; gap: 1px; margin: 2px 0 5px 28px; padding-left: 9px; border-left: 1px solid var(--line); }
+.side-nav .side-nav-children a { padding: 5px 8px; font-size: 12px; font-weight: 600; }
+
+.pesaway-operation-set { display: grid; gap: 16px; }
+.pesaway-operation-form { padding: 14px 0; border-top: 1px solid var(--line); }
+.pesaway-operation-form:first-child { border-top: 0; padding-top: 2px; }
+.pesaway-operation-form h4 { margin: 0 0 2px; color: var(--navy); font-size: 14px; }
+.pesaway-operation-form h4 + .helper-copy { margin-top: 0; }
+.pesaway-split-forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+
 .sidebar-note {
   display: flex;
   align-items: center;
@@ -649,6 +666,7 @@ textarea { min-height: 72px; resize: vertical; }
   .topbar h2 { font-size: 19px; }
   .content { padding: 28px 18px 50px; }
   .metric-grid, .form-grid, .compact-form-grid, .godigital-summary-grid { grid-template-columns: 1fr; }
+  .pesaway-split-forms { grid-template-columns: 1fr; }
   .check-grid, .test-detail-grid { grid-template-columns: 1fr; }
   .welcome-row, .api-band, .card-workspace-actions { align-items: flex-start; flex-direction: column; }
   .key-form { width: 100%; flex-wrap: wrap; }
