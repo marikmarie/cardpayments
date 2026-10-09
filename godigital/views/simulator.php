@@ -61,10 +61,7 @@ $lastReference = $last_reference ?: $newReference('GDC2B');
       <div><span>Merchant ID</span><strong><?= $ready('merchant_id_configured') ? 'Configured' : 'Not configured' ?></strong></div>
       <div><span>OAuth credentials</span><strong><?= $ready('client_id_configured') && $ready('client_secret_configured') ? 'Configured' : 'Not configured' ?></strong></div>
     </div>
-    <div class="warning">
-      <strong>IP allow-list required</strong>
-      <p>Ask GoDigital to allow this server’s public IP. <code>PGW-1009</code> means it is not approved.</p>
-    </div>
+ 
     <form method="post" action="<?= $url('/godigital-tester/token') ?>" class="form-actions compact-actions">
       <button class="primary-action" type="submit">Check OAuth connection</button>
     </form>
