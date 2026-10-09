@@ -5,6 +5,7 @@ namespace App\Controllers;
 
 use App\Models\PaymentLink;
 use App\Models\CheckoutSettings;
+use App\PaymentReference;
 use App\Services\CheckoutLink;
 use App\Services\PaymentLinkService;
 use App\Store;
@@ -37,6 +38,7 @@ final class VendorSimulatorController extends Controller
             'session_link' => $sessionLink,
             'flash' => $_SESSION['flash'] ?? null,
             'checkout_type' => $this->checkoutSettings->type(),
+            'payment_reference' => PaymentReference::generate(),
         ]);
         unset($_SESSION['flash']);
     }

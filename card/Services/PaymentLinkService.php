@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Models\CheckoutSettings;
 use App\Models\PaymentLink;
+use App\PaymentReference;
 use App\Store;
 
 /** Card module: creates one locally tracked invoice and CyberSource checkout. */
@@ -34,10 +35,10 @@ final class PaymentLinkService
             throw new \InvalidArgumentException('A valid customer email is required when sending the payment link.');
         }
 
-        $invoiceNumber = trim((string) ($input['invoice_number'] ?? '')) ?: 'INV-' . gmdate('YmdHis');
-        if (strlen($invoiceNumber) > 20) {
-            throw new \InvalidArgumentException('Invoice number cannot exceed 20 characters.');
-        }
+        $invoiceNumber = PaymentReference::require(
+            trim((string) ($input['invoice_number'] ?? '')) ?: PaymentReference::generate(),
+            'Invoice number'
+        );
 
         $request = [
             'customer_name' => trim((string) ($input['customer_name'] ?? '')) ?: 'Customer',

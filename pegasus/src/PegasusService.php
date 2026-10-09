@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Pegasus;
 
+use App\PaymentReference;
 use App\Store;
 
 /** PegPay transaction validation and local status records. */
@@ -180,9 +181,10 @@ final class PegasusService
             throw new \InvalidArgumentException('transaction_type must be PULL (collection) or PUSH (payout).');
         }
         $id = trim((string) ($input['vendor_transaction_id'] ?? ''));
-        if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
-            throw new \InvalidArgumentException('vendor_transaction_id must be a unique 1-60 character reference.');
+        if (!PaymentReference::isValid($id)) {
+            throw new \InvalidArgumentException('vendor_transaction_id must start with PMT and contain exactly 10 letters or numbers.');
         }
+        $id = strtoupper($id);
         $fromAccount = trim((string) ($input['from_account'] ?? ''));
         $toAccount = trim((string) ($input['to_account'] ?? ''));
         $fromNetwork = trim((string) ($input['from_network'] ?? ''));

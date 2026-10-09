@@ -26,6 +26,10 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 
 Set `CYBERSOURCE_ENV="live"` and add production REST credentials generated in CyberSource Production Business Center. Test and production REST keys are separate. `.env` and log files are excluded by `.gitignore`; do not commit either.
 
+## Payment ID format
+
+New CissyTech payment, request, invoice, and integration IDs use exactly 10 uppercase characters: `PMT` followed by seven letters or digits, for example `PMT1234567`. Provider-issued IDs and existing historical references remain available for status checks.
+
 ## External API
 
 Open the built-in browser reference at `http://localhost:8000/developers/api`, or import the OpenAPI 3.1 document from `http://localhost:8000/api/v1/openapi.json`.
@@ -42,7 +46,7 @@ Content-Type: application/json
 {
   "amount": "100000",
   "currency": "UGX",
-  "invoice_number": "ORDER-1001",
+  "invoice_number": "PMT1234567",
   "description": "Order payment",
   "due_date": "2026-09-30",
   "send": false,

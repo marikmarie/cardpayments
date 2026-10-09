@@ -4,8 +4,8 @@
 /** @var array $activity */
 $resultJson = $result ? json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : '';
 $ready = static fn(string $key): bool => !empty($configuration[$key]);
-$newReference = static fn(string $prefix): string => $prefix . gmdate('ymdHis') . strtoupper(bin2hex(random_bytes(2)));
-$lastReference = $last_reference ?: $newReference('PMT');
+$newReference = static fn(): string => \App\PaymentReference::generate();
+$lastReference = $last_reference ?: $newReference();
 ?>
 
 <section class="test-hero godigital-hero">
@@ -69,7 +69,7 @@ $lastReference = $last_reference ?: $newReference('PMT');
   <form method="post" action="<?= $url('/godigital-tester/collection') ?>" class="godigital-payment-form" data-godigital-panel="collection">
  
     <div class="compact-form-grid">
-      <label>Reference<input name="reference" value="<?= \App\View::e($lastReference) ?>" maxlength="120" required></label>
+      <label>Reference<input name="reference" value="<?= \App\View::e($lastReference) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
       <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
       <label>Customer MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
@@ -81,7 +81,7 @@ $lastReference = $last_reference ?: $newReference('PMT');
   <form method="post" action="<?= $url('/godigital-tester/disbursement') ?>" class="godigital-payment-form" data-godigital-panel="disbursement">
   
     <div class="compact-form-grid">
-      <label>Reference<input name="reference" value="<?= \App\View::e($newReference('PMT')) ?>" maxlength="120" required></label>
+      <label>Reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
       <label>Provider<select name="provider_code" data-godigital-provider required>
         <option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option>
@@ -97,7 +97,7 @@ $lastReference = $last_reference ?: $newReference('PMT');
   <form method="post" action="<?= $url('/godigital-tester/status') ?>" class="godigital-payment-form" data-godigital-panel="status">
     <p class="helper-copy">Use the payment reference.</p>
     <div class="compact-form-grid">
-      <label class="wide">Payment reference<input name="reference" value="<?= \App\View::e($last_reference) ?>" placeholder="PMT..." maxlength="120" required></label>
+      <label class="wide">Payment reference<input name="reference" value="<?= \App\View::e($last_reference) ?>" placeholder="PMT0000000" maxlength="120" required></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check provider status</button></div>
   </form>

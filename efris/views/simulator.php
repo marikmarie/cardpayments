@@ -7,13 +7,12 @@
 /** @var array|null $result */
 /** @var array|null $status_result */
 /** @var string $active_tab */
-$stamp = gmdate('YmdHis');
 $selectedKey = (string) ($setup['api_key_id'] ?? '');
 $branch = (string) ($setup['branch_code'] ?? 'KAMPALA-01');
 $invoice = $invoice ?? [];
 $invoiceKey = (string) ($invoice['api_key_id'] ?? $selectedKey);
-$reference = (string) ($invoice['external_reference'] ?? "POSINV{$stamp}");
-$idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS{$stamp}");
+$reference = (string) ($invoice['external_reference'] ?? \App\PaymentReference::generate());
+$idempotency = (string) ($invoice['idempotency_key'] ?? \App\PaymentReference::generate());
 ?>
 <section class="create-heading">
   <p class="eyebrow">EFRIS test workspace</p>
@@ -90,8 +89,8 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS{$stamp}");
         <?php endforeach; ?>
       </select>
     </label>
-    <label>Invoice reference<input name="external_reference" value="<?= \App\View::e($reference) ?>" maxlength="100" required></label>
-    <label>Idempotency key<input name="idempotency_key" value="<?= \App\View::e($idempotency) ?>" maxlength="100" required></label>
+    <label>Invoice reference<input name="external_reference" value="<?= \App\View::e($reference) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
+    <label>Idempotency key<input name="idempotency_key" value="<?= \App\View::e($idempotency) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
     <label>Branch code<input name="branch_code" value="<?= \App\View::e($invoice['branch_code'] ?? $branch) ?>" required></label>
     <label>Amount (UGX)<input name="total_amount" type="number" min="1" step="0.01" value="<?= \App\View::e($invoice['total_amount'] ?? '50000.00') ?>" required></label>
     <label>Payment method
@@ -131,7 +130,7 @@ $idempotency = (string) ($invoice['idempotency_key'] ?? "EFRIS{$stamp}");
         <?php endforeach; ?>
       </select>
     </label>
-    <label>Invoice reference<input name="external_reference" value="<?= \App\View::e($last_reference) ?>" placeholder="POS-INV-000172" required></label>
+    <label>Invoice reference<input name="external_reference" value="<?= \App\View::e($last_reference) ?>" placeholder="PMT0000000" required></label>
     <div class="form-actions compact-actions"><button class="secondary-action">Check status</button></div>
   </form>
   <?php if ($status_result): ?><p><strong>Stored test response</strong></p><pre class="code-block"><?= \App\View::e(json_encode($status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre><?php endif; ?>

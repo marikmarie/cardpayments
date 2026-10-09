@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Pegasus;
 
 use App\Controllers\Controller;
+use App\PaymentReference;
 use App\Store;
 use App\View;
 
@@ -90,7 +91,7 @@ final class PegasusSimulatorController extends Controller
         try {
             $id = trim((string) ($input['vendor_transaction_id'] ?? ''));
             if (!empty($input['unknown_scenario'])) {
-                $id = $this->requestId('U');
+                $id = $this->requestId();
             }
             if (!preg_match('/^[A-Za-z0-9_-]{1,60}$/', $id)) {
                 throw new \InvalidArgumentException('Enter a valid vendor transaction ID.');
@@ -195,7 +196,7 @@ final class PegasusSimulatorController extends Controller
         $results = [];
         try {
             foreach ($review['items'] as $item) {
-                $id = $this->requestId($review['type'] === 'salary' ? 'S' : 'A');
+                $id = $this->requestId();
                 $response = $this->pegasus->createTransaction([
                     'transaction_type' => 'PUSH',
                     'vendor_transaction_id' => $id,
@@ -258,7 +259,7 @@ final class PegasusSimulatorController extends Controller
         return [
             'pull' => [
                 'title' => 'Collect money', 'type' => 'PULL', 'channel' => 'mobile', 'button' => 'Submit PULL collection',
-                'reference' => $this->requestId('P'), 'amount' => '500',
+                'reference' => $this->requestId(), 'amount' => '500',
                 'from_account' => '256702685176', 'from_network' => 'AIRTEL',
                 'to_account' => '', 'to_network' => 'AIRTEL',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'COLLECTION-TEST',
@@ -266,7 +267,7 @@ final class PegasusSimulatorController extends Controller
             ],
             'push' => [
                 'title' => 'Pay a staff allowance', 'type' => 'PUSH', 'channel' => 'mobile', 'button' => 'Send allowance payout',
-                'reference' => $this->requestId('A'), 'amount' => '500',
+                'reference' => $this->requestId(), 'amount' => '500',
                 'from_account' => '256702685176', 'from_network' => 'AIRTEL',
                 'to_account' => '256702685176', 'to_network' => 'AIRTEL',
                 'customer_name' => 'CissyTech Staff', 'customer_reference' => 'MONTHLY-ALLOWANCE',
@@ -274,7 +275,7 @@ final class PegasusSimulatorController extends Controller
             ],
             'bank_push' => [
                 'title' => 'Send a bank payout', 'type' => 'PUSH', 'channel' => 'bank', 'button' => 'Submit bank payout',
-                'reference' => $this->requestId('B'), 'amount' => '5000',
+                'reference' => $this->requestId(), 'amount' => '5000',
                 'from_account' => '3010000007781', 'from_network' => 'PBU',
                 'to_account' => '3010000007781', 'to_network' => 'PBU',
                 'customer_name' => 'CissyTech UAT', 'customer_reference' => 'BANK-PAYOUT-TEST',
@@ -283,10 +284,10 @@ final class PegasusSimulatorController extends Controller
         ];
     }
 
-    /** Compact, alphanumeric vendor request IDs for PegPay. */
-    private function requestId(string $prefix): string
+    /** Create the shared 10-character payment ID for a new PegPay test request. */
+    private function requestId(): string
     {
-        return strtoupper($prefix) . gmdate('ymdHis') . strtoupper(bin2hex(random_bytes(3)));
+        return PaymentReference::generate();
     }
 
     /** Bank and mobile codes published in the PegPay integration document. */

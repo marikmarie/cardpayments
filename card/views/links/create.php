@@ -15,7 +15,7 @@
     <div class="compact-form-grid">
       <label>
         Invoice number
-        <input name="invoice_number" placeholder="INV1001">
+        <input name="invoice_number" value="<?= \App\View::e($payment_reference) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required>
       </label>
       <label>
         Amount

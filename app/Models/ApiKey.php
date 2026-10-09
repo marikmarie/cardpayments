@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\PaymentReference;
 use App\Store;
 
+/** Integration credential repository; the token remains the only secret. */
 final class ApiKey
 {
     public function __construct(private Store $store) {}
@@ -31,18 +33,30 @@ final class ApiKey
         return null;
     }
 
+    /** Create a dashboard-visible PMT ID and a separate high-entropy API token. */
     public function create(string $name): array
     {
         $token = 'plk_test_' . bin2hex(random_bytes(20));
-        $row = [
-            'id' => bin2hex(random_bytes(12)),
-            'name' => $name,
-            'token_hash' => hash('sha256', $token),
-            'last_used_at' => null,
-            'created_at' => gmdate('c'),
-        ];
-        $this->store->transaction(function (array &$data) use ($row): void {
-            $data['api_keys'][] = $row;
+        $row = $this->store->transaction(function (array &$data) use ($name, $token): array {
+            for ($attempt = 0; $attempt < 5; $attempt++) {
+                $id = PaymentReference::generate();
+                foreach ($data['api_keys'] ?? [] as $key) {
+                    if (($key['id'] ?? null) === $id) {
+                        continue 2;
+                    }
+                }
+                $row = [
+                    'id' => $id,
+                    'name' => $name,
+                    'token_hash' => hash('sha256', $token),
+                    'last_used_at' => null,
+                    'created_at' => gmdate('c'),
+                ];
+                $data['api_keys'][] = $row;
+                return $row;
+            }
+
+            throw new \RuntimeException('Could not allocate a unique API key ID. Please try again.');
         });
         return $row + ['token' => $token];
     }

@@ -16,7 +16,7 @@
     <div class="vendor-form-body">
       <label>
         Vendor order reference
-        <input name="invoice_number" placeholder="ORDER1001" maxlength="20" required>
+        <input name="invoice_number" value="<?= \App\View::e($payment_reference) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required>
       </label>
       <div class="vendor-fields">
         <label>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Efris;
 
 use App\Config;
+use App\PaymentReference;
 use App\Store;
 
 /** A safe error that the HTTP controller can return without exposing internals. */
@@ -75,9 +76,7 @@ final class Gateway
      */
     public function fiscalise(array $apiKey, array $input, string $idempotencyKey): array
     {
-        if (trim($idempotencyKey) === '') {
-            throw new GatewayException(400, 'Idempotency-Key is required.');
-        }
+        $idempotencyKey = $this->paymentReference($idempotencyKey, 'Idempotency-Key');
         if ($this->mode() !== 'mock') {
             throw new GatewayException(503, 'Live EFRIS submission is not enabled. Complete URA test onboarding and install the approved T109 protocol adapter first.');
         }
@@ -102,7 +101,7 @@ final class Gateway
             }
 
             $record = [
-                'id' => bin2hex(random_bytes(12)),
+                'id' => PaymentReference::generate(),
                 'tenant_id' => $tenant['id'],
                 'external_reference' => $invoice['external_reference'],
                 'branch_code' => $invoice['branch_code'],
@@ -123,7 +122,7 @@ final class Gateway
             ];
             $data['efris_invoices'][] = $record;
             $data['efris_audit'][] = [
-                'id' => bin2hex(random_bytes(12)),
+                'id' => PaymentReference::generate(),
                 'tenant_id' => $tenant['id'],
                 'action' => 'invoice.mock_accepted',
                 'target_id' => $record['id'],
@@ -156,6 +155,9 @@ final class Gateway
     {
         $tenantId = strtolower(trim((string) ($input['tenant_id'] ?? '')));
         $apiKeyId = trim((string) ($input['api_key_id'] ?? ''));
+        if (PaymentReference::isValid($apiKeyId)) {
+            $apiKeyId = strtoupper($apiKeyId);
+        }
         $branchCode = strtoupper(trim((string) ($input['branch_code'] ?? '')));
         $name = trim((string) ($input['name'] ?? ''));
         $tin = trim((string) ($input['tin'] ?? ''));
@@ -163,7 +165,7 @@ final class Gateway
         $deviceNumber = trim((string) ($input['device_number'] ?? ''));
 
         if (!preg_match('/^[a-z0-9][a-z0-9_-]{2,63}$/', $tenantId)
-            || !preg_match('/^[a-f0-9]{24}$/', $apiKeyId)
+            || !preg_match('/^(?:PMT[A-Z0-9]{7}|[a-f0-9]{24})$/i', $apiKeyId)
             || $name === '' || $tin === '' || $branchCode === '' || $branchId === '' || $deviceNumber === '') {
             throw new GatewayException(422, 'tenant_id, api_key_id, name, tin, branch_code, ura_branch_id, and device_number are required.');
         }
@@ -205,7 +207,7 @@ final class Gateway
             $assignments[] = ['api_key_id' => $apiKeyId, 'tenant_id' => $tenantId, 'created_at' => gmdate('c')];
             $data['efris_api_key_assignments'] = $assignments;
             $data['efris_audit'][] = [
-                'id' => bin2hex(random_bytes(12)),
+                'id' => PaymentReference::generate(),
                 'tenant_id' => $tenantId,
                 'action' => 'tenant.test_configured',
                 'target_id' => $tenantId,
@@ -252,7 +254,7 @@ final class Gateway
     {
         $this->store->transaction(function (array &$data) use ($tenantId, $action, $targetId): void {
             $data['efris_audit'][] = [
-                'id' => bin2hex(random_bytes(12)),
+                'id' => PaymentReference::generate(),
                 'tenant_id' => $tenantId,
                 'action' => $action,
                 'target_id' => $targetId,
@@ -266,14 +268,14 @@ final class Gateway
 
     private function validateInvoice(array $input, array $tenant): array
     {
-        $reference = trim((string) ($input['external_reference'] ?? ''));
+        $reference = $this->paymentReference($input['external_reference'] ?? '', 'external_reference');
         $branchCode = strtoupper(trim((string) ($input['branch_code'] ?? '')));
         $currency = strtoupper(trim((string) ($input['currency'] ?? '')));
         $total = trim((string) ($input['total_amount'] ?? ''));
         $paymentMethod = strtoupper(trim((string) ($input['payment_method'] ?? '')));
         $items = $input['items'] ?? null;
 
-        if ($reference === '' || strlen($reference) > 100 || $branchCode === ''
+        if ($branchCode === ''
             || !preg_match('/^[A-Z]{3}$/', $currency)
             || !preg_match('/^\d{1,15}(\.\d{1,4})?$/', $total)
             || $paymentMethod === '' || !is_array($items) || $items === []) {
@@ -323,6 +325,17 @@ final class Gateway
         ];
     }
 
+    /** Normalize a newly created EFRIS payment identifier to the shared PMT format. */
+    private function paymentReference(mixed $value, string $field): string
+    {
+        $reference = strtoupper(trim((string) $value));
+        if (!PaymentReference::isValid($reference)) {
+            throw new GatewayException(422, "{$field} must start with PMT and contain exactly 10 letters or numbers.");
+        }
+        return $reference;
+    }
+
+    /** Shape a stored mock invoice for the dashboard and vendor API. */
     private function presentInvoice(array $record, bool $replayed, int $httpStatus): array
     {
         return [

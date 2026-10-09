@@ -44,7 +44,7 @@ GODIGITAL_CALLBACK_SECRET=""
 GODIGITAL_TIMEOUT_SECONDS="30"
 ```
 
-Keep UAT and production values separate. Changing between environments requires changing all four provider values together: base URL, client ID, client secret, and merchant ID.
+Keep UAT and production values separate. Changing between environments requires changing all four provider values together: base URL, client ID, client secret, and merchant ID. New GoDigital references, request IDs, and idempotency keys use the shared `PMT1234567` format.
 
 ## UAT test MSISDNs
 
@@ -89,7 +89,7 @@ Example collection request:
 ```http
 POST /api/v1/godigital/collections
 X-API-Key: plk_test_...
-Idempotency-Key: gd-order-1001-v1
+Idempotency-Key: PMT1234567
 Content-Type: application/json
 ```
 
@@ -98,7 +98,7 @@ Content-Type: application/json
   "amount": "10000.00",
   "provider_code": "VODACOM",
   "msisdn": "255754123456",
-  "reference": "ORDER-1001",
+  "reference": "PMT1234567",
   "currency": "TZS",
   "narration": "Wallet top-up"
 }

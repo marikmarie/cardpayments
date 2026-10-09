@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace GoDigital;
 
 use App\Config;
+use App\PaymentReference;
 use App\Store;
 
 /**
@@ -422,7 +423,7 @@ final class GoDigitalGateway
         if ($currency !== 'TZS') {
             throw new GoDigitalException('GoDigital payment currency must be TZS.', 422);
         }
-        $reference = $this->reference((string) ($input['reference'] ?? ''));
+        $reference = $this->paymentReference((string) ($input['reference'] ?? ''));
         $narration = trim((string) ($input['narration'] ?? ''));
         if (strlen($narration) > 200) {
             throw new GoDigitalException('narration must be 200 characters or fewer.', 422);
@@ -445,14 +446,24 @@ final class GoDigitalGateway
     {
         $value = trim((string) $value);
         if ($value === '') {
-            return $this->uuid();
+            return PaymentReference::generate();
         }
-        if (!preg_match('/^[A-Za-z0-9_-]{8,120}$/', $value)) {
-            throw new GoDigitalException('request_id must be 8-120 letters, numbers, underscores, or hyphens.', 422);
+        if (!PaymentReference::isValid($value)) {
+            throw new GoDigitalException('request_id must start with PMT and contain exactly 10 letters or numbers.', 422);
         }
-        return $value;
+        return strtoupper($value);
     }
 
+    /** Validate a new CissyTech payment reference before it is sent to GoDigital. */
+    private function paymentReference(string $value): string
+    {
+        if (!PaymentReference::isValid($value)) {
+            throw new GoDigitalException('reference must start with PMT and contain exactly 10 letters or numbers.', 422);
+        }
+        return strtoupper(trim($value));
+    }
+
+    /** Accept the wider historical provider format when checking an old payment. */
     private function reference(string $value): string
     {
         $value = trim($value);
@@ -482,11 +493,11 @@ final class GoDigitalGateway
 
     private function idempotencyKey(string $value): string
     {
-        $value = trim($value) ?: $this->uuid();
-        if (!preg_match('/^[A-Za-z0-9._-]{8,120}$/', $value)) {
-            throw new GoDigitalException('Idempotency-Key must be 8-120 letters, numbers, periods, underscores, or hyphens.', 422);
+        $value = trim($value) ?: PaymentReference::generate();
+        if (!PaymentReference::isValid($value)) {
+            throw new GoDigitalException('Idempotency-Key must start with PMT and contain exactly 10 letters or numbers.', 422);
         }
-        return $value;
+        return strtoupper($value);
     }
 
     private function callbackUrl(bool $required): string
@@ -584,11 +595,6 @@ final class GoDigitalGateway
                 $state['godigital_activity'] = array_slice($state['godigital_activity'], -100);
             }
         });
-    }
-
-    private function uuid(): string
-    {
-        return 'GD' . gmdate('ymdHis') . strtoupper(bin2hex(random_bytes(4)));
     }
 
     /** Keep browser-visible integration logs useful without persisting credentials or phone numbers. */

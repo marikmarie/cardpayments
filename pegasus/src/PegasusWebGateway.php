@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Pegasus;
 
 use App\Config;
+use App\PaymentReference;
 use App\Store;
 
 /** Hosted PegPay Web card-collection form and signed browser-return handling. */
@@ -41,9 +42,8 @@ final class PegasusWebGateway
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) throw new \InvalidArgumentException('Enter a valid customer email address.');
 
         $record = [
-            // This reference becomes part of a public hosted-checkout URL. Keep it
-            // unguessable as well as unique so only the customer who receives the
-            // checkout URL can start that payment session.
+            // This shared payment ID becomes part of the hosted-checkout URL.
+            // The checkout form stays server-side, so no PegPay secrets enter it.
             'id' => $this->collectionId(),
             'amount' => $amount,
             'currency' => $currency,
@@ -343,10 +343,10 @@ final class PegasusWebGateway
         return $value;
     }
 
-    /** A compact 80-bit opaque reference for the public card checkout route. */
+    /** Create the shared 10-character payment ID for a new hosted card collection. */
     private function collectionId(): string
     {
-        return 'C' . strtoupper(bin2hex(random_bytes(10)));
+        return PaymentReference::generate();
     }
 
     private function text(mixed $value, int $length, string $field): string

@@ -149,7 +149,7 @@ foreach ($bank_test_accounts as $code => $recipient) {
       <div class="form-grid">
         <label>
           Vendor transaction ID
-          <input name="vendor_transaction_id" value="<?= \App\View::e($sample['reference']) ?>" maxlength="60" required>
+        <input name="vendor_transaction_id" value="<?= \App\View::e($sample['reference']) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required>
         </label>
         <label>
           Amount (UGX)

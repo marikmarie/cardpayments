@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Models\ApiKey;
 use App\Models\CheckoutSettings;
 use App\Models\PaymentLink;
+use App\PaymentReference;
 use App\Services\CyberSourceService;
 use App\Services\PaymentLinkService;
 use App\Store;
@@ -48,6 +49,7 @@ final class LinkController extends Controller
         View::render('links/create', [
             'title' => 'Create invoice', 'active_nav' => 'create',
             'checkout_type' => $this->checkoutSettings->type(), 'flash' => $_SESSION['flash'] ?? null,
+            'payment_reference' => PaymentReference::generate(),
         ]);
         unset($_SESSION['flash']);
     }

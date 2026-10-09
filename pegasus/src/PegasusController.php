@@ -131,7 +131,7 @@ final class PegasusController extends Controller
                     'description' => 'Use PULL to collect from from_account. Use PUSH to pay to to_account. Reusing the same vendor_transaction_id is safe only with identical data.',
                     'requestBody' => $this->bodySchema(['transaction_type', 'vendor_transaction_id', 'amount'], [
                         'transaction_type' => ['type' => 'string', 'enum' => ['PULL', 'PUSH'], 'example' => 'PULL'],
-                        'vendor_transaction_id' => ['type' => 'string', 'example' => 'COLLECT1001'],
+                        'vendor_transaction_id' => ['type' => 'string', 'minLength' => 10, 'maxLength' => 10, 'pattern' => '^PMT[A-Z0-9]{7}$', 'example' => 'PMT1234567'],
                         'amount' => ['type' => 'string', 'description' => 'Whole UGX amount.', 'example' => '500'],
                         'from_account' => ['type' => 'string', 'example' => '256772000000'],
                         'from_network' => ['type' => 'string', 'example' => 'MTN'],

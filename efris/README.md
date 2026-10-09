@@ -33,12 +33,12 @@ Do not switch the mode to live until the URA test setup is complete and the curr
    curl.exe -X POST http://localhost:8000/api/v1/efris/invoices `
      -H "Content-Type: application/json" `
      -H "X-API-Key: <api-key-secret>" `
-     -H "Idempotency-Key: POS-INV-000172" `
+     -H "Idempotency-Key: PMT1234567" `
      --data-binary "@efris/fixtures/invoice.json"
    ```
 
 5. Expect `TEST_ACCEPTED` and `NOT_SUBMITTED`. Repeat the same request: it returns the original local record with `meta.replayed: true`; it must not create a duplicate.
-6. Retrieve it using `GET /api/v1/efris/invoices/POS-INV-000172` with the same API key.
+6. Retrieve it using `GET /api/v1/efris/invoices/PMT1234567` with the same API key.
 
 ## Test in the browser
 

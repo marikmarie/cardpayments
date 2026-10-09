@@ -54,7 +54,7 @@ final class DashboardAccess
             return false;
         }
 
-        if (preg_match('#^/pay/[a-f0-9]{24}(?:/refresh)?$#', $path) === 1) {
+        if (preg_match('#^/pay/(?:PMT[A-Z0-9]{7}|[a-f0-9]{24})(?:/refresh)?$#i', $path) === 1) {
             return false;
         }
 

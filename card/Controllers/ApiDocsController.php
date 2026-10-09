@@ -40,7 +40,7 @@ final class ApiDocsController extends Controller
                         'properties' => [
                             'amount' => ['type' => 'string', 'example' => '1000.00'],
                             'currency' => ['type' => 'string', 'example' => 'UGX'],
-                            'invoice_number' => ['type' => 'string', 'maxLength' => 20, 'example' => 'ORDER-1001'],
+                            'invoice_number' => ['type' => 'string', 'minLength' => 10, 'maxLength' => 10, 'pattern' => '^PMT[A-Z0-9]{7}$', 'example' => 'PMT1234567'],
                             'description' => ['type' => 'string'],
                             'due_date' => ['type' => 'string', 'format' => 'date'],
                             'send' => ['type' => 'boolean'],

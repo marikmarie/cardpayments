@@ -50,11 +50,11 @@ X-API-Key: plk_test_...</pre>
       <div class="request-grid">
         <div>
           <h3>Request body</h3>
-          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "ORDER1001", "description": "Order payment", "send": false, "customer": { "name": "Mariam", "email": "mariam@gmail.com" } }</pre>
+          <pre>{ "amount": "1000.00", "currency": "UGX", "invoice_number": "PMT1234567", "description": "Order payment", "send": false, "customer": { "name": "Mariam", "email": "mariam@gmail.com" } }</pre>
         </div>
         <div>
           <h3>201 response</h3>
-          <pre>{ "data": { "invoice_number": "ORDER-1001", "payment_url": "active payment link" } }</pre>
+          <pre>{ "data": { "invoice_number": "PMT1234567", "payment_url": "active payment link" } }</pre>
         </div>
       </div>
       <div class="warning">

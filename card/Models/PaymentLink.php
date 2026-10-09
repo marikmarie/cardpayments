@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\PaymentReference;
 use App\Store;
 
 /** Card payment-link repository. */
@@ -33,19 +34,35 @@ final class PaymentLink
         return null;
     }
 
+    /** Persist a new locally tracked payment link with a unique PMT identifier. */
     public function create(array $values): array
     {
-        $row = $values + [
-            'id' => bin2hex(random_bytes(12)),
-            'status' => 'CREATED',
-            'created_at' => gmdate('c'),
-            'updated_at' => gmdate('c'),
-        ];
+        return $this->store->transaction(function (array &$data) use ($values): array {
+            for ($attempt = 0; $attempt < 5; $attempt++) {
+                $id = PaymentReference::generate();
+                $exists = false;
+                foreach ($data['payment_links'] ?? [] as $link) {
+                    if (($link['id'] ?? null) === $id) {
+                        $exists = true;
+                        break;
+                    }
+                }
+                if ($exists) {
+                    continue;
+                }
 
-        $this->store->transaction(function (array &$data) use ($row): void {
-            $data['payment_links'][] = $row;
+                $row = $values + [
+                    'id' => $id,
+                    'status' => 'CREATED',
+                    'created_at' => gmdate('c'),
+                    'updated_at' => gmdate('c'),
+                ];
+                $data['payment_links'][] = $row;
+                return $row;
+            }
+
+            throw new \RuntimeException('Could not allocate a unique payment ID. Please try again.');
         });
-        return $row;
     }
 
     public function update(string $id, array $changes): ?array
