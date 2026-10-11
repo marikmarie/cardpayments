@@ -71,12 +71,17 @@ $lastReference = $last_reference ?: $newReference();
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($lastReference) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
       <label>Amount (TZS)<input name="amount" inputmode="decimal" value="10000.00" required></label>
-      <label>Provider<select name="provider_code" data-godigital-provider required><option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option><option value="YAS" data-test-msisdn="255712691323">Yas (Mixx)</option><option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option><option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
+      <label>Provider<select name="provider_code" data-godigital-provider required>
+      <option value="VODACOM" data-test-msisdn="255766271010">Vodacom (M-Pesa)</option>
+      <option value="YAS" data-test-msisdn="255715123161">Yas (Mixx)</option>
+      <option value="AIRTEL" data-test-msisdn="255692478295">Airtel</option>
+      <option value="HALOTEL" data-test-msisdn="255622160766">Halotel (HaloPesa)</option></select></label>
       <label>Customer MSISDN<input name="msisdn" data-godigital-msisdn inputmode="numeric" value="255766271010" pattern="255[0-9]{9}" required></label>
       <label class="wide">Narration<input name="narration" value="GoDigital collection" maxlength="200"></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request collection</button></div>
   </form>
+
 
   <form method="post" action="<?= $url('/godigital-tester/disbursement') ?>" class="godigital-payment-form" data-godigital-panel="disbursement">
   
