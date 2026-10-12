@@ -18,7 +18,6 @@ $lastReference = $last_reference ?: $newReference();
 </section>
 
 <section class="panel form-section momopay-workspace">
-  <div class="section-title"><span>◍</span><div><h3>Test console</h3><p>MTN accepts a request first; use the callback or Status tab for the final result.</p></div></div>
 
   <div class="pegasus-tabs" data-momopay-tabs data-default-tab="<?= \App\View::e($active_tab) ?>">
     <button type="button" class="pegasus-tab" data-momopay-tab="connection">Connection</button>
