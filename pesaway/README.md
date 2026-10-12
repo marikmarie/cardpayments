@@ -10,6 +10,18 @@ The PesaWay module implements the documented direct API operations that are appl
 
 FX and crypto products are deliberately not implemented. The UI has no FX or crypto tab, requests reject known crypto currencies, and the active-channel response is filtered before display.
 
+## Implemented PesaWay operations
+
+The protected local API exposes each non-FX/non-crypto operation from the PesaWay guide:
+
+- `POST /api/v1/pesaway/channels` — active payment channels.
+- `POST /api/v1/pesaway/mobile/b2c`, `/mobile/b2b`, and `/mobile/c2b` — mobile payouts and collections.
+- `POST /api/v1/pesaway/mobile/authorize` and `/mobile/query` — OTP authorisation and transaction status.
+- `POST /api/v1/pesaway/bank/payout` and `/bank/query` — bank transfer and status.
+- `POST /api/v1/pesaway/airtime`, `/transactions/pull`, `/refunds`, `/balance`, `/sms`, and `/sms/balance`.
+
+The browser tester at `/pesaway-tester` provides matching tabs for every operation. The token request remains internal because it uses merchant credentials; the **Overview** tab verifies it without showing it.
+
 ## Configure
 
 Set these values only in `.env`:

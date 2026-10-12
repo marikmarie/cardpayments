@@ -39,6 +39,9 @@
       <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
         <span>◉</span> GoDigital
       </a>
+      <a class="<?= ($active_nav ?? '') === 'momopay' ? 'active' : '' ?>" href="<?= $url('/momopay-tester') ?>">
+        <span>◍</span> MoMo Pay
+      </a>
       <details class="side-nav-group" <?= ($active_nav ?? '') === 'pesaway' ? 'open' : '' ?> >
         <summary><span>◌</span> PesaWay <b>⌄</b></summary>
         <div class="side-nav-children">

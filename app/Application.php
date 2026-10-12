@@ -21,6 +21,9 @@ use Pegasus\PegasusWebController;
 use Pesaway\PesawayController;
 use Pesaway\PesawayTesterController;
 use Pesaway\PesawayWebhookController;
+use MomoPay\MomoPayController;
+use MomoPay\MomoPayTesterController;
+use MomoPay\MomoPayWebhookController;
 
 /**
  * Application HTTP entrypoint.
@@ -128,6 +131,8 @@ final class Application
         if ($method === 'POST' && $path === '/webhooks/godigital') { (new GoDigitalWebhookController())->receive(); return true; }
         if ($method === 'GET' && $path === '/webhooks/pesaway/health') { (new PesawayWebhookController())->health(); return true; }
         if ($method === 'POST' && $path === '/webhooks/pesaway') { (new PesawayWebhookController())->receive(); return true; }
+        if ($method === 'GET' && $path === '/webhooks/momopay/health') { (new MomoPayWebhookController())->health(); return true; }
+        if (in_array($method, ['POST', 'PUT'], true) && $path === '/webhooks/momopay') { (new MomoPayWebhookController())->receive(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); return true; }
         if ($method === 'GET' && $path === '/api/v1/godigital/openapi.json') { (new GoDigitalController())->openApi(); return true; }
@@ -152,6 +157,14 @@ final class Application
         if ($method === 'POST' && $path === '/api/v1/pesaway/balance') { (new PesawayController())->balance(); return true; }
         if ($method === 'POST' && $path === '/api/v1/pesaway/sms') { (new PesawayController())->sendSms(); return true; }
         if ($method === 'POST' && $path === '/api/v1/pesaway/sms/balance') { (new PesawayController())->smsBalance(); return true; }
+
+        if ($method === 'GET' && $path === '/api/v1/momopay/openapi.json') { (new MomoPayController())->openApi(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/collections') { (new MomoPayController())->collection(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/disbursements') { (new MomoPayController())->disbursement(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/withdrawals') { (new MomoPayController())->withdrawal(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/status') { (new MomoPayController())->status(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/balance') { (new MomoPayController())->balance(); return true; }
+        if ($method === 'POST' && $path === '/api/v1/momopay/account-holder') { (new MomoPayController())->accountHolder(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/efris/openapi.json') { (new EfrisController())->openApi(); return true; }
         if ($method === 'GET' && $path === '/api/v1/efris/health') { (new EfrisController())->health(); return true; }
@@ -209,6 +222,15 @@ final class Application
         if ($method === 'POST' && $path === '/pesaway-tester/balance') { (new PesawayTesterController())->balance($_POST); return true; }
         if ($method === 'POST' && $path === '/pesaway-tester/sms') { (new PesawayTesterController())->sendSms($_POST); return true; }
         if ($method === 'POST' && $path === '/pesaway-tester/sms-balance') { (new PesawayTesterController())->smsBalance($_POST); return true; }
+
+        if ($method === 'GET' && $path === '/momopay-tester') { (new MomoPayTesterController())->index(); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/token') { (new MomoPayTesterController())->token($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/collection') { (new MomoPayTesterController())->collection($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/disbursement') { (new MomoPayTesterController())->disbursement($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/withdrawal') { (new MomoPayTesterController())->withdrawal($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/status') { (new MomoPayTesterController())->status($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/balance') { (new MomoPayTesterController())->balance($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/account-holder') { (new MomoPayTesterController())->accountHolder($_POST); return true; }
 
         if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); return true; }
         if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $match)) { (new ApiController())->show(rawurldecode($match[1])); return true; }

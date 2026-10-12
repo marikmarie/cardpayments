@@ -11,6 +11,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 - A separate `efris/` gateway module and OpenAPI contract for tenant-scoped POS/ERP fiscalisation testing.
 - A separate `godigital/` gateway module for GoDigital Tanzania mobile-money collections, payouts, callbacks, and UAT testing.
 - A separate `pesaway/` gateway module for PesaWay payments, queries, refunds, balances, SMS, callbacks, and UAT testing; it excludes FX and crypto products.
+- A separate `momopay/` gateway module for MTN MoMo Pay collections, disbursements, transaction checks, account checks, callbacks, and UAT testing.
 - MySQL production schemas in `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql`.
 - Local JSON store in `storage/data.json` because this PHP installation has no PDO driver enabled.
 
@@ -69,6 +70,10 @@ The GoDigital integration is documented in [`godigital/README.md`](godigital/REA
 ## PesaWay gateway
 
 The PesaWay integration is documented in [`pesaway/README.md`](pesaway/README.md). Its protected dashboard workspace is available at `/pesaway-tester` from the PesaWay sidebar dropdown, with separate tabs for connection, active channels, mobile money, bank transfer, airtime, transaction history, refunds, account balance, SMS, callbacks, and logs. Configure PesaWay credentials only in `.env`, then register the public HTTPS callback `/webhooks/pesaway`. The implementation deliberately excludes PesaWay FX and crypto operations.
+
+## MTN MoMo Pay gateway
+
+The MTN MoMo Pay implementation is documented in [`momopay/README.md`](momopay/README.md). Its dashboard tester is at `/momopay-tester`, with simple tabs for the Collection and Disbursement products, withdrawal requests, status, balances, account-holder checks, callbacks, and logs. It reads provisioned API users, API keys, and subscription keys from `.env`; it never creates or returns credentials during a payment.
 
 ## Database deployment
 

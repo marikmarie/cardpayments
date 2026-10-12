@@ -41,6 +41,13 @@ spl_autoload_register(static function (string $class): void {
             require $file;
         }
     }
+
+    if (str_starts_with($class, 'MomoPay\\')) {
+        $file = dirname(__DIR__) . '/momopay/src/' . str_replace('\\', '/', substr($class, strlen('MomoPay\\'))) . '.php';
+        if (is_file($file)) {
+            require $file;
+        }
+    }
 });
 
 \App\Config::load(dirname(__DIR__) . '/.env');

@@ -61,7 +61,14 @@ final class PesawayGateway
     {
         $region = $this->region($input['region'] ?? '');
         $payload = $this->optionalFields($input, ['TransactionType', 'Country', 'Currency']);
-        $payload['MerchantCode'] = $this->merchantCode($input['merchant_code'] ?? '');
+        $this->requireConfiguration(false);
+        $merchantCode = trim((string) ($input['merchant_code'] ?? '')) ?: $this->config('PESAWAY_MERCHANT_CODE');
+        if ($merchantCode !== '') {
+            if (!preg_match('/^[A-Za-z0-9._-]{2,100}$/', $merchantCode)) {
+                throw new PesawayException('Use a valid PesaWay merchant code.', 422);
+            }
+            $payload['MerchantCode'] = $merchantCode;
+        }
         if (isset($payload['Currency'])) {
             $payload['Currency'] = $this->currency($payload['Currency']);
         }
@@ -419,6 +426,10 @@ final class PesawayGateway
         $code = trim((string) ($response['code'] ?? ''));
         if ($code !== '' && !str_starts_with($code, '200')) {
             throw new PesawayException((string) ($response['description'] ?? $response['message'] ?? 'PesaWay rejected the request.'), 502);
+        }
+        $resultCode = trim((string) ($response['ResultCode'] ?? ''));
+        if ($resultCode !== '' && $resultCode !== '0') {
+            throw new PesawayException((string) ($response['ResultDesc'] ?? $response['ResponseDescription'] ?? 'PesaWay rejected the request.'), 502);
         }
         return $response;
     }
