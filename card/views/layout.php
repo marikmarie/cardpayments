@@ -39,6 +39,22 @@
       <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
         <span>◉</span> GoDigital
       </a>
+      <details class="side-nav-group" <?= ($active_nav ?? '') === 'pesaway' ? 'open' : '' ?> >
+        <summary><span>◌</span> PesaWay <b>⌄</b></summary>
+        <div class="side-nav-children">
+          <a href="<?= $url('/pesaway-tester?tab=connection') ?>">Overview</a>
+          <a href="<?= $url('/pesaway-tester?tab=channels') ?>">Channels</a>
+          <a href="<?= $url('/pesaway-tester?tab=mobile') ?>">Mobile money</a>
+          <a href="<?= $url('/pesaway-tester?tab=bank') ?>">Bank transfer</a>
+          <a href="<?= $url('/pesaway-tester?tab=airtime') ?>">Airtime</a>
+          <a href="<?= $url('/pesaway-tester?tab=transactions') ?>">Transactions</a>
+          <a href="<?= $url('/pesaway-tester?tab=refunds') ?>">Refunds</a>
+          <a href="<?= $url('/pesaway-tester?tab=account') ?>">Account</a>
+          <a href="<?= $url('/pesaway-tester?tab=sms') ?>">SMS</a>
+          <a href="<?= $url('/pesaway-tester?tab=callbacks') ?>">Callbacks</a>
+          <a href="<?= $url('/pesaway-tester?tab=logs') ?>">Logs</a>
+        </div>
+      </details>
     </nav>
 
     <p class="workspace-label nav-section-label">Compliance</p>

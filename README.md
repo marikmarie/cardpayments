@@ -10,6 +10,7 @@ A compact plain-PHP dashboard and integration API for CyberSource-hosted payment
 - Signed `POST /webhooks/cybersource` receiver for CyberSource invoice status events.
 - A separate `efris/` gateway module and OpenAPI contract for tenant-scoped POS/ERP fiscalisation testing.
 - A separate `godigital/` gateway module for GoDigital Tanzania mobile-money collections, payouts, callbacks, and UAT testing.
+- A separate `pesaway/` gateway module for PesaWay payments, queries, refunds, balances, SMS, callbacks, and UAT testing; it excludes FX and crypto products.
 - MySQL production schemas in `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql`.
 - Local JSON store in `storage/data.json` because this PHP installation has no PDO driver enabled.
 
@@ -64,6 +65,10 @@ The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from ca
 ## GoDigital gateway
 
 The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). Its dashboard tester follows the v1.1.4 contract and has separate tabs for connection, C2B collections, B2C payouts, status, wallet balance, recipient name check, callback setup, and logs. Configure its credentials only in `.env`, allow-list the deployed server's public outbound IP with GoDigital, and use the public HTTPS callback `/webhooks/godigital`.
+
+## PesaWay gateway
+
+The PesaWay integration is documented in [`pesaway/README.md`](pesaway/README.md). Its protected dashboard workspace is available at `/pesaway-tester` from the PesaWay sidebar dropdown, with separate tabs for connection, active channels, mobile money, bank transfer, airtime, transaction history, refunds, account balance, SMS, callbacks, and logs. Configure PesaWay credentials only in `.env`, then register the public HTTPS callback `/webhooks/pesaway`. The implementation deliberately excludes PesaWay FX and crypto operations.
 
 ## Database deployment
 
