@@ -249,7 +249,14 @@ final class MomoPayGateway
         if (!function_exists('curl_init')) {
             throw new MomoPayException('The PHP cURL extension is required for MoMo Pay requests.', 503);
         }
-        $body = $payload === null ? null : $this->encodeJson($payload);
+        $needsEmptyPostBody = strtoupper($method) === 'POST' && $payload === null;
+        $body = $payload === null ? ($needsEmptyPostBody ? '' : null) : $this->encodeJson($payload);
+        if ($needsEmptyPostBody && !$this->hasHeader($headers, 'Content-Length')) {
+            // MTN's token gateway rejects a bodyless POST unless its zero-byte
+            // length is declared (HTTP 411). Sending the empty payload also
+            // makes cURL use a regular POST instead of a bodyless custom verb.
+            $headers[] = 'Content-Length: 0';
+        }
         $this->activity($operation . '_request', 'MoMo Pay request sent: ' . $method . ' ' . parse_url($url, PHP_URL_PATH) . '.', [
             'method' => $method,
             'url' => $url,
@@ -499,6 +506,18 @@ final class MomoPayGateway
             $safe[$name] = preg_match('/authorization|key|secret|token/i', $name) ? '[redacted]' : trim($value);
         }
         return $safe;
+    }
+
+    /** Return whether the request already includes the given HTTP header. */
+    private function hasHeader(array $headers, string $name): bool
+    {
+        foreach ($headers as $header) {
+            [$headerName] = explode(':', $header, 2);
+            if (strcasecmp(trim($headerName), $name) === 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function redact(mixed $value, ?string $key = null): mixed
