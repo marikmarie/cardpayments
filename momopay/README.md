@@ -60,7 +60,7 @@ The local API contract is at `/api/v1/momopay/openapi.json` and requires a dashb
 
 The **SIT cases** tab in `/momopay-tester` covers the automated API cases in `UG Momo OpenAPI SIT Sheet.xlsx`. It is deliberately available only while `MOMOPAY_TARGET_ENVIRONMENT=sandbox`, so a negative test cannot send an intentionally bad credential, target environment, or request to production.
 
-Select the matching product and one case, complete only the fields that case needs, and submit it. The response screen gives the generated MTN request UUID where one is created. Open **Logs** after every test: the outbound request and the provider response have a `[SIT: …]` label, while credentials, bearer tokens, and customer numbers remain masked. Record the HTTP status, response body, and any final callback or status result in the SIT sheet.
+Select the matching product and one case, complete only the fields that case needs, and submit it. The response screen gives the generated MTN request UUID where one is created. Open **Logs** after every test: the outbound request and the provider response have a `[SIT: …]` label. Every response entry records `source: MTN MoMo API`, the actual HTTP status, and the raw body returned by MTN. Credentials, bearer tokens, and customer numbers are masked; no response body or transaction outcome is invented by this application. Record the HTTP status, response body, and any final callback or status result in the SIT sheet.
 
 ### Portal provisioning cases
 
@@ -90,9 +90,9 @@ Choose **Collection** in the SIT tab. The request cases send `POST /collection/v
 
 | Sheet case | Tester selection | Expected result |
 | --- | --- | --- |
-| TC02-01 — approved payment | **Successful request** | Initial HTTP 202/PENDING is normal. The final status must become `SUCCESS` only after the subscriber approves; retain the callback or status-query log. |
-| TC02-02 — rejected payment | **Subscriber rejects** | Initial acceptance can be HTTP 202/PENDING. Record the final rejected/failed status from the callback or status query. |
-| TC02-03 — timeout | **Approval timeout** | The request can remain pending first, then reaches MTN's failed/timeout outcome. Record the final callback or status response. |
+| TC02-01 — approved payment | **Successful request** | An initial HTTP 202 only confirms MTN accepted the request. Record `SUCCESS` only when it appears in MTN's callback or status-query response. |
+| TC02-02 — rejected payment | **Subscriber rejects** | The initial HTTP response only records submission. Record the final rejected/failed status from MTN's callback or status query. |
+| TC02-03 — timeout | **Approval timeout** | Record MTN's final timeout/failed response from the callback or status query. |
 | TC02-04 — duplicate reference | **Duplicate MTN UUID** | First submit a request, copy its MTN UUID into **MTN UUID**, then run this case. The repeat must be rejected as a duplicate, commonly HTTP 409; no second payment should be created. |
 | TC02-05 — incomplete request | **Missing amount** and **Missing currency** | Run both variants. Each omits the named required field and should receive a validation failure, commonly HTTP 400. |
 | TC02-06 — insufficient funds | **Insufficient funds** | The request is sent with a deliberately large amount. Record MTN's final insufficient-funds failure; sandbox funding rules determine the exact response. |
@@ -115,7 +115,7 @@ Choose **Disbursement** in the SIT tab. The request cases send `POST /disburseme
 
 | Sheet case | Tester selection | Expected result |
 | --- | --- | --- |
-| TC02-01 — normal transfer | **Successful request** | Initial HTTP 202/PENDING is expected. Record final `SUCCESS` from the callback or status query. |
+| TC02-01 — normal transfer | **Successful request** | An initial HTTP 202 only confirms MTN accepted the request. Record final `SUCCESS` only from MTN's callback or status-query response. |
 | TC02-02 — duplicate reference | **Duplicate MTN UUID** | Reuse the MTN UUID returned by the first request. The provider rejects the duplicate, commonly HTTP 409, and no second transfer is created. |
 | TC02-03 — incomplete request | **Missing amount** and **Missing currency** | Each variant omits one mandatory field and should produce a validation failure. |
 | TC02-04 — insufficient funds | **Insufficient funds** | Record MTN's final insufficient-funds outcome; its exact sandbox response depends on the funded test account. |
@@ -152,12 +152,12 @@ Choose the required product, then use the **Balance** group. The implemented MTN
 | Sheet case | Tester selection | Expected result |
 | --- | --- | --- |
 | TC02-01 — valid balance | **Valid balance** | HTTP 200 with the configured account's balance response. |
-| TC02-02 — invalid account-holder type | **Invalid account holder type (not applicable)** | The tester writes a `NOT_APPLICABLE` log entry. Mark this row not applicable because the MTN balance endpoint does not accept an account-holder type. |
-| TC02-03 — invalid account-holder ID | **Invalid account holder ID (not applicable)** | The tester writes a `NOT_APPLICABLE` log entry. Mark this row not applicable because the MTN balance endpoint does not accept an account-holder ID. |
+| TC02-02 — invalid account-holder type | Not sent to the tester | Mark this row not applicable. The MTN balance endpoint does not accept an account-holder type, so there is no MoMo API request or response to log. |
+| TC02-03 — invalid account-holder ID | Not sent to the tester | Mark this row not applicable. The MTN balance endpoint does not accept an account-holder ID, so there is no MoMo API request or response to log. |
 | TC02-04 — invalid subscription key | **Invalid subscription key** | Balance request is rejected with an authentication/subscription failure. |
 | TC02-05 — invalid target environment | **Invalid target environment** | Balance request is rejected because the target header is invalid. |
 | TC02-06 — invalid bearer token | **Invalid bearer token** | Balance request is rejected with an authentication failure. |
 
 ### Interpreting results
 
-The sandbox accepts a request before a customer approval, rejection, timeout, available-funds, or limit outcome is final. For those scenarios, an initial HTTP 202 and `PENDING` result is not a pass or fail by itself: wait for the callback or run the matching **Valid MTN UUID** status case and record the final response. The tester logs every request and response it sends or receives; the provider controls the final sandbox behavior and the exact body or status for a negative test can differ by MTN configuration.
+The sandbox accepts a request before a customer approval, rejection, timeout, available-funds, or limit outcome is final. An initial HTTP 202 is not a pass or fail by itself: wait for MTN's callback or run the matching **Valid MTN UUID** status case and record the final response. The tester logs every request and response it sends or receives; the provider controls the final sandbox behavior and the exact body or status for a negative test can differ by MTN configuration.

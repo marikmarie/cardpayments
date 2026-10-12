@@ -42,9 +42,9 @@ final class MomoPayTesterController extends Controller
     }
 
     public function token(array $input): never { $this->run('connection', fn() => $this->gateway->tokenDetails((string) ($input['product'] ?? ''))); }
-    public function collection(array $input): never { $this->payment('collection', fn() => $this->gateway->collection($input), $input, 'Collection request accepted. Ask the customer to approve it.'); }
-    public function disbursement(array $input): never { $this->payment('disbursement', fn() => $this->gateway->disbursement($input), $input, 'Disbursement accepted. Confirm the final status.'); }
-    public function withdrawal(array $input): never { $this->payment('withdrawal', fn() => $this->gateway->withdrawal($input), $input, 'Withdrawal request accepted. Confirm it from the callback.'); }
+    public function collection(array $input): never { $this->payment('collection', fn() => $this->gateway->collection($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
+    public function disbursement(array $input): never { $this->payment('disbursement', fn() => $this->gateway->disbursement($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
+    public function withdrawal(array $input): never { $this->payment('withdrawal', fn() => $this->gateway->withdrawal($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
     public function status(array $input): never { $this->run('status', fn() => $this->gateway->status($input)); }
     public function balance(array $input): never { $this->run('account', fn() => $this->gateway->balance($input)); }
     public function accountHolder(array $input): never { $this->run('account', fn() => $this->gateway->accountHolder($input)); }
@@ -56,7 +56,7 @@ final class MomoPayTesterController extends Controller
     }
 
     /** Keep the last safe response for the appropriate test tab. */
-    private function run(string $tab, callable $operation, string $success = 'Request completed.', string $reference = ''): never
+    private function run(string $tab, callable $operation, string $success = 'MoMo API response recorded. Open Logs for the exact provider response.', string $reference = ''): never
     {
         try {
             $_SESSION['momopay_result'] = $operation();

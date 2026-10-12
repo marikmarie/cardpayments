@@ -43,12 +43,11 @@ final class MomoPayGateway
     /** Verify a configured product token without returning the access token. */
     public function tokenDetails(string $product): array
     {
-        $token = $this->token($this->product($product));
+        $product = $this->product($product);
+        $token = $this->token($product);
         return [
             'product' => $product,
-            'token_type' => (string) ($token['token_type'] ?? 'Bearer'),
-            'expires_in' => isset($token['expires_in']) ? (int) $token['expires_in'] : null,
-            'received_at' => gmdate('c'),
+            'provider_response' => $this->redact($this->providerBody($token)),
         ];
     }
 
@@ -90,15 +89,13 @@ final class MomoPayGateway
             ? '/collection/v1_0/requesttopay/' . rawurlencode($providerReference)
             : '/disbursement/v1_0/transfer/' . rawurlencode($providerReference);
         $response = $this->authorized($product, 'status_' . $product, 'GET', $endpoint);
-        $status = strtoupper((string) ($response['status'] ?? $response['financialTransactionId'] ?? 'PENDING'));
-        $this->updateTransaction($transaction['reference'] ?? $reference, $response, $status);
+        $this->updateTransaction($transaction['reference'] ?? $reference, $response, $this->providerStatus($response));
 
         return [
             'reference' => $transaction['reference'] ?? $reference,
             'provider_reference' => $providerReference,
             'product' => $product,
-            'status' => $status,
-            'response' => $response,
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
@@ -127,7 +124,10 @@ final class MomoPayGateway
     {
         $payload = json_decode($rawBody, true);
         if (!is_array($payload)) {
-            $this->activity('callback_failed', 'MoMo Pay callback rejected: invalid JSON.');
+            $this->activity('callback_failed', 'MoMo Pay callback rejected: invalid JSON.', [
+                'source' => 'MTN MoMo callback',
+                'raw_body' => $this->redactProviderBody($rawBody),
+            ]);
             throw new MomoPayException('Callback body must be valid JSON.', 400);
         }
         $providerReference = trim((string) ($payload['referenceId'] ?? $payload['X-Reference-Id'] ?? $payload['externalId'] ?? ''));
@@ -152,10 +152,11 @@ final class MomoPayGateway
                 $this->updateTransactionByProviderReference($providerReference, $payload, $status);
             }
         }
-        $this->activity($duplicate ? 'callback_duplicate' : 'callback_received', $duplicate ? 'Duplicate MoMo Pay callback acknowledged.' : 'MoMo Pay callback accepted.', [
+        $this->activity($duplicate ? 'callback_duplicate' : 'callback_received', $duplicate ? 'Duplicate MoMo Pay callback recorded.' : 'MoMo Pay callback recorded.', [
+            'source' => 'MTN MoMo callback',
             'callback_id' => $callbackId,
             'headers' => $headers,
-            'request' => $payload,
+            'raw_body' => $this->redactProviderBody($rawBody),
         ]);
 
         return ['status' => 'RECEIVED', 'duplicate' => $duplicate];
@@ -176,11 +177,6 @@ final class MomoPayGateway
 
         $product = $this->product($input['product'] ?? '');
         $case = $this->sitCase($input['case'] ?? '');
-        $this->activity('sit_case_started', 'MoMo SIT case started: ' . $case . '.', [
-            'case' => $case,
-            'product' => $product,
-        ]);
-
         return match (true) {
             str_starts_with($case, 'auth_') => $this->sitToken($product, $case),
             str_starts_with($case, 'payment_') => $this->sitPayment($product, $case, $input),
@@ -204,9 +200,7 @@ final class MomoPayGateway
         return [
             'case' => $case,
             'product' => $product,
-            'token_type' => (string) ($response['token_type'] ?? 'Bearer'),
-            'expires_in' => isset($response['expires_in']) ? (int) $response['expires_in'] : null,
-            'http_status' => $response['http_status'] ?? 200,
+            'provider_response' => $this->redact($this->providerBody($response)),
         ];
     }
 
@@ -268,7 +262,7 @@ final class MomoPayGateway
             'provider_reference' => $providerReference,
             'product' => $product,
             'operation' => 'sit_' . $case,
-            'status' => 'PENDING',
+            'status' => $this->providerStatus($response),
             'amount' => $payload['amount'] ?? null,
             'currency' => $payload['currency'] ?? null,
             'phone_last4' => substr((string) $partyId, -4),
@@ -281,9 +275,7 @@ final class MomoPayGateway
             'product' => $product,
             'reference' => $reference,
             'provider_reference' => $providerReference,
-            'status' => 'PENDING',
-            'http_status' => $response['http_status'] ?? 202,
-            'message' => 'Request sent. Use the Status tab or callback log for the provider result.',
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
@@ -308,9 +300,7 @@ final class MomoPayGateway
             'case' => $case,
             'product' => $product,
             'provider_reference' => $providerReference,
-            'status' => strtoupper((string) ($response['status'] ?? $response['financialTransactionId'] ?? 'RECEIVED')),
-            'http_status' => $response['http_status'] ?? 200,
-            'response' => $response,
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
@@ -337,28 +327,13 @@ final class MomoPayGateway
             'case' => $case,
             'product' => $product,
             'query' => $query,
-            'http_status' => $response['http_status'] ?? 200,
-            'response' => $response,
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
-    /** Exercise balance cases, recording sheet rows that do not map to the balance API. */
+    /** Retrieve the exact response for a balance case supported by the MTN endpoint. */
     private function sitBalance(string $product, string $case): array
     {
-        if (in_array($case, ['balance_invalid_account_type', 'balance_invalid_account_id'], true)) {
-            $this->activity('sit_case_not_applicable', 'MoMo SIT balance case recorded as not applicable: ' . $case . '.', [
-                'case' => $case,
-                'product' => $product,
-                'reason' => 'The MTN balance endpoint has no account-holder type or account-holder ID parameter.',
-            ]);
-            return [
-                'case' => $case,
-                'product' => $product,
-                'outcome' => 'NOT_APPLICABLE',
-                'message' => 'The balance endpoint has no account-holder parameter. Record this sheet row as not applicable and retain this log entry.',
-            ];
-        }
-
         $response = $this->authorizedWithOverrides(
             $product,
             'sit_' . $product . '_' . $case,
@@ -372,8 +347,7 @@ final class MomoPayGateway
         return [
             'case' => $case,
             'product' => $product,
-            'http_status' => $response['http_status'] ?? 200,
-            'response' => $response,
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
@@ -401,7 +375,7 @@ final class MomoPayGateway
             'provider_reference' => $providerReference,
             'product' => $product,
             'operation' => $operation,
-            'status' => 'PENDING',
+            'status' => $this->providerStatus($response),
             'amount' => $payload['amount'],
             'currency' => $payload['currency'],
             'phone_last4' => substr($phone, -4),
@@ -412,9 +386,7 @@ final class MomoPayGateway
         return [
             'reference' => $reference,
             'provider_reference' => $providerReference,
-            'status' => 'PENDING',
-            'http_status' => $response['http_status'] ?? 202,
-            'message' => 'Accepted by MTN. Confirm final status from the callback or Status tab.',
+            'provider_response' => $this->providerBody($response),
         ];
     }
 
@@ -463,7 +435,7 @@ final class MomoPayGateway
         return $this->http($operation, $method, $this->apiUrl($endpoint), $headers, $payload);
     }
 
-    /** Send one MTN request and write a safe outbound request/response log. */
+    /** Send one MTN request and persist the provider's returned HTTP body. */
     private function http(string $operation, string $method, string $url, array $headers, ?array $payload = null): array
     {
         if (!function_exists('curl_init')) {
@@ -507,12 +479,13 @@ final class MomoPayGateway
             throw new MomoPayException('MoMo Pay connection failed: ' . ($error ?: 'unknown transport error'), 502);
         }
         $decoded = trim($raw) === '' ? [] : json_decode($raw, true);
-        $response = is_array($decoded) ? $decoded : ['raw_response' => substr($raw, 0, 4000)];
+        $response = is_array($decoded) ? $decoded : ['raw_response' => $raw];
         $response['http_status'] = $status;
         $this->activity($operation . '_response', 'MoMo Pay response received (HTTP ' . $status . ').' . $sitLabel, [
+            'source' => 'MTN MoMo API',
             'operation' => $operation,
             'http_status' => $status,
-            'body' => $response,
+            'raw_body' => $this->redactProviderBody($raw),
         ]);
         if ($status < 200 || $status >= 300) {
             $message = $status === 500 && strtolower((string) ($response['error'] ?? '')) === 'login_failed'
@@ -540,7 +513,8 @@ final class MomoPayGateway
         }, false);
     }
 
-    private function updateTransaction(string $reference, array $response, string $status): void
+    /** Store only a status supplied by MTN; an accepted request has no final provider status yet. */
+    private function updateTransaction(string $reference, array $response, ?string $status): void
     {
         if (!PaymentReference::isValid($reference)) {
             return;
@@ -549,7 +523,9 @@ final class MomoPayGateway
             if (!is_array($state['momopay_transactions'][$reference] ?? null)) {
                 return;
             }
-            $state['momopay_transactions'][$reference]['status'] = $status;
+            if ($status !== null) {
+                $state['momopay_transactions'][$reference]['status'] = $status;
+            }
             $state['momopay_transactions'][$reference]['provider_status'] = $this->redact($response);
             $state['momopay_transactions'][$reference]['updated_at'] = gmdate('c');
         });
@@ -577,6 +553,23 @@ final class MomoPayGateway
         return $product;
     }
 
+    /** Remove transport metadata so the UI can show only fields returned by MTN. */
+    private function providerBody(array $response): array
+    {
+        unset($response['http_status']);
+        return $response;
+    }
+
+    /** Read an MTN transaction status without inventing one when the provider omitted it. */
+    private function providerStatus(array $response): ?string
+    {
+        $status = $this->providerBody($response)['status'] ?? null;
+        if (!is_scalar($status) || trim((string) $status) === '') {
+            return null;
+        }
+        return strtoupper(trim((string) $status));
+    }
+
     /** Validate the finite set of sandbox scenarios documented in the SIT workbook. */
     private function sitCase(mixed $value): string
     {
@@ -589,7 +582,7 @@ final class MomoPayGateway
             'payment_https_callback', 'payment_http_callback',
             'status_valid', 'status_invalid_reference', 'status_invalid_subscription', 'status_invalid_target', 'status_invalid_token',
             'account_valid', 'account_invalid_type', 'account_invalid_id', 'account_invalid_subscription', 'account_invalid_target', 'account_invalid_token',
-            'balance_valid', 'balance_invalid_account_type', 'balance_invalid_account_id', 'balance_invalid_subscription', 'balance_invalid_target', 'balance_invalid_token',
+            'balance_valid', 'balance_invalid_subscription', 'balance_invalid_target', 'balance_invalid_token',
         ];
         if (!in_array($case, $cases, true)) {
             throw new MomoPayException('Choose a supported MoMo SIT case.', 422);
@@ -785,6 +778,21 @@ final class MomoPayGateway
             $safe[$name] = preg_match('/authorization|key|secret|token/i', $name) ? '[redacted]' : trim($value);
         }
         return $safe;
+    }
+
+    /** Keep the provider body intact where safe, while never persisting secrets or customer numbers. */
+    private function redactProviderBody(string $body): string
+    {
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded)) {
+            return $body;
+        }
+
+        $redacted = $this->redact($decoded);
+        if ($redacted === $decoded) {
+            return $body;
+        }
+        return json_encode($redacted, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[response could not be redacted]';
     }
 
     /** Return whether the request already includes the given HTTP header. */

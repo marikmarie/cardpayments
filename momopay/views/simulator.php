@@ -95,7 +95,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   </div>
 
   <div data-momopay-panel="sit"<?= $panelVisibility('sit') ?>>
-    <div class="warning"><strong>Sandbox SIT runner</strong><p>Run one case at a time with sandbox credentials. Every outbound request and response is labelled with the SIT case in Logs. MTN controls approval, rejection, timeout, funds, and limit outcomes.</p></div>
+    <div class="warning"><strong>Sandbox SIT runner</strong><p>Run one case at a time with sandbox credentials. Logs retain the actual HTTP status and raw body returned by the MTN MoMo API for every outbound request. MTN controls approval, rejection, timeout, funds, and limit outcomes.</p></div>
     <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form">
       <div class="compact-form-grid">
         <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
@@ -104,7 +104,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
           <optgroup label="RequestToPay or Transfer"><option value="payment_approved">Successful request</option><option value="payment_rejected">Subscriber rejects</option><option value="payment_timeout">Approval timeout</option><option value="payment_duplicate_reference">Duplicate MTN UUID</option><option value="payment_missing_amount">Missing amount</option><option value="payment_missing_currency">Missing currency</option><option value="payment_insufficient_funds">Insufficient funds</option><option value="payment_invalid_party">Invalid recipient</option><option value="payment_daily_limit">Exceeds daily limit</option><option value="payment_invalid_subscription">Invalid subscription key</option><option value="payment_invalid_target">Invalid target environment</option><option value="payment_invalid_token">Invalid bearer token</option><option value="payment_https_callback">HTTPS callback URL</option><option value="payment_http_callback">HTTP callback URL</option></optgroup>
           <optgroup label="Transaction status"><option value="status_valid">Valid MTN UUID</option><option value="status_invalid_reference">Unknown MTN UUID</option><option value="status_invalid_subscription">Invalid subscription key</option><option value="status_invalid_target">Invalid target environment</option><option value="status_invalid_token">Invalid bearer token</option></optgroup>
           <optgroup label="Account holder"><option value="account_valid">Valid account check</option><option value="account_invalid_type">Invalid account holder type</option><option value="account_invalid_id">Invalid account holder ID</option><option value="account_invalid_subscription">Invalid subscription key</option><option value="account_invalid_target">Invalid target environment</option><option value="account_invalid_token">Invalid bearer token</option></optgroup>
-          <optgroup label="Balance"><option value="balance_valid">Valid balance</option><option value="balance_invalid_account_type">Invalid account holder type (not applicable)</option><option value="balance_invalid_account_id">Invalid account holder ID (not applicable)</option><option value="balance_invalid_subscription">Invalid subscription key</option><option value="balance_invalid_target">Invalid target environment</option><option value="balance_invalid_token">Invalid bearer token</option></optgroup>
+          <optgroup label="Balance"><option value="balance_valid">Valid balance</option><option value="balance_invalid_subscription">Invalid subscription key</option><option value="balance_invalid_target">Invalid target environment</option><option value="balance_invalid_token">Invalid bearer token</option></optgroup>
         </select></label>
         <label>PMT reference (payment)<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" placeholder="PMT1234567"></label>
         <label>MTN UUID (status or duplicate)<input name="provider_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
@@ -121,8 +121,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
 
   <div data-momopay-panel="callbacks"<?= $panelVisibility('callbacks') ?>>
     <div class="godigital-summary-grid one-column"><div><span>Callback endpoint</span><strong class="copyable-value"><?= \App\View::e($configuration['callback_url'] ?: 'Set APP_URL or MOMOPAY_CALLBACK_URL') ?></strong></div></div>
-    <div class="warning"><strong>Register this callback with MTN</strong><p>The receiver accepts both POST and PUT callbacks and records them once. MTN only sends one final callback, so use the Status tab when a callback is not received.</p></div>
-    <pre class="code-block"><code><?= \App\View::e(json_encode(['status' => 'RECEIVED', 'duplicate' => false], JSON_PRETTY_PRINT)) ?></code></pre>
+    <div class="warning"><strong>Register this callback with MTN</strong><p>The receiver accepts both POST and PUT callbacks and records each payload received from MTN. Callback payloads appear in Logs; no sample provider response is shown here.</p></div>
   </div>
 
   <div data-momopay-panel="logs"<?= $panelVisibility('logs') ?>>
@@ -131,7 +130,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <?php else: ?><div class="event-empty"><span>◍</span><p>Requests, responses, and callbacks appear here.</p></div><?php endif; ?>
   </div>
 
-  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Latest response</h3><p>Credentials and customer phone numbers are excluded.</p></div></div><pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre></section><?php endif; ?>
+  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request metadata and provider response</h3><p>Logs retain the raw MTN response; credentials and customer phone numbers are masked.</p></div></div><pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre></section><?php endif; ?>
 </section>
 
 <section class="api-test-band"><div><p class="eyebrow">Server API</p><h3>MoMo Pay API</h3><p>Use a dashboard-issued <code>X-API-Key</code>.</p></div><a class="primary-action" href="<?= $url('/api/v1/momopay/openapi.json') ?>">Open API JSON</a></section>
