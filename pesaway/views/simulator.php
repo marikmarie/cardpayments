@@ -4,6 +4,7 @@ $ready = static fn(string $key): bool => (bool) ($configuration[$key] ?? false);
 $newReference = static fn(): string => \App\PaymentReference::generate();
 $resultJson = json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}';
 $today = gmdate('Y-m-d');
+$panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' : ' hidden';
 ?>
 
 <section class="page-intro">
@@ -39,7 +40,7 @@ $today = gmdate('Y-m-d');
     <button type="button" class="pegasus-tab" data-pesaway-tab="logs">Logs</button>
   </div>
 
-  <div data-pesaway-panel="connection">
+  <div data-pesaway-panel="connection"<?= $panelVisibility('connection') ?>>
     <div class="godigital-summary-grid">
       <div><span>Base URL</span><strong><?= $ready('base_url_configured') ? \App\View::e($configuration['base_url']) : 'Not configured' ?></strong></div>
       <div><span>Region header</span><strong><?= \App\View::e(strtoupper($configuration['region'])) ?></strong></div>
@@ -48,7 +49,7 @@ $today = gmdate('Y-m-d');
     <form method="post" action="<?= $url('/pesaway-tester/token') ?>" class="form-actions compact-actions"><button class="primary-action" type="submit">Check OAuth connection</button></form>
   </div>
 
-  <form method="post" action="<?= $url('/pesaway-tester/channels') ?>" class="pesaway-operation-form" data-pesaway-panel="channels">
+  <form method="post" action="<?= $url('/pesaway-tester/channels') ?>" class="pesaway-operation-form" data-pesaway-panel="channels"<?= $panelVisibility('channels') ?>>
     <p class="helper-copy">Lists payment channels enabled for the merchant. Crypto channel data is removed before it is displayed.</p>
     <div class="compact-form-grid">
       <label>Transaction type<select name="transaction_type"><option value="Payins">Payins</option><option value="Payouts">Payouts</option></select></label>
@@ -59,7 +60,7 @@ $today = gmdate('Y-m-d');
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Get active channels</button></div>
   </form>
 
-  <div class="pesaway-operation-set" data-pesaway-panel="mobile">
+  <div class="pesaway-operation-set" data-pesaway-panel="mobile"<?= $panelVisibility('mobile') ?>>
     <form method="post" action="<?= $url('/pesaway-tester/mobile-b2c') ?>" class="pesaway-operation-form">
       <h4>Send to customer</h4><p class="helper-copy">B2C payout to a mobile number.</p>
       <div class="compact-form-grid">
@@ -109,7 +110,7 @@ $today = gmdate('Y-m-d');
     </div>
   </div>
 
-  <div class="pesaway-operation-set" data-pesaway-panel="bank">
+  <div class="pesaway-operation-set" data-pesaway-panel="bank"<?= $panelVisibility('bank') ?>>
     <form method="post" action="<?= $url('/pesaway-tester/bank-payout') ?>" class="pesaway-operation-form">
       <h4>Bank payout</h4><p class="helper-copy">Send a payment to the bank account and bank name supplied by the recipient.</p>
       <div class="compact-form-grid">
@@ -127,7 +128,7 @@ $today = gmdate('Y-m-d');
     </form>
   </div>
 
-  <form method="post" action="<?= $url('/pesaway-tester/airtime') ?>" class="pesaway-operation-form" data-pesaway-panel="airtime">
+  <form method="post" action="<?= $url('/pesaway-tester/airtime') ?>" class="pesaway-operation-form" data-pesaway-panel="airtime"<?= $panelVisibility('airtime') ?>>
     <p class="helper-copy">Send airtime to a customer phone number.</p>
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
@@ -139,7 +140,7 @@ $today = gmdate('Y-m-d');
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send airtime</button></div>
   </form>
 
-  <form method="post" action="<?= $url('/pesaway-tester/pull') ?>" class="pesaway-operation-form" data-pesaway-panel="transactions">
+  <form method="post" action="<?= $url('/pesaway-tester/pull') ?>" class="pesaway-operation-form" data-pesaway-panel="transactions"<?= $panelVisibility('transactions') ?>>
     <p class="helper-copy">Retrieve a page of completed or in-progress collections, payments, or refunds.</p>
     <div class="compact-form-grid">
       <label>Start date<input type="date" name="start_date" value="<?= $today ?>" required></label>
@@ -151,7 +152,7 @@ $today = gmdate('Y-m-d');
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Pull transactions</button></div>
   </form>
 
-  <form method="post" action="<?= $url('/pesaway-tester/refund') ?>" class="pesaway-operation-form" data-pesaway-panel="refunds">
+  <form method="post" action="<?= $url('/pesaway-tester/refund') ?>" class="pesaway-operation-form" data-pesaway-panel="refunds"<?= $panelVisibility('refunds') ?>>
     <p class="helper-copy">The request receives PesaWay’s documented timestamp and HMAC signature. Set the separate refund secret first.</p>
     <div class="compact-form-grid">
       <label>Original reference<input name="original_reference" required></label>
@@ -163,13 +164,13 @@ $today = gmdate('Y-m-d');
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request refund</button></div>
   </form>
 
-  <form method="post" action="<?= $url('/pesaway-tester/balance') ?>" class="pesaway-operation-form" data-pesaway-panel="account">
+  <form method="post" action="<?= $url('/pesaway-tester/balance') ?>" class="pesaway-operation-form" data-pesaway-panel="account"<?= $panelVisibility('account') ?>>
     <p class="helper-copy">Checks the configured merchant account balance.</p>
     <div class="compact-form-grid"><label>Currency (optional)<input name="currency" maxlength="3" placeholder="KES"></label><label>Merchant code (optional)<input name="merchant_code" maxlength="100" placeholder="Use configured code"></label></div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check account balance</button></div>
   </form>
 
-  <div class="pesaway-operation-set" data-pesaway-panel="sms">
+  <div class="pesaway-operation-set" data-pesaway-panel="sms"<?= $panelVisibility('sms') ?>>
     <form method="post" action="<?= $url('/pesaway-tester/sms') ?>" class="pesaway-operation-form">
       <h4>Send SMS</h4><p class="helper-copy">Separate multiple recipient numbers with commas or new lines.</p>
       <div class="compact-form-grid"><label class="wide">Message<input name="message" value="Your payment is being processed." required></label><label class="wide">Destination<input name="destination" inputmode="numeric" placeholder="2547…" required></label></div>
@@ -178,13 +179,13 @@ $today = gmdate('Y-m-d');
     <form method="post" action="<?= $url('/pesaway-tester/sms-balance') ?>" class="pesaway-operation-form"><h4>SMS balance</h4><div class="form-actions compact-actions"><button class="outline-action" type="submit">Check SMS balance</button></div></form>
   </div>
 
-  <div data-pesaway-panel="callbacks">
+  <div data-pesaway-panel="callbacks"<?= $panelVisibility('callbacks') ?>>
     <div class="godigital-summary-grid one-column"><div><span>Callback endpoint</span><strong class="copyable-value"><?= \App\View::e($configuration['callback_url'] ?: 'Set APP_URL or PESAWAY_CALLBACK_URL') ?></strong></div></div>
     <div class="warning"><strong>Register this endpoint with PesaWay</strong><p>It accepts payment callbacks and returns HTTP 200 after recording them. Generic callbacks can use <code>Signature</code>; refund callbacks use <code>X-Timestamp</code>, <code>X-Signature</code>, and <code>X-Event-ID</code> when their matching secrets are configured.</p></div>
     <pre class="code-block"><code><?= \App\View::e(json_encode(['status' => 'RECEIVED', 'duplicate' => false], JSON_PRETTY_PRINT)) ?></code></pre>
   </div>
 
-  <div data-pesaway-panel="logs">
+  <div data-pesaway-panel="logs"<?= $panelVisibility('logs') ?>>
     <?php if ($activity): ?>
       <div class="event-list godigital-events">
         <?php foreach ($activity as $entry): ?>
@@ -206,11 +207,14 @@ $today = gmdate('Y-m-d');
 <script>
 (() => {
   const tabs = document.querySelector('[data-pesaway-tabs]');
+  if (!tabs) return;
+  const buttons = tabs.querySelectorAll('[data-pesaway-tab]');
+  const panels = document.querySelectorAll('[data-pesaway-panel]');
   const show = (tab) => {
-    document.querySelectorAll('[data-pesaway-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.pesawayTab === tab));
-    document.querySelectorAll('[data-pesaway-panel]').forEach((panel) => { panel.hidden = panel.dataset.pesawayPanel !== tab; });
+    buttons.forEach((button) => button.classList.toggle('is-active', button.dataset.pesawayTab === tab));
+    panels.forEach((panel) => { panel.hidden = panel.dataset.pesawayPanel !== tab; });
   };
-  tabs.querySelectorAll('[data-pesaway-tab]').forEach((button) => button.addEventListener('click', () => show(button.dataset.pesawayTab)));
+  buttons.forEach((button) => button.addEventListener('click', () => show(button.dataset.pesawayTab)));
   show(tabs.dataset.defaultTab || 'connection');
 })();
 </script>

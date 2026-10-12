@@ -43,6 +43,6 @@ PESAWAY_TIMEOUT_SECONDS="30"
 
 Kenya is the default region (`ke`), so the tester starts with KES, `254` phone-number examples, and the `MPESA` channel. To use another supported market, set `PESAWAY_REGION` to `ug`, `tz`, `zm`, `gh`, or `cm` and enter the active channel and currency returned for that region.
 
-The PesaWay dashboard workspace is `/pesaway-tester`; the collapsible PesaWay sidebar group opens its matching tab. `/webhooks/pesaway` is the callback receiver and `/webhooks/pesaway/health` is its health endpoint. The protected local API contract is at `/api/v1/pesaway/openapi.json` and requires a dashboard-issued `X-API-Key`.
+The PesaWay dashboard workspace is `/pesaway-tester`. Its tabs show only the selected operation group. `/webhooks/pesaway` is the callback receiver and `/webhooks/pesaway/health` is its health endpoint. The protected local API contract is at `/api/v1/pesaway/openapi.json` and requires a dashboard-issued `X-API-Key`.
 
 Every outbound call writes a redacted request record and a response record to the application store under `pesaway_activity`. Tokens, client secrets, signatures, OTPs, phone numbers, and account numbers are masked before they are persisted or shown in the Logs tab.
