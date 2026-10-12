@@ -289,7 +289,9 @@ final class MomoPayGateway
         $response['http_status'] = $status;
         $this->activity($operation . '_response', 'MoMo Pay response received (HTTP ' . $status . ').', ['http_status' => $status, 'body' => $response]);
         if ($status < 200 || $status >= 300) {
-            $message = (string) ($response['message'] ?? $response['error_description'] ?? $response['reason'] ?? 'MTN rejected the request.');
+            $message = $status === 500 && strtolower((string) ($response['error'] ?? '')) === 'login_failed'
+                ? 'MTN rejected the API user and API key pair. Use the matching credentials provisioned for this product and environment.'
+                : (string) ($response['message'] ?? $response['error_description'] ?? $response['reason'] ?? $response['error'] ?? 'MTN rejected the request.');
             throw new MomoPayException($message . ' (HTTP ' . $status . ')', 502);
         }
         return $response;
@@ -358,13 +360,17 @@ final class MomoPayGateway
                 throw new MomoPayException('Set ' . $key . ' in .env before using MoMo Pay.', 503);
             }
         }
+        $apiUserKey = $this->key($product, 'API_USER');
+        if (!$this->isUuid($this->config($apiUserKey))) {
+            throw new MomoPayException($apiUserKey . ' must be the UUID v4 created as the MTN API user for this product.', 503);
+        }
     }
 
     private function productConfigured(string $product): bool
     {
         return $this->config('MOMOPAY_BASE_URL') !== ''
             && $this->config($this->key($product, 'SUBSCRIPTION_KEY')) !== ''
-            && $this->config($this->key($product, 'API_USER')) !== ''
+            && $this->isUuid($this->config($this->key($product, 'API_USER')))
             && $this->config($this->key($product, 'API_KEY')) !== '';
     }
 
