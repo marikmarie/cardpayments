@@ -73,7 +73,7 @@ The PesaWay integration is documented in [`pesaway/README.md`](pesaway/README.md
 
 ## MTN MoMo Pay gateway
 
-The MTN MoMo Pay implementation is documented in [`momopay/README.md`](momopay/README.md). Its dashboard tester is at `/momopay-tester`, with simple tabs for the Collection and Disbursement products, withdrawal requests, status, balances, account-holder checks, callbacks, and logs. It reads provisioned API users, API keys, and subscription keys from `.env`; it never creates or returns credentials during a payment.
+The MTN MoMo Pay implementation is documented in [`momopay/README.md`](momopay/README.md). Its dashboard tester is at `/momopay-tester`, with sandbox-only API-user and API-key provisioning, Collection and Disbursement products, withdrawal requests, status, balances, account-holder checks, callbacks, and logs. It reads payment credentials from `.env`; a newly created sandbox API key is shown once for copying into `.env` and is never logged.
 
 ## Database deployment
 

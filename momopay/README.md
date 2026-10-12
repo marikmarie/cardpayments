@@ -12,6 +12,7 @@ Provision a Collection API user/key and a Disbursement API user/key in the MTN M
 MOMOPAY_BASE_URL="https://sandbox.momodeveloper.mtn.com"
 MOMOPAY_TARGET_ENVIRONMENT="sandbox"
 MOMOPAY_DEFAULT_CURRENCY="UGX"
+MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY=""
 MOMOPAY_COLLECTION_SUBSCRIPTION_KEY=""
 MOMOPAY_COLLECTION_API_USER=""
 MOMOPAY_COLLECTION_API_KEY=""
@@ -24,9 +25,9 @@ MOMOPAY_TIMEOUT_SECONDS="30"
 
 ## Get sandbox credentials
 
-1. In the MTN developer portal, subscribe to **Collections** and copy its Primary or Secondary subscription key from your profile. Do the same for **Disbursements** only if you will test payouts. Subscription keys are product-specific.
-2. Create a new UUID v4. This UUID becomes the API user value. In PowerShell, use `New-Guid` and copy the value exactly, including dashes.
-3. Create that API user through MTN's Sandbox Provisioning API, using the Collection subscription key. The callback host must be the host name only, such as `mariam.cissytech.com`.
+1. In the MTN developer portal, create the developer account, subscribe to **Collections**, and copy its Primary or Secondary sandbox subscription key. Do the same for **Disbursements** when payouts are required. Set the key used for sandbox user creation in `MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY`; keep each product's own key in its Collection or Disbursement variable.
+2. In `/momopay-tester`, open **Setup**. Enter the public callback host without a path, select the product, and create an API user. The tester generates a UUID v4 if you leave that field blank. It logs MTN's exact response and displays the UUID to copy into the matching `MOMOPAY_<PRODUCT>_API_USER` variable.
+3. In **Setup**, create the API key for the same UUID. The MTN key is shown once for copying into the matching `MOMOPAY_<PRODUCT>_API_KEY` variable; it is never written to Logs. You can also run the two Provisioning API calls directly:
 
    ```powershell
    $apiUser = (New-Guid).Guid
@@ -39,14 +40,14 @@ MOMOPAY_TIMEOUT_SECONDS="30"
    Invoke-RestMethod -Method Post -Uri "$provisioningBase/apiuser" -Headers $headers -ContentType 'application/json' -Body '{"providerCallbackHost":"your-public-host.example"}'
    ```
 
-4. Create an API key for the same API user. Save the returned key immediately; MTN does not return an existing API key again.
+4. If you use the direct request instead of Setup, create an API key for the same API user. Save the returned key immediately; MTN does not return an existing API key again.
 
    ```powershell
    $apiKeyResult = Invoke-RestMethod -Method Post -Uri "$provisioningBase/apiuser/$apiUser/apikey" -Headers @{ 'Ocp-Apim-Subscription-Key' = $subscriptionKey }
    $apiKeyResult.apiKey
    ```
 
-5. Put the three Collection values into `MOMOPAY_COLLECTION_SUBSCRIPTION_KEY`, `MOMOPAY_COLLECTION_API_USER`, and `MOMOPAY_COLLECTION_API_KEY`. For a Collection token test, those values must all come from the same sandbox setup. Then use **Check Collection token** in `/momopay-tester`.
+5. Put the three Collection values into `MOMOPAY_COLLECTION_SUBSCRIPTION_KEY`, `MOMOPAY_COLLECTION_API_USER`, and `MOMOPAY_COLLECTION_API_KEY`. For a Collection token test, those values must all come from the same sandbox setup. Do the equivalent for Disbursements, restart the app after changing `.env`, then use **Check Collection token** or **Check Disbursement token** in `/momopay-tester`.
 
 `login_failed` means MTN reached the token endpoint but rejected the Basic-auth API user/API key pair. Create a new API key for the configured API user, or create a new API user and key together, then update both variables. Do not substitute the subscription key for either value.
 
@@ -61,6 +62,39 @@ The local API contract is at `/api/v1/momopay/openapi.json` and requires a dashb
 The **SIT cases** tab in `/momopay-tester` covers the automated API cases in `UG Momo OpenAPI SIT Sheet.xlsx`. It is deliberately available only while `MOMOPAY_TARGET_ENVIRONMENT=sandbox`, so a negative test cannot send an intentionally bad credential, target environment, or request to production.
 
 Select the matching product and one case, complete only the fields that case needs, and submit it. The response screen gives the generated MTN request UUID where one is created. Open **Logs** after every test: the outbound request and the provider response have a `[SIT: …]` label. Every response entry records `source: MTN MoMo API`, the actual HTTP status, and the raw body returned by MTN. Credentials, bearer tokens, and customer numbers are masked; no response body or transaction outcome is invented by this application. Record the HTTP status, response body, and any final callback or status result in the SIT sheet.
+
+### Workbook coverage
+
+| Workbook sheet | UAT coverage in this project |
+| --- | --- |
+| SignUp & Provision API User | Portal signup and product subscription remain MTN portal steps. The **Setup** tab runs the sandbox API-user and API-key calls and logs MTN's returned bodies. |
+| Collection | Collection OAuth, RequestToPay, status, callback-protocol, validation, and negative-header cases are in **SIT cases** with **Collection** selected. |
+| Disbursement and Remittance | Disbursement OAuth, Transfer, status, callback-protocol, validation, and negative-header cases are in **SIT cases** with **Disbursement** selected. |
+| ValidateAccount | Active and basic-user-information checks for either product are in **Account** and the ValidateAccount group in **SIT cases**. |
+| Balance | Collection and Disbursement balance checks plus authentication/header tests are in **Account** and the Balance group in **SIT cases**. The two worksheet rows that specify account-holder type or ID cannot be sent because MTN's balance endpoint has neither parameter. |
+| FAQ and documentation sheets | The setup, callback, environment, currency, and final-status requirements below come from these workbook sheets. |
+
+### Required UAT setup from the FAQ
+
+1. The MTN API endpoint remains HTTPS in every environment. For the callback URL, use a public **HTTP** URL in sandbox and a public **HTTPS** URL in production. During API-user creation, `providerCallbackHost` is only the host name, such as `payments.example.com`; do not include a path.
+2. Sandbox does not move real funds or issue customer prompts. Treat a request's initial HTTP response as submission only, then record MTN's callback or status response as the final result.
+3. Use a separate API user, API key, and subscription key for every country and product setup. Production API users and API keys come from the MTN Partner Portal, not the sandbox Provisioning API.
+4. Keep the MTN UUID v4 returned or sent in `X-Reference-Id`. The tester displays it beside the local PMT reference so it can be pasted into the status and duplicate-reference cases. The MTN API does not provide a search for unrelated historic transactions.
+5. For production, set the currency and target environment issued for that country. The workbook lists the following values:
+
+| Country | Currency | `MOMOPAY_TARGET_ENVIRONMENT` |
+| --- | --- | --- |
+| Uganda | `UGX` | `mtnuganda` |
+| Ghana | `GHS` | `mtnghana` |
+| Ivory Coast | `XOF` | `mtnivorycoast` |
+| Zambia | `ZMW` | `mtnzambia` |
+| Cameroon | `XAF` | `mtncameroon` |
+| Benin | `XOF` | `mtnbenin` |
+| Congo | `XAF` | `mtncongo` |
+| Eswatini | `SZL` | `mtnswaziland` |
+| Guinea-Conakry | `GNF` | `mtnguineaconakry` |
+| South Africa | `ZAR` | `mtnsouthafrica` |
+| Liberia | `LRD` | `mtnliberia` |
 
 ### Portal provisioning cases
 

@@ -2,7 +2,10 @@
 /** MTN MoMo Pay browser test workspace. */
 $ready = static fn(string $key): bool => !empty($configuration[$key]);
 $newReference = static fn(): string => \App\PaymentReference::generate();
-$resultJson = $result ? (json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
+$apiKeyOnce = is_array($result) ? trim((string) ($result['api_key_once'] ?? '')) : '';
+$resultForDisplay = is_array($result) ? $result : [];
+unset($resultForDisplay['api_key_once']);
+$resultJson = $resultForDisplay ? (json_encode($resultForDisplay, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
 $lastReference = $last_reference ?: $newReference();
 $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' : ' hidden';
 ?>
@@ -22,6 +25,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
 
   <div class="pegasus-tabs" data-momopay-tabs data-default-tab="<?= \App\View::e($active_tab) ?>">
     <button type="button" class="pegasus-tab" data-momopay-tab="connection">Connection</button>
+    <button type="button" class="pegasus-tab" data-momopay-tab="setup">Setup</button>
     <button type="button" class="pegasus-tab" data-momopay-tab="collection">Collect</button>
     <button type="button" class="pegasus-tab" data-momopay-tab="disbursement">Payout</button>
     <button type="button" class="pegasus-tab" data-momopay-tab="withdrawal">Withdraw</button>
@@ -41,6 +45,36 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <div class="momopay-token-actions">
       <form method="post" action="<?= $url('/momopay-tester/token') ?>"><input type="hidden" name="product" value="collection"><button class="primary-action" type="submit">Check Collection token</button></form>
       <form method="post" action="<?= $url('/momopay-tester/token') ?>"><input type="hidden" name="product" value="disbursement"><button class="outline-action" type="submit">Check Disbursement token</button></form>
+    </div>
+  </div>
+
+  <div data-momopay-panel="setup"<?= $panelVisibility('setup') ?>>
+    <div class="warning"><strong>Sandbox provisioning</strong><p>Complete MTN portal signup and product subscription first. This tab runs only the workbook's API-user and API-key provisioning calls in the sandbox. Production credentials are issued in the MTN Partner Portal.</p></div>
+    <div class="godigital-summary-grid">
+      <div><span>Provisioning key</span><strong><?= $ready('provisioning_ready') ? 'configured' : 'add MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY' ?></strong></div>
+      <div><span>Suggested callback host</span><strong><?= \App\View::e($configuration['provider_callback_host'] ?: 'enter a public host below') ?></strong></div>
+      <div><span>Environment</span><strong><?= \App\View::e(strtoupper($configuration['target_environment'])) ?></strong></div>
+    </div>
+    <div class="momopay-account-grid">
+      <form method="post" action="<?= $url('/momopay-tester/provision-api-user') ?>" class="momopay-operation-form">
+        <h4>1. Create API user</h4>
+        <p class="helper-copy">Leave API user blank to generate an MTN-compliant UUID v4. Use the public host only, without a path.</p>
+        <div class="compact-form-grid">
+          <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+          <label>API user UUID (optional)<input name="api_user" placeholder="Leave blank to generate"></label>
+          <label class="wide">Provider callback host<input name="provider_callback_host" value="<?= \App\View::e($configuration['provider_callback_host']) ?>" placeholder="payments.example.com" required></label>
+        </div>
+        <div class="form-actions compact-actions"><button class="primary-action" type="submit">Create API user</button></div>
+      </form>
+      <form method="post" action="<?= $url('/momopay-tester/provision-api-key') ?>" class="momopay-operation-form">
+        <h4>2. Create API key</h4>
+        <p class="helper-copy">Use the exact API-user UUID above. Copy the returned API key immediately into the product's `.env` API-key value.</p>
+        <div class="compact-form-grid">
+          <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+          <label class="wide">API user UUID<input name="api_user" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx" required></label>
+        </div>
+        <div class="form-actions compact-actions"><button class="outline-action" type="submit">Create API key</button></div>
+      </form>
     </div>
   </div>
 
@@ -130,7 +164,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <?php else: ?><div class="event-empty"><span>◍</span><p>Requests, responses, and callbacks appear here.</p></div><?php endif; ?>
   </div>
 
-  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request metadata and provider response</h3><p>Logs retain the raw MTN response; credentials and customer phone numbers are masked.</p></div></div><pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre></section><?php endif; ?>
+  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request metadata and provider response</h3><p>Logs retain the raw MTN response; credentials and customer phone numbers are masked.</p></div></div><?php if ($apiKeyOnce !== ''): ?><div class="warning"><strong>Copy the API key now</strong><p>This one-time value is returned by MTN and is never written to Logs. Put it in the selected product's `.env` API-key variable.</p><pre class="code-block"><code><?= \App\View::e($apiKeyOnce) ?></code></pre></div><?php endif; ?><?php if ($resultJson !== ''): ?><pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre><?php endif; ?></section><?php endif; ?>
 </section>
 
 <section class="api-test-band"><div><p class="eyebrow">Server API</p><h3>MoMo Pay API</h3><p>Use a dashboard-issued <code>X-API-Key</code>.</p></div><a class="primary-action" href="<?= $url('/api/v1/momopay/openapi.json') ?>">Open API JSON</a></section>

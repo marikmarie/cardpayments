@@ -225,6 +225,8 @@ final class Application
 
         if ($method === 'GET' && $path === '/momopay-tester') { (new MomoPayTesterController())->index(); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/token') { (new MomoPayTesterController())->token($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/provision-api-user') { (new MomoPayTesterController())->provisionApiUser($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/provision-api-key') { (new MomoPayTesterController())->provisionApiKey($_POST); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/collection') { (new MomoPayTesterController())->collection($_POST); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/disbursement') { (new MomoPayTesterController())->disbursement($_POST); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/withdrawal') { (new MomoPayTesterController())->withdrawal($_POST); return true; }

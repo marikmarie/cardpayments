@@ -10,7 +10,7 @@ use App\View;
 /** Browser-only MTN MoMo Pay UAT workspace. */
 final class MomoPayTesterController extends Controller
 {
-    private const TABS = ['connection', 'collection', 'disbursement', 'withdrawal', 'status', 'account', 'sit', 'callbacks', 'logs'];
+    private const TABS = ['connection', 'setup', 'collection', 'disbursement', 'withdrawal', 'status', 'account', 'sit', 'callbacks', 'logs'];
 
     private MomoPayGateway $gateway;
 
@@ -42,6 +42,8 @@ final class MomoPayTesterController extends Controller
     }
 
     public function token(array $input): never { $this->run('connection', fn() => $this->gateway->tokenDetails((string) ($input['product'] ?? ''))); }
+    public function provisionApiUser(array $input): never { $this->run('setup', fn() => $this->gateway->provisionApiUser($input)); }
+    public function provisionApiKey(array $input): never { $this->run('setup', fn() => $this->gateway->provisionApiKey($input)); }
     public function collection(array $input): never { $this->payment('collection', fn() => $this->gateway->collection($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
     public function disbursement(array $input): never { $this->payment('disbursement', fn() => $this->gateway->disbursement($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
     public function withdrawal(array $input): never { $this->payment('withdrawal', fn() => $this->gateway->withdrawal($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }

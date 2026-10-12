@@ -10,10 +10,10 @@ use App\Store;
 /**
  * Small server-side client for MTN MoMo Pay Collection and Disbursement.
  *
- * MTN API users and API keys are provisioned once in the MTN portal. This
- * gateway reads them from .env and never creates or exposes credentials while
- * taking a payment. The MTN-required UUID is kept as a provider reference;
- * the merchant-facing ID remains the standard PMT reference.
+ * Payment credentials are read from .env. The sandbox-only Setup flow can
+ * provision an API user/key before payment testing; a returned key is shown
+ * once and never logged. The MTN-required UUID is kept as a provider
+ * reference; the merchant-facing ID remains the standard PMT reference.
  */
 final class MomoPayGateway
 {
@@ -27,6 +27,7 @@ final class MomoPayGateway
     public function configuration(): array
     {
         $callbackUrl = $this->callbackUrl(false);
+        $callbackHost = $this->hostFromUrl($callbackUrl);
 
         return [
             'base_url' => $this->config('MOMOPAY_BASE_URL'),
@@ -37,6 +38,62 @@ final class MomoPayGateway
             'disbursement_ready' => $this->productConfigured('disbursement'),
             'callback_url' => $callbackUrl,
             'callback_configured' => filter_var($callbackUrl, FILTER_VALIDATE_URL) !== false,
+            'provider_callback_host' => $callbackHost,
+            'provisioning_ready' => $this->config('MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY') !== '',
+        ];
+    }
+
+    /** Create a sandbox API user with the exact provider response retained in Logs. */
+    public function provisionApiUser(array $input): array
+    {
+        $this->requireSandboxProvisioning();
+        $product = $this->product($input['product'] ?? '');
+        $apiUser = trim((string) ($input['api_user'] ?? ''));
+        if ($apiUser === '') {
+            $apiUser = $this->uuid();
+        }
+        if (!$this->isUuid($apiUser)) {
+            throw new MomoPayException('API user must be a UUID v4, or leave it blank to generate one.', 422);
+        }
+        $callbackHost = $this->callbackHost($input['provider_callback_host'] ?? '');
+        $response = $this->http('provision_api_user', 'POST', $this->apiUrl('/v1_0/apiuser'), [
+            'Accept: application/json',
+            'Content-Type: application/json',
+            'Ocp-Apim-Subscription-Key: ' . $this->provisioningSubscriptionKey(),
+            'X-Reference-Id: ' . $apiUser,
+        ], ['providerCallbackHost' => $callbackHost]);
+
+        return [
+            'product' => $product,
+            'api_user' => $apiUser,
+            'provider_callback_host' => $callbackHost,
+            'provider_response' => $this->providerBody($response),
+        ];
+    }
+
+    /** Create an API key for an existing sandbox API user and expose it once for configuration. */
+    public function provisionApiKey(array $input): array
+    {
+        $this->requireSandboxProvisioning();
+        $product = $this->product($input['product'] ?? '');
+        $apiUser = trim((string) ($input['api_user'] ?? ''));
+        if (!$this->isUuid($apiUser)) {
+            throw new MomoPayException('Enter the UUID v4 returned or used when creating the API user.', 422);
+        }
+        $response = $this->http('provision_api_key', 'POST', $this->apiUrl('/v1_0/apiuser/' . rawurlencode($apiUser) . '/apikey'), [
+            'Accept: application/json',
+            'Ocp-Apim-Subscription-Key: ' . $this->provisioningSubscriptionKey(),
+        ]);
+        $apiKey = trim((string) ($response['apiKey'] ?? ''));
+        if ($apiKey === '') {
+            throw new MomoPayException('MTN did not return an API key. The exact provider response is in Logs.', 502);
+        }
+
+        return [
+            'product' => $product,
+            'api_user' => $apiUser,
+            'api_key_once' => $apiKey,
+            'provider_response' => $this->redact($this->providerBody($response)),
         ];
     }
 
@@ -553,6 +610,24 @@ final class MomoPayGateway
         return $product;
     }
 
+    /** Require the separate sandbox subscription key used by the Provisioning API. */
+    private function requireSandboxProvisioning(): void
+    {
+        if ($this->targetEnvironment() !== 'sandbox') {
+            throw new MomoPayException('API-user and API-key provisioning is available only in the MTN sandbox. Use the MTN Partner Portal for production credentials.', 403);
+        }
+        $this->apiUrl('');
+        if ($this->provisioningSubscriptionKey() === '') {
+            throw new MomoPayException('Set MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY in .env before provisioning an API user or API key.', 503);
+        }
+    }
+
+    /** Read the sandbox provisioning subscription key without falling back to a payment product. */
+    private function provisioningSubscriptionKey(): string
+    {
+        return $this->config('MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY');
+    }
+
     /** Remove transport metadata so the UI can show only fields returned by MTN. */
     private function providerBody(array $response): array
     {
@@ -671,6 +746,29 @@ final class MomoPayGateway
             throw new MomoPayException('Set MOMOPAY_CALLBACK_URL or APP_URL to a public callback URL.', 503);
         }
         return $url;
+    }
+
+    /** Accept a domain or callback URL and return the host required by MTN's Provisioning API. */
+    private function callbackHost(mixed $value): string
+    {
+        $value = trim((string) $value);
+        $host = $this->hostFromUrl($value);
+        if ($host === '' && preg_match('/^[a-z0-9.-]+$/i', $value)) {
+            $host = strtolower($value);
+        }
+        if ($host === '' || !preg_match('/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i', $host)) {
+            throw new MomoPayException('Enter a public callback host such as payments.example.com.', 422);
+        }
+        return $host;
+    }
+
+    /** Get only the host component from a full callback URL. */
+    private function hostFromUrl(string $url): string
+    {
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+        return strtolower((string) (parse_url($url, PHP_URL_HOST) ?: ''));
     }
 
     private function reference(mixed $value): string
