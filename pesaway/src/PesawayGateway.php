@@ -34,7 +34,7 @@ final class PesawayGateway
             'consumer_key_configured' => $this->config('PESAWAY_CONSUMER_KEY') !== '',
             'consumer_secret_configured' => $this->config('PESAWAY_CONSUMER_SECRET') !== '',
             'merchant_code_configured' => $this->config('PESAWAY_MERCHANT_CODE') !== '',
-            'region' => $this->config('PESAWAY_REGION') ?: 'tz',
+            'region' => $this->config('PESAWAY_REGION') ?: 'ke',
             'callback_url' => $callbackUrl,
             'callback_is_https' => str_starts_with(strtolower($callbackUrl), 'https://'),
             'callback_secret_configured' => $this->config('PESAWAY_CALLBACK_SECRET') !== '',
@@ -477,7 +477,7 @@ final class PesawayGateway
 
     private function region(mixed $value): string
     {
-        $region = strtolower(trim((string) $value) ?: $this->config('PESAWAY_REGION') ?: 'tz');
+        $region = strtolower(trim((string) $value) ?: $this->config('PESAWAY_REGION') ?: 'ke');
         if (!in_array($region, self::REGIONS, true)) {
             throw new PesawayException('Choose a supported PesaWay region: ' . implode(', ', self::REGIONS) . '.', 422);
         }

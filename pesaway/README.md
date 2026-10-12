@@ -30,7 +30,7 @@ Set these values only in `.env`:
 PESAWAY_BASE_URL="https://api.sandbox.pesaway.com/api/v1"
 PESAWAY_CONSUMER_KEY=""
 PESAWAY_CONSUMER_SECRET=""
-PESAWAY_REGION="tz"
+PESAWAY_REGION="ke"
 PESAWAY_MERCHANT_CODE=""
 PESAWAY_CALLBACK_URL="https://your-domain.example/webhooks/pesaway"
 PESAWAY_CALLBACK_SECRET=""
@@ -40,6 +40,8 @@ PESAWAY_TIMEOUT_SECONDS="30"
 ```
 
 `PESAWAY_CALLBACK_SECRET` verifies the normal `Signature` callback header when PesaWay has enabled it for the merchant. `PESAWAY_REFUND_SECRET` signs outbound refund requests, and `PESAWAY_REFUND_CALLBACK_SECRET` verifies refund callbacks with `X-Timestamp` and `X-Signature`. Keep all of them out of version control.
+
+Kenya is the default region (`ke`), so the tester starts with KES, `254` phone-number examples, and the `MPESA` channel. To use another supported market, set `PESAWAY_REGION` to `ug`, `tz`, `zm`, `gh`, or `cm` and enter the active channel and currency returned for that region.
 
 The PesaWay dashboard workspace is `/pesaway-tester`; the collapsible PesaWay sidebar group opens its matching tab. `/webhooks/pesaway` is the callback receiver and `/webhooks/pesaway/health` is its health endpoint. The protected local API contract is at `/api/v1/pesaway/openapi.json` and requires a dashboard-issued `X-API-Key`.
 

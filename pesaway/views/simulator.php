@@ -52,8 +52,8 @@ $today = gmdate('Y-m-d');
     <p class="helper-copy">Lists payment channels enabled for the merchant. Crypto channel data is removed before it is displayed.</p>
     <div class="compact-form-grid">
       <label>Transaction type<select name="transaction_type"><option value="Payins">Payins</option><option value="Payouts">Payouts</option></select></label>
-      <label>Country (optional)<input name="country" maxlength="30" placeholder="TZ"></label>
-      <label>Currency (optional)<input name="currency" maxlength="3" placeholder="TZS"></label>
+      <label>Country (optional)<input name="country" maxlength="30" placeholder="Kenya"></label>
+      <label>Currency (optional)<input name="currency" maxlength="3" placeholder="KES"></label>
       <label>Merchant code (optional)<input name="merchant_code" maxlength="100" placeholder="Use configured code"></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Get active channels</button></div>
@@ -65,9 +65,9 @@ $today = gmdate('Y-m-d');
       <div class="compact-form-grid">
         <label>Reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
         <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
-        <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2557…" required></label>
-        <label>Channel<input name="channel" value="Vodacom MPESA" required></label>
-        <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+        <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2547…" required></label>
+        <label>Channel<input name="channel" value="MPESA" required></label>
+        <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
         <label>Reason<input name="reason" value="PesaWay payout" required></label>
       </div>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send B2C payment</button></div>
@@ -80,7 +80,7 @@ $today = gmdate('Y-m-d');
         <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
         <label>Account number<input name="account_number" required></label>
         <label>Channel<input name="channel" value="MPESA Paybill" required></label>
-        <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+        <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
         <label>Reason<input name="reason" value="PesaWay business payout" required></label>
       </div>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send B2B payment</button></div>
@@ -91,9 +91,9 @@ $today = gmdate('Y-m-d');
       <div class="compact-form-grid">
         <label>Reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
         <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
-        <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2557…" required></label>
-        <label>Channel<input name="channel" value="Vodacom MPESA" required></label>
-        <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+        <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2547…" required></label>
+        <label>Channel<input name="channel" value="MPESA" required></label>
+        <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
         <label>Reason<input name="reason" value="PesaWay collection" required></label>
       </div>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request collection</button></div>
@@ -117,7 +117,7 @@ $today = gmdate('Y-m-d');
         <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
         <label>Account number<input name="account_number" required></label>
         <label>Bank name<input name="bank_name" required></label>
-        <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+        <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
         <label>Reason<input name="reason" value="PesaWay bank payout" required></label>
       </div>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send bank payout</button></div>
@@ -132,8 +132,8 @@ $today = gmdate('Y-m-d');
     <div class="compact-form-grid">
       <label>Reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
       <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
-      <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2557…" required></label>
-      <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+      <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2547…" required></label>
+      <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
       <label class="wide">Description<input name="description" value="PesaWay airtime" required></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send airtime</button></div>
@@ -157,7 +157,7 @@ $today = gmdate('Y-m-d');
       <label>Original reference<input name="original_reference" required></label>
       <label>New refund reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" required></label>
       <label>Amount<input name="amount" inputmode="decimal" value="1000.00" required></label>
-      <label>Currency<input name="currency" value="TZS" maxlength="3" required></label>
+      <label>Currency<input name="currency" value="KES" maxlength="3" required></label>
       <label class="wide">Reason<input name="reason" value="Customer refund" required></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Request refund</button></div>
@@ -165,14 +165,14 @@ $today = gmdate('Y-m-d');
 
   <form method="post" action="<?= $url('/pesaway-tester/balance') ?>" class="pesaway-operation-form" data-pesaway-panel="account">
     <p class="helper-copy">Checks the configured merchant account balance.</p>
-    <div class="compact-form-grid"><label>Currency (optional)<input name="currency" maxlength="3" placeholder="TZS"></label><label>Merchant code (optional)<input name="merchant_code" maxlength="100" placeholder="Use configured code"></label></div>
+    <div class="compact-form-grid"><label>Currency (optional)<input name="currency" maxlength="3" placeholder="KES"></label><label>Merchant code (optional)<input name="merchant_code" maxlength="100" placeholder="Use configured code"></label></div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check account balance</button></div>
   </form>
 
   <div class="pesaway-operation-set" data-pesaway-panel="sms">
     <form method="post" action="<?= $url('/pesaway-tester/sms') ?>" class="pesaway-operation-form">
       <h4>Send SMS</h4><p class="helper-copy">Separate multiple recipient numbers with commas or new lines.</p>
-      <div class="compact-form-grid"><label class="wide">Message<input name="message" value="Your payment is being processed." required></label><label class="wide">Destination<input name="destination" inputmode="numeric" placeholder="2557…" required></label></div>
+      <div class="compact-form-grid"><label class="wide">Message<input name="message" value="Your payment is being processed." required></label><label class="wide">Destination<input name="destination" inputmode="numeric" placeholder="2547…" required></label></div>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Send SMS</button></div>
     </form>
     <form method="post" action="<?= $url('/pesaway-tester/sms-balance') ?>" class="pesaway-operation-form"><h4>SMS balance</h4><div class="form-actions compact-actions"><button class="outline-action" type="submit">Check SMS balance</button></div></form>
