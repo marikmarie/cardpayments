@@ -10,7 +10,7 @@ use App\View;
 /** Browser-only MTN MoMo Pay UAT workspace. */
 final class MomoPayTesterController extends Controller
 {
-    private const TABS = ['connection', 'collection', 'disbursement', 'withdrawal', 'status', 'account', 'callbacks', 'logs'];
+    private const TABS = ['connection', 'collection', 'disbursement', 'withdrawal', 'status', 'account', 'sit', 'callbacks', 'logs'];
 
     private MomoPayGateway $gateway;
 
@@ -48,6 +48,7 @@ final class MomoPayTesterController extends Controller
     public function status(array $input): never { $this->run('status', fn() => $this->gateway->status($input)); }
     public function balance(array $input): never { $this->run('account', fn() => $this->gateway->balance($input)); }
     public function accountHolder(array $input): never { $this->run('account', fn() => $this->gateway->accountHolder($input)); }
+    public function sit(array $input): never { $this->run('sit', fn() => $this->gateway->sit($input)); }
 
     private function payment(string $tab, callable $operation, array $input, string $success): never
     {

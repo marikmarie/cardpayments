@@ -101,6 +101,7 @@ body {
 
 .pesaway-operation-set { display: grid; gap: 16px; }
 [data-pesaway-panel][hidden] { display: none !important; }
+[data-momopay-panel][hidden] { display: none !important; }
 .pesaway-operation-form { padding: 14px 0; border-top: 1px solid var(--line); }
 .pesaway-operation-form:first-child { border-top: 0; padding-top: 2px; }
 .pesaway-operation-form h4 { margin: 0 0 2px; color: var(--navy); font-size: 14px; }

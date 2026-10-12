@@ -113,12 +113,13 @@ final class MomoPayGateway
     /** Verify whether a customer MSISDN is active, or retrieve enabled basic information. */
     public function accountHolder(array $input): array
     {
+        $product = $this->product($input['product'] ?? 'collection');
         $query = strtolower(trim((string) ($input['query'] ?? 'active')));
         if (!in_array($query, ['active', 'basicuserinfo'], true)) {
             throw new MomoPayException('Choose active or basic user information.', 422);
         }
         $phone = $this->phoneNumber($input['phone_number'] ?? '');
-        return $this->authorized('collection', 'account_holder_' . $query, 'GET', '/collection/v1_0/accountholder/msisdn/' . rawurlencode($phone) . '/' . $query);
+        return $this->authorized($product, 'account_holder_' . $product . '_' . $query, 'GET', '/' . $product . '/v1_0/accountholder/msisdn/' . rawurlencode($phone) . '/' . $query);
     }
 
     /** Receive and record a callback. MTN can call this endpoint by POST or PUT. */
@@ -166,6 +167,216 @@ final class MomoPayGateway
         return $this->store->read('momopay_activity');
     }
 
+    /** Run one controlled sandbox SIT case and retain its request/response log. */
+    public function sit(array $input): array
+    {
+        if ($this->targetEnvironment() !== 'sandbox') {
+            throw new MomoPayException('SIT cases can only run while MOMOPAY_TARGET_ENVIRONMENT is sandbox.', 403);
+        }
+
+        $product = $this->product($input['product'] ?? '');
+        $case = $this->sitCase($input['case'] ?? '');
+        $this->activity('sit_case_started', 'MoMo SIT case started: ' . $case . '.', [
+            'case' => $case,
+            'product' => $product,
+        ]);
+
+        return match (true) {
+            str_starts_with($case, 'auth_') => $this->sitToken($product, $case),
+            str_starts_with($case, 'payment_') => $this->sitPayment($product, $case, $input),
+            str_starts_with($case, 'status_') => $this->sitStatus($product, $case, $input),
+            str_starts_with($case, 'account_') => $this->sitAccountHolder($product, $case, $input),
+            str_starts_with($case, 'balance_') => $this->sitBalance($product, $case),
+            default => throw new MomoPayException('Choose a supported MoMo SIT case.', 422),
+        };
+    }
+
+    /** Exercise the OAuth cases from the MTN SIT sheet without exposing a token. */
+    private function sitToken(string $product, string $case): array
+    {
+        $overrides = match ($case) {
+            'auth_invalid_subscription' => ['subscription_key' => 'invalid-sit-subscription-key'],
+            'auth_invalid_api_key' => ['api_key' => 'invalid-sit-api-key'],
+            default => [],
+        };
+        $response = $this->token($product, 'sit_' . $product . '_' . $case, $overrides);
+
+        return [
+            'case' => $case,
+            'product' => $product,
+            'token_type' => (string) ($response['token_type'] ?? 'Bearer'),
+            'expires_in' => isset($response['expires_in']) ? (int) $response['expires_in'] : null,
+            'http_status' => $response['http_status'] ?? 200,
+        ];
+    }
+
+    /** Submit a constrained Collection or Disbursement test case to the sandbox. */
+    private function sitPayment(string $product, string $case, array $input): array
+    {
+        $referenceInput = trim((string) ($input['reference'] ?? ''));
+        $reference = $this->reference($referenceInput !== '' ? $referenceInput : PaymentReference::generate());
+        $providerReference = $this->sitProviderReference($input, $case === 'payment_duplicate_reference');
+        $partyField = $product === 'collection' ? 'payer' : 'payee';
+        $amount = trim((string) ($input['amount'] ?? ''));
+        if ($amount === '') {
+            $amount = in_array($case, ['payment_insufficient_funds', 'payment_daily_limit'], true) ? '999999999' : '1000';
+        }
+        $partyId = $case === 'payment_invalid_party'
+            ? 'invalid-party'
+            : $this->phoneNumber($input['phone_number'] ?? '');
+        $payload = [
+            'amount' => $this->amount($amount),
+            'currency' => $this->currency($input['currency'] ?? ''),
+            'externalId' => $reference,
+            $partyField => ['partyIdType' => 'MSISDN', 'partyId' => $partyId],
+            'payerMessage' => $this->message(trim((string) ($input['message'] ?? '')) ?: ('SIT ' . $case)),
+            'payeeNote' => $this->message(trim((string) ($input['message'] ?? '')) ?: ('SIT ' . $case)),
+        ];
+        if ($case === 'payment_missing_amount') {
+            unset($payload['amount']);
+        }
+        if ($case === 'payment_missing_currency') {
+            unset($payload['currency']);
+        }
+
+        $callbackUrl = trim((string) ($input['callback_url'] ?? ''));
+        if ($callbackUrl === '') {
+            $callbackUrl = $this->callbackUrl(false);
+        }
+        if (in_array($case, ['payment_https_callback', 'payment_http_callback'], true)) {
+            $scheme = $case === 'payment_https_callback' ? 'https://' : 'http://';
+            if (!str_starts_with(strtolower($callbackUrl), $scheme)) {
+                throw new MomoPayException('Enter a public ' . strtoupper(rtrim($scheme, ':/')) . ' callback URL for this SIT case.', 422);
+            }
+        }
+        if (filter_var($callbackUrl, FILTER_VALIDATE_URL)) {
+            $payload['callbackUrl'] = $callbackUrl;
+        }
+
+        $endpoint = $product === 'collection' ? '/collection/v1_0/requesttopay' : '/disbursement/v1_0/transfer';
+        $response = $this->authorizedWithOverrides(
+            $product,
+            'sit_' . $product . '_' . $case,
+            'POST',
+            $endpoint,
+            $payload,
+            $providerReference,
+            $this->sitRequestOverrides($case),
+        );
+        $this->recordTransaction([
+            'reference' => $reference,
+            'provider_reference' => $providerReference,
+            'product' => $product,
+            'operation' => 'sit_' . $case,
+            'status' => 'PENDING',
+            'amount' => $payload['amount'] ?? null,
+            'currency' => $payload['currency'] ?? null,
+            'phone_last4' => substr((string) $partyId, -4),
+            'created_at' => gmdate('c'),
+            'updated_at' => gmdate('c'),
+        ]);
+
+        return [
+            'case' => $case,
+            'product' => $product,
+            'reference' => $reference,
+            'provider_reference' => $providerReference,
+            'status' => 'PENDING',
+            'http_status' => $response['http_status'] ?? 202,
+            'message' => 'Request sent. Use the Status tab or callback log for the provider result.',
+        ];
+    }
+
+    /** Query a known or deliberately unknown MTN transaction UUID. */
+    private function sitStatus(string $product, string $case, array $input): array
+    {
+        $providerReference = $this->sitProviderReference($input, $case === 'status_valid');
+        $endpoint = $product === 'collection'
+            ? '/collection/v1_0/requesttopay/' . rawurlencode($providerReference)
+            : '/disbursement/v1_0/transfer/' . rawurlencode($providerReference);
+        $response = $this->authorizedWithOverrides(
+            $product,
+            'sit_' . $product . '_' . $case,
+            'GET',
+            $endpoint,
+            null,
+            '',
+            $this->sitRequestOverrides($case),
+        );
+
+        return [
+            'case' => $case,
+            'product' => $product,
+            'provider_reference' => $providerReference,
+            'status' => strtoupper((string) ($response['status'] ?? $response['financialTransactionId'] ?? 'RECEIVED')),
+            'http_status' => $response['http_status'] ?? 200,
+            'response' => $response,
+        ];
+    }
+
+    /** Exercise account-holder validation cases with constrained invalid values. */
+    private function sitAccountHolder(string $product, string $case, array $input): array
+    {
+        $query = strtolower(trim((string) ($input['query'] ?? 'active')));
+        if (!in_array($query, ['active', 'basicuserinfo'], true)) {
+            throw new MomoPayException('Choose active or basic user information.', 422);
+        }
+        $partyType = $case === 'account_invalid_type' ? 'INVALID' : 'MSISDN';
+        $partyId = $case === 'account_invalid_id' ? 'invalid-account' : $this->phoneNumber($input['phone_number'] ?? '');
+        $response = $this->authorizedWithOverrides(
+            $product,
+            'sit_' . $product . '_' . $case,
+            'GET',
+            '/' . $product . '/v1_0/accountholder/' . rawurlencode($partyType) . '/' . rawurlencode($partyId) . '/' . $query,
+            null,
+            '',
+            $this->sitRequestOverrides($case),
+        );
+
+        return [
+            'case' => $case,
+            'product' => $product,
+            'query' => $query,
+            'http_status' => $response['http_status'] ?? 200,
+            'response' => $response,
+        ];
+    }
+
+    /** Exercise balance cases, recording sheet rows that do not map to the balance API. */
+    private function sitBalance(string $product, string $case): array
+    {
+        if (in_array($case, ['balance_invalid_account_type', 'balance_invalid_account_id'], true)) {
+            $this->activity('sit_case_not_applicable', 'MoMo SIT balance case recorded as not applicable: ' . $case . '.', [
+                'case' => $case,
+                'product' => $product,
+                'reason' => 'The MTN balance endpoint has no account-holder type or account-holder ID parameter.',
+            ]);
+            return [
+                'case' => $case,
+                'product' => $product,
+                'outcome' => 'NOT_APPLICABLE',
+                'message' => 'The balance endpoint has no account-holder parameter. Record this sheet row as not applicable and retain this log entry.',
+            ];
+        }
+
+        $response = $this->authorizedWithOverrides(
+            $product,
+            'sit_' . $product . '_' . $case,
+            'GET',
+            '/' . $product . '/v1_0/account/balance',
+            null,
+            '',
+            $this->sitRequestOverrides($case),
+        );
+
+        return [
+            'case' => $case,
+            'product' => $product,
+            'http_status' => $response['http_status'] ?? 200,
+            'response' => $response,
+        ];
+    }
+
     private function submit(string $product, string $operation, string $endpoint, array $input, string $partyField): array
     {
         $reference = $this->reference($input['reference'] ?? '');
@@ -208,13 +419,13 @@ final class MomoPayGateway
     }
 
     /** Get a product token, keeping the token out of the returned dashboard/API data. */
-    private function token(string $product): array
+    private function token(string $product, ?string $operation = null, array $overrides = []): array
     {
         $this->requireProduct($product);
-        $user = $this->config($this->key($product, 'API_USER'));
-        $apiKey = $this->config($this->key($product, 'API_KEY'));
-        $subscriptionKey = $this->config($this->key($product, 'SUBSCRIPTION_KEY'));
-        $response = $this->http($product . '_token', 'POST', $this->apiUrl('/' . $product . '/token/'), [
+        $user = (string) ($overrides['api_user'] ?? $this->config($this->key($product, 'API_USER')));
+        $apiKey = (string) ($overrides['api_key'] ?? $this->config($this->key($product, 'API_KEY')));
+        $subscriptionKey = (string) ($overrides['subscription_key'] ?? $this->config($this->key($product, 'SUBSCRIPTION_KEY')));
+        $response = $this->http($operation ?? ($product . '_token'), 'POST', $this->apiUrl('/' . $product . '/token/'), [
             'Accept: application/json',
             'Ocp-Apim-Subscription-Key: ' . $subscriptionKey,
             'Authorization: Basic ' . base64_encode($user . ':' . $apiKey),
@@ -227,11 +438,20 @@ final class MomoPayGateway
 
     private function authorized(string $product, string $operation, string $method, string $endpoint, ?array $payload = null, string $providerReference = ''): array
     {
-        $token = $this->token($product);
+        return $this->authorizedWithOverrides($product, $operation, $method, $endpoint, $payload, $providerReference);
+    }
+
+    /** Send an authorised request, optionally using a sandbox-only SIT mutation. */
+    private function authorizedWithOverrides(string $product, string $operation, string $method, string $endpoint, ?array $payload = null, string $providerReference = '', array $overrides = []): array
+    {
+        $this->requireProduct($product);
+        $token = array_key_exists('access_token', $overrides)
+            ? ['access_token' => (string) $overrides['access_token']]
+            : $this->token($product, $operation . '_token');
         $headers = [
             'Accept: application/json',
-            'Ocp-Apim-Subscription-Key: ' . $this->config($this->key($product, 'SUBSCRIPTION_KEY')),
-            'X-Target-Environment: ' . $this->targetEnvironment(),
+            'Ocp-Apim-Subscription-Key: ' . (string) ($overrides['subscription_key'] ?? $this->config($this->key($product, 'SUBSCRIPTION_KEY'))),
+            'X-Target-Environment: ' . (string) ($overrides['target_environment'] ?? $this->targetEnvironment()),
             'Authorization: Bearer ' . $token['access_token'],
         ];
         if ($payload !== null) {
@@ -257,7 +477,9 @@ final class MomoPayGateway
             // makes cURL use a regular POST instead of a bodyless custom verb.
             $headers[] = 'Content-Length: 0';
         }
-        $this->activity($operation . '_request', 'MoMo Pay request sent: ' . $method . ' ' . parse_url($url, PHP_URL_PATH) . '.', [
+        $sitLabel = str_starts_with($operation, 'sit_') ? ' [SIT: ' . $operation . ']' : '';
+        $this->activity($operation . '_request', 'MoMo Pay request sent: ' . $method . ' ' . parse_url($url, PHP_URL_PATH) . '.' . $sitLabel, [
+            'operation' => $operation,
             'method' => $method,
             'url' => $url,
             'headers' => $this->redactHeaders($headers),
@@ -287,7 +509,11 @@ final class MomoPayGateway
         $decoded = trim($raw) === '' ? [] : json_decode($raw, true);
         $response = is_array($decoded) ? $decoded : ['raw_response' => substr($raw, 0, 4000)];
         $response['http_status'] = $status;
-        $this->activity($operation . '_response', 'MoMo Pay response received (HTTP ' . $status . ').', ['http_status' => $status, 'body' => $response]);
+        $this->activity($operation . '_response', 'MoMo Pay response received (HTTP ' . $status . ').' . $sitLabel, [
+            'operation' => $operation,
+            'http_status' => $status,
+            'body' => $response,
+        ]);
         if ($status < 200 || $status >= 300) {
             $message = $status === 500 && strtolower((string) ($response['error'] ?? '')) === 'login_failed'
                 ? 'MTN rejected the API user and API key pair. Use the matching credentials provisioned for this product and environment.'
@@ -349,6 +575,53 @@ final class MomoPayGateway
             throw new MomoPayException('Choose Collection or Disbursement.', 422);
         }
         return $product;
+    }
+
+    /** Validate the finite set of sandbox scenarios documented in the SIT workbook. */
+    private function sitCase(mixed $value): string
+    {
+        $case = strtolower(trim((string) $value));
+        $cases = [
+            'auth_invalid_subscription', 'auth_invalid_api_key', 'auth_valid', 'auth_second_token',
+            'payment_approved', 'payment_rejected', 'payment_timeout', 'payment_duplicate_reference',
+            'payment_missing_amount', 'payment_missing_currency', 'payment_insufficient_funds', 'payment_invalid_party', 'payment_daily_limit',
+            'payment_invalid_subscription', 'payment_invalid_target', 'payment_invalid_token',
+            'payment_https_callback', 'payment_http_callback',
+            'status_valid', 'status_invalid_reference', 'status_invalid_subscription', 'status_invalid_target', 'status_invalid_token',
+            'account_valid', 'account_invalid_type', 'account_invalid_id', 'account_invalid_subscription', 'account_invalid_target', 'account_invalid_token',
+            'balance_valid', 'balance_invalid_account_type', 'balance_invalid_account_id', 'balance_invalid_subscription', 'balance_invalid_target', 'balance_invalid_token',
+        ];
+        if (!in_array($case, $cases, true)) {
+            throw new MomoPayException('Choose a supported MoMo SIT case.', 422);
+        }
+        return $case;
+    }
+
+    /** Apply only the deliberate header mutations required by a negative SIT case. */
+    private function sitRequestOverrides(string $case): array
+    {
+        return match ($case) {
+            'payment_invalid_subscription', 'status_invalid_subscription', 'account_invalid_subscription', 'balance_invalid_subscription' => ['subscription_key' => 'invalid-sit-subscription-key'],
+            'payment_invalid_target', 'status_invalid_target', 'account_invalid_target', 'balance_invalid_target' => ['target_environment' => 'invalid-sit-environment'],
+            'payment_invalid_token', 'status_invalid_token', 'account_invalid_token', 'balance_invalid_token' => ['access_token' => 'invalid-sit-bearer-token'],
+            default => [],
+        };
+    }
+
+    /** Read an MTN request UUID from the tester or create one for an invalid-reference case. */
+    private function sitProviderReference(array $input, bool $required = false): string
+    {
+        $reference = trim((string) ($input['provider_reference'] ?? ''));
+        if ($reference === '') {
+            if ($required) {
+                throw new MomoPayException('Enter the MTN UUID from the earlier request for this SIT case.', 422);
+            }
+            return $this->uuid();
+        }
+        if (!$this->isUuid($reference)) {
+            throw new MomoPayException('Use an MTN request UUID v4 for this SIT case.', 422);
+        }
+        return $reference;
     }
 
     private function requireProduct(string $product): void

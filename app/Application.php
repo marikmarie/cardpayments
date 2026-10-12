@@ -231,6 +231,7 @@ final class Application
         if ($method === 'POST' && $path === '/momopay-tester/status') { (new MomoPayTesterController())->status($_POST); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/balance') { (new MomoPayTesterController())->balance($_POST); return true; }
         if ($method === 'POST' && $path === '/momopay-tester/account-holder') { (new MomoPayTesterController())->accountHolder($_POST); return true; }
+        if ($method === 'POST' && $path === '/momopay-tester/sit') { (new MomoPayTesterController())->sit($_POST); return true; }
 
         if ($method === 'POST' && $path === '/api/v1/payment-links') { (new ApiController())->create(); return true; }
         if ($method === 'GET' && preg_match('#^/api/v1/payment-links/([^/]+)$#', $path, $match)) { (new ApiController())->show(rawurldecode($match[1])); return true; }
