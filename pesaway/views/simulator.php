@@ -15,7 +15,7 @@ $today = gmdate('Y-m-d');
   <span class="status-pill">Region: <?= \App\View::e(strtoupper($configuration['region'])) ?></span>
 </section>
 
-<section class="integration-checks">
+<section class="check-grid pesaway-check-grid">
   <article class="check-card <?= $ready('base_url_configured') ? 'ready' : 'attention' ?>"><span class="check-icon">1</span><div><strong>API URL</strong><p><?= $ready('base_url_configured') ? 'Configured' : 'Needed in .env' ?></p></div><span class="check-state"><?= $ready('base_url_configured') ? 'ready' : 'needed' ?></span></article>
   <article class="check-card <?= $ready('consumer_key_configured') && $ready('consumer_secret_configured') ? 'ready' : 'attention' ?>"><span class="check-icon">2</span><div><strong>OAuth</strong><p><?= $ready('consumer_key_configured') && $ready('consumer_secret_configured') ? 'Configured' : 'Add consumer key and secret' ?></p></div><span class="check-state"><?= $ready('consumer_key_configured') && $ready('consumer_secret_configured') ? 'ready' : 'needed' ?></span></article>
   <article class="check-card <?= $ready('merchant_code_configured') ? 'ready' : 'attention' ?>"><span class="check-icon">3</span><div><strong>Merchant</strong><p><?= $ready('merchant_code_configured') ? 'Configured' : 'Add merchant code' ?></p></div><span class="check-state"><?= $ready('merchant_code_configured') ? 'ready' : 'needed' ?></span></article>
