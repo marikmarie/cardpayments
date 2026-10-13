@@ -83,7 +83,7 @@ final class GoDigitalController extends Controller
                         'type' => 'object',
                         'required' => ['amount', 'provider_code', 'msisdn', 'reference'],
                         'properties' => [
-                            'amount' => ['type' => 'string', 'example' => '10000.00'],
+                            'amount' => ['type' => 'string', 'example' => '1000.00'],
                             'provider_code' => ['type' => 'string', 'enum' => ['YAS', 'VODACOM', 'HALOTEL', 'AIRTEL']],
                             'msisdn' => ['type' => 'string', 'example' => '255754123456'],
                             'reference' => ['type' => 'string', 'minLength' => 10, 'maxLength' => 10, 'pattern' => '^PMT[A-Z0-9]{7}$', 'example' => 'PMT1234567'],
