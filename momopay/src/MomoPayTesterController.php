@@ -32,6 +32,7 @@ final class MomoPayTesterController extends Controller
             'active_nav' => 'momopay',
             'topbar_action' => ['label' => 'MoMo Pay API', 'href' => '/api/v1/momopay/openapi.json'],
             'configuration' => $this->gateway->configuration(),
+            'sit_cases' => $this->gateway->sitCases(),
             'result' => $_SESSION['momopay_result'] ?? null,
             'active_tab' => $tab,
             'last_reference' => $_SESSION['momopay_last_reference'] ?? '',
@@ -44,21 +45,29 @@ final class MomoPayTesterController extends Controller
     public function token(array $input): never { $this->run('connection', fn() => $this->gateway->tokenDetails((string) ($input['product'] ?? ''))); }
     public function provisionApiUser(array $input): never { $this->run('setup', fn() => $this->gateway->provisionApiUser($input)); }
     public function provisionApiKey(array $input): never { $this->run('setup', fn() => $this->gateway->provisionApiKey($input)); }
-    public function collection(array $input): never { $this->payment('collection', fn() => $this->gateway->collection($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
-    public function disbursement(array $input): never { $this->payment('disbursement', fn() => $this->gateway->disbursement($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
-    public function withdrawal(array $input): never { $this->payment('withdrawal', fn() => $this->gateway->withdrawal($input), $input, 'MoMo API response recorded. Open Logs for the exact provider response.'); }
+    public function collection(array $input): never { $this->payment('collection', fn() => $this->gateway->collection($input), $input); }
+    public function disbursement(array $input): never { $this->payment('disbursement', fn() => $this->gateway->disbursement($input), $input); }
+    public function withdrawal(array $input): never { $this->payment('withdrawal', fn() => $this->gateway->withdrawal($input), $input); }
     public function status(array $input): never { $this->run('status', fn() => $this->gateway->status($input)); }
     public function balance(array $input): never { $this->run('account', fn() => $this->gateway->balance($input)); }
     public function accountHolder(array $input): never { $this->run('account', fn() => $this->gateway->accountHolder($input)); }
-    public function sit(array $input): never { $this->run('sit', fn() => $this->gateway->sit($input)); }
-
-    private function payment(string $tab, callable $operation, array $input, string $success): never
+    public function sit(array $input): never
     {
-        $this->run($tab, $operation, $success, (string) ($input['reference'] ?? ''));
+        $this->run('sit', fn() => $this->gateway->sit($input), self::RESULT_MESSAGE, '', [
+            'case' => (string) ($input['case'] ?? ''),
+            'product' => (string) ($input['product'] ?? ''),
+        ]);
+    }
+
+    private const RESULT_MESSAGE = 'The redacted request and MTN response are shown below. Logs keep the audit history.';
+
+    private function payment(string $tab, callable $operation, array $input): never
+    {
+        $this->run($tab, $operation, self::RESULT_MESSAGE, (string) ($input['reference'] ?? ''));
     }
 
     /** Keep the last safe response for the appropriate test tab. */
-    private function run(string $tab, callable $operation, string $success = 'MoMo API response recorded. Open Logs for the exact provider response.', string $reference = ''): never
+    private function run(string $tab, callable $operation, string $success = self::RESULT_MESSAGE, string $reference = '', array $context = []): never
     {
         try {
             $_SESSION['momopay_result'] = $operation();
@@ -69,6 +78,9 @@ final class MomoPayTesterController extends Controller
             $this->flash('success', $success);
         } catch (MomoPayException $error) {
             $_SESSION['momopay_active_tab'] = $tab;
+            if ($error->details !== []) {
+                $_SESSION['momopay_result'] = array_merge($context, $error->details, ['error' => $error->getMessage()]);
+            }
             $this->flash('error', $error->getMessage());
         } catch (\Throwable $error) {
             $_SESSION['momopay_active_tab'] = $tab;

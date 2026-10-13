@@ -11,7 +11,7 @@ Provision a Collection API user/key and a Disbursement API user/key in the MTN M
 ```ini
 MOMOPAY_BASE_URL="https://sandbox.momodeveloper.mtn.com"
 MOMOPAY_TARGET_ENVIRONMENT="sandbox"
-MOMOPAY_DEFAULT_CURRENCY="UGX"
+MOMOPAY_DEFAULT_CURRENCY="EUR"
 MOMOPAY_PROVISIONING_SUBSCRIPTION_KEY=""
 MOMOPAY_COLLECTION_SUBSCRIPTION_KEY=""
 MOMOPAY_COLLECTION_API_USER=""
@@ -61,7 +61,9 @@ The local API contract is at `/api/v1/momopay/openapi.json` and requires a dashb
 
 The **SIT cases** tab in `/momopay-tester` covers the automated API cases in `UG Momo OpenAPI SIT Sheet.xlsx`. It is deliberately available only while `MOMOPAY_TARGET_ENVIRONMENT=sandbox`, so a negative test cannot send an intentionally bad credential, target environment, or request to production.
 
-Select the matching product and one case, complete only the fields that case needs, and submit it. The response screen gives the generated MTN request UUID where one is created. Open **Logs** after every test: the outbound request and the provider response have a `[SIT: …]` label. Every response entry records `source: MTN MoMo API`, the actual HTTP status, and the raw body returned by MTN. Credentials, bearer tokens, and customer numbers are masked; no response body or transaction outcome is invented by this application. Record the HTTP status, response body, and any final callback or status result in the SIT sheet.
+Select the matching product and one case. The selector shows only the fields that case uses, the required `.env` names, its documented sandbox phone number (or explains that no number applies), and the X-Reference-Id rule. The request and MTN response, including the HTTP status, appear directly beneath the test after it runs; **Logs** remains the redacted audit history. Credentials, bearer tokens, and customer numbers are masked; no response body or transaction outcome is invented by this application. Record the HTTP status, response body, and any final callback or status result in the SIT sheet.
+
+The supplied sandbox matrix uses `EUR` for SIT payment requests. OAuth token calls do **not** use `X-Reference-Id`; the selector generates a separate UUID only as a value to record in the workbook's `ReferenceID` column, and labels it clearly as not sent to MTN. Payment requests generate and send an MTN UUID automatically, while duplicate-reference and valid-status cases require a UUID from an earlier request.
 
 ### Workbook coverage
 

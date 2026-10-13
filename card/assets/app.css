@@ -112,6 +112,17 @@ body {
 .momopay-operation-form { padding: 14px 0; border-top: 1px solid var(--line); }
 .momopay-operation-form:first-child { border-top: 0; padding-top: 2px; }
 .momopay-operation-form h4 { margin: 0 0 6px; color: var(--navy); font-size: 14px; }
+.momopay-sit-guide { margin-top: 16px; padding: 14px; border: 1px solid #cfe8f1; border-radius: 8px; background: #f5fbfd; }
+.momopay-sit-guide h4 { margin: 0; color: var(--navy); font-size: 16px; }
+.momopay-sit-guide > p { margin: 5px 0 13px; color: var(--muted); }
+.momopay-sit-variables { margin-top: 12px; padding-top: 12px; border-top: 1px solid #d9e9ee; }
+.momopay-sit-variables > span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.momopay-sit-variables ul { margin: 7px 0 0; padding-left: 20px; color: var(--ink); }
+.momopay-sit-variables li { margin: 3px 0; overflow-wrap: anywhere; }
+.momopay-exchange-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.momopay-exchange-grid .code-block { margin-top: 0; min-width: 0; }
+.momopay-result-metadata { margin-top: 12px; }
+.momopay-result-metadata summary { color: var(--blue); cursor: pointer; font-weight: 700; }
 
 .sidebar-note {
   display: flex;
@@ -666,7 +677,7 @@ textarea { min-height: 72px; resize: vertical; }
   .content { padding: 28px 18px 50px; }
   .metric-grid, .form-grid, .compact-form-grid, .godigital-summary-grid { grid-template-columns: 1fr; }
   .pesaway-split-forms { grid-template-columns: 1fr; }
-  .momopay-account-grid { grid-template-columns: 1fr; }
+  .momopay-account-grid, .momopay-exchange-grid { grid-template-columns: 1fr; }
   .momopay-token-actions { align-items: stretch; flex-direction: column; }
   .check-grid, .test-detail-grid { grid-template-columns: 1fr; }
   .welcome-row, .api-band, .card-workspace-actions { align-items: flex-start; flex-direction: column; }

@@ -4,8 +4,19 @@ $ready = static fn(string $key): bool => !empty($configuration[$key]);
 $newReference = static fn(): string => \App\PaymentReference::generate();
 $apiKeyOnce = is_array($result) ? trim((string) ($result['api_key_once'] ?? '')) : '';
 $resultForDisplay = is_array($result) ? $result : [];
-unset($resultForDisplay['api_key_once']);
-$resultJson = $resultForDisplay ? (json_encode($resultForDisplay, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
+$providerRequest = is_array($resultForDisplay['provider_request'] ?? null) ? $resultForDisplay['provider_request'] : [];
+$providerResponse = is_array($resultForDisplay['provider_response'] ?? null) ? $resultForDisplay['provider_response'] : [];
+$providerHttpStatus = (int) ($resultForDisplay['provider_http_status'] ?? 0);
+$resultError = trim((string) ($resultForDisplay['error'] ?? ''));
+unset($resultForDisplay['api_key_once'], $resultForDisplay['provider_request'], $resultForDisplay['provider_response'], $resultForDisplay['provider_http_status'], $resultForDisplay['error']);
+$resultMetadataJson = $resultForDisplay ? (json_encode($resultForDisplay, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
+$providerRequestJson = $providerRequest ? (json_encode($providerRequest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
+$providerResponseJson = $providerResponse ? (json_encode($providerResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}') : '';
+$sitCaseGroups = [];
+foreach ($sit_cases as $caseId => $caseDefinition) {
+  $sitCaseGroups[(string) ($caseDefinition['group'] ?? 'Other')][$caseId] = $caseDefinition;
+}
+$sitCaseJson = json_encode($sit_cases, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}';
 $lastReference = $last_reference ?: $newReference();
 $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' : ' hidden';
 ?>
@@ -129,26 +140,31 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   </div>
 
   <div data-momopay-panel="sit"<?= $panelVisibility('sit') ?>>
-    <div class="warning"><strong>Sandbox SIT runner</strong><p>Run one case at a time with sandbox credentials. Logs retain the actual HTTP status and raw body returned by the MTN MoMo API for every outbound request. MTN controls approval, rejection, timeout, funds, and limit outcomes.</p></div>
-    <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form">
+    <div class="warning"><strong>Sandbox SIT runner</strong><p>Select one case to see its required configuration, sandbox value, and reference-ID rule before it runs. The request and MTN response stay on this tab after submission.</p></div>
+    <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form" data-momopay-sit-form>
       <div class="compact-form-grid">
-        <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
-        <label>SIT case<select name="case" required>
-          <optgroup label="OAuth 2.0 authentication"><option value="auth_invalid_subscription">Invalid subscription key</option><option value="auth_invalid_api_key">Invalid API key</option><option value="auth_valid">Valid token</option><option value="auth_second_token">Second valid token</option></optgroup>
-          <optgroup label="RequestToPay or Transfer"><option value="payment_approved">Successful request</option><option value="payment_rejected">Subscriber rejects</option><option value="payment_timeout">Approval timeout</option><option value="payment_duplicate_reference">Duplicate MTN UUID</option><option value="payment_missing_amount">Missing amount</option><option value="payment_missing_currency">Missing currency</option><option value="payment_insufficient_funds">Insufficient funds</option><option value="payment_invalid_party">Invalid recipient</option><option value="payment_daily_limit">Exceeds daily limit</option><option value="payment_invalid_subscription">Invalid subscription key</option><option value="payment_invalid_target">Invalid target environment</option><option value="payment_invalid_token">Invalid bearer token</option><option value="payment_https_callback">HTTPS callback URL</option><option value="payment_http_callback">HTTP callback URL</option></optgroup>
-          <optgroup label="Transaction status"><option value="status_valid">Valid MTN UUID</option><option value="status_invalid_reference">Unknown MTN UUID</option><option value="status_invalid_subscription">Invalid subscription key</option><option value="status_invalid_target">Invalid target environment</option><option value="status_invalid_token">Invalid bearer token</option></optgroup>
-          <optgroup label="Account holder"><option value="account_valid">Valid account check</option><option value="account_invalid_type">Invalid account holder type</option><option value="account_invalid_id">Invalid account holder ID</option><option value="account_invalid_subscription">Invalid subscription key</option><option value="account_invalid_target">Invalid target environment</option><option value="account_invalid_token">Invalid bearer token</option></optgroup>
-          <optgroup label="Balance"><option value="balance_valid">Valid balance</option><option value="balance_invalid_subscription">Invalid subscription key</option><option value="balance_invalid_target">Invalid target environment</option><option value="balance_invalid_token">Invalid bearer token</option></optgroup>
-        </select></label>
-        <label>PMT reference (payment)<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" placeholder="PMT1234567"></label>
-        <label>MTN UUID (status or duplicate)<input name="provider_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
-        <label>Amount<input name="amount" inputmode="decimal" placeholder="1000.00"></label>
-        <label>Phone number<input name="phone_number" inputmode="numeric" placeholder="2567…"></label>
-        <label>Currency<input name="currency" value="<?= \App\View::e($configuration['currency']) ?>" maxlength="3"></label>
-        <label>Account query<select name="query"><option value="active">Active status</option><option value="basicuserinfo">Basic user info</option></select></label>
-        <label class="wide">Callback URL (HTTP or HTTPS case)<input name="callback_url" placeholder="Use the configured callback for other cases"></label>
-        <label class="wide">Message<input name="message" value="MoMo SIT test" maxlength="160"></label>
+        <label>Product<select name="product" data-momopay-sit-product><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+        <label>SIT case<select name="case" data-momopay-sit-case required><?php foreach ($sitCaseGroups as $group => $cases): ?><optgroup label="<?= \App\View::e($group) ?>"><?php foreach ($cases as $caseId => $caseDefinition): ?><option value="<?= \App\View::e($caseId) ?>"><?= \App\View::e((string) $caseDefinition['label']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
+        <label data-sit-field="reference">PMT reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" placeholder="PMT1234567"></label>
+        <label data-sit-field="workbook_reference">Workbook Reference ID<input name="workbook_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
+        <label data-sit-field="provider_reference">MTN X-Reference-Id<input name="provider_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
+        <label data-sit-field="amount">Amount (EUR)<input name="amount" inputmode="decimal" placeholder="1000.00"></label>
+        <label data-sit-field="phone_number">Sandbox phone number<input name="phone_number" inputmode="numeric" placeholder="46733123450"></label>
+        <label data-sit-field="currency">Currency<input name="currency" value="EUR" maxlength="3"></label>
+        <label data-sit-field="query">Account query<select name="query"><option value="active">Active status</option><option value="basicuserinfo">Basic user info</option></select></label>
+        <label class="wide" data-sit-field="callback_url">Callback URL<input name="callback_url" placeholder="Use the configured callback for other cases"></label>
+        <label class="wide" data-sit-field="message">Message<input name="message" value="MoMo SIT test" maxlength="160"></label>
       </div>
+      <section class="momopay-sit-guide" data-momopay-sit-guide aria-live="polite">
+        <h4 data-sit-title></h4>
+        <p data-sit-description></p>
+        <div class="godigital-summary-grid">
+          <div><span>Sandbox test number</span><strong data-sit-test-number></strong></div>
+          <div><span>Reference ID</span><strong data-sit-reference-note></strong></div>
+          <div><span>Test currency</span><strong data-sit-currency></strong></div>
+        </div>
+        <div class="momopay-sit-variables"><span>Required environment variables</span><ul data-sit-environment></ul></div>
+      </section>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Run SIT case</button></div>
     </form>
   </div>
@@ -164,7 +180,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <?php else: ?><div class="event-empty"><span>◍</span><p>Requests, responses, and callbacks appear here.</p></div><?php endif; ?>
   </div>
 
-  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request metadata and provider response</h3><p>Logs retain the raw MTN response; credentials and customer phone numbers are masked.</p></div></div><?php if ($apiKeyOnce !== ''): ?><div class="warning"><strong>Copy the API key now</strong><p>This one-time value is returned by MTN and is never written to Logs. Put it in the selected product's `.env` API-key variable.</p><pre class="code-block"><code><?= \App\View::e($apiKeyOnce) ?></code></pre></div><?php endif; ?><?php if ($resultJson !== ''): ?><pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre><?php endif; ?></section><?php endif; ?>
+  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request and MTN response</h3><p>Both sides of this test are shown here. Secrets and customer numbers are masked.</p></div></div><?php if ($resultError !== ''): ?><div class="warning"><strong>MTN rejected this request</strong><p><?= \App\View::e($resultError) ?></p></div><?php endif; ?><?php if ($apiKeyOnce !== ''): ?><div class="warning"><strong>Copy the API key now</strong><p>This one-time value is returned by MTN and is never written to Logs. Put it in the selected product's `.env` API-key value.</p><pre class="code-block"><code><?= \App\View::e($apiKeyOnce) ?></code></pre></div><?php endif; ?><div class="momopay-exchange-grid"><article class="code-block"><span>REQUEST SENT</span><pre><code><?= \App\View::e($providerRequestJson ?: 'No provider request was created.') ?></code></pre></article><article class="code-block"><span>MTN RESPONSE<?= $providerHttpStatus > 0 ? ' · HTTP ' . \App\View::e((string) $providerHttpStatus) : '' ?></span><pre><code><?= \App\View::e($providerResponseJson ?: 'No provider response was returned.') ?></code></pre></article></div><?php if ($resultMetadataJson !== ''): ?><details class="momopay-result-metadata"><summary>Test metadata</summary><pre class="code-block"><code><?= \App\View::e($resultMetadataJson) ?></code></pre></details><?php endif; ?></section><?php endif; ?>
 </section>
 
 <section class="api-test-band"><div><p class="eyebrow">Server API</p><h3>MoMo Pay API</h3><p>Use a dashboard-issued <code>X-API-Key</code>.</p></div><a class="primary-action" href="<?= $url('/api/v1/momopay/openapi.json') ?>">Open API JSON</a></section>
@@ -175,6 +191,68 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   if (!tabs) return;
   const buttons = tabs.querySelectorAll('[data-momopay-tab]');
   const panels = document.querySelectorAll('[data-momopay-panel]');
+  const sitForm = document.querySelector('[data-momopay-sit-form]');
+  if (sitForm) {
+    const sitCases = <?= $sitCaseJson ?>;
+    const product = sitForm.querySelector('[data-momopay-sit-product]');
+    const caseSelect = sitForm.querySelector('[data-momopay-sit-case]');
+    const guide = sitForm.querySelector('[data-momopay-sit-guide]');
+    const inputFor = (name) => sitForm.querySelector(`[name="${name}"]`);
+    const labelFor = (name) => sitForm.querySelector(`[data-sit-field="${name}"]`);
+    const valueForProduct = (value, productName) => {
+      if (Array.isArray(value)) return '';
+      if (!value || typeof value !== 'object') return value || '';
+      return value[productName] || value.default || '';
+    };
+    const newUuid = () => {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+        const random = Math.random() * 16 | 0;
+        return (character === 'x' ? random : (random & 0x3 | 0x8)).toString(16);
+      });
+    };
+    const requiredFor = (field, caseId) => {
+      if (field === 'provider_reference') return ['payment_duplicate_reference', 'status_valid'].includes(caseId);
+      return ['reference', 'workbook_reference', 'amount', 'phone_number', 'currency', 'callback_url', 'message'].includes(field);
+    };
+    const updateSitCase = () => {
+      const caseId = caseSelect.value;
+      const definition = sitCases[caseId];
+      if (!definition) return;
+      const fields = definition.fields || [];
+      ['reference', 'workbook_reference', 'provider_reference', 'amount', 'phone_number', 'currency', 'query', 'callback_url', 'message'].forEach((field) => {
+        const label = labelFor(field);
+        const input = inputFor(field);
+        const visible = fields.includes(field);
+        if (label) label.hidden = !visible;
+        if (!input) return;
+        input.required = visible && requiredFor(field, caseId);
+        if (!visible) return;
+        const defaultValue = valueForProduct((definition.defaults || {})[field], product.value);
+        if (defaultValue !== '') input.value = defaultValue;
+        if (field === 'workbook_reference' && !input.value) input.value = newUuid();
+      });
+
+      const testNumber = valueForProduct(definition.test_numbers, product.value);
+      guide.querySelector('[data-sit-title]').textContent = definition.label || caseId;
+      guide.querySelector('[data-sit-description]').textContent = definition.description || '';
+      guide.querySelector('[data-sit-test-number]').textContent = testNumber
+        ? `${testNumber}${testNumber === '46733123449' ? ' (an unlisted number; MTN treats other numbers as Success)' : ''}`
+        : 'No MSISDN test number is sent for this endpoint.';
+      guide.querySelector('[data-sit-reference-note]').textContent = definition.reference_note || '';
+      guide.querySelector('[data-sit-currency]').textContent = fields.includes('currency') ? 'EUR' : 'Not sent for this case.';
+      const variableList = guide.querySelector('[data-sit-environment]');
+      variableList.replaceChildren();
+      (definition.environment || []).forEach((variable) => {
+        const item = document.createElement('li');
+        item.textContent = String(variable).replaceAll('{PRODUCT}', product.value.toUpperCase());
+        variableList.appendChild(item);
+      });
+    };
+    product.addEventListener('change', updateSitCase);
+    caseSelect.addEventListener('change', updateSitCase);
+    updateSitCase();
+  }
   const show = (tab) => {
     buttons.forEach((button) => button.classList.toggle('is-active', button.dataset.momopayTab === tab));
     panels.forEach((panel) => { panel.hidden = panel.dataset.momopayPanel !== tab; });
