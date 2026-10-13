@@ -251,8 +251,8 @@ final class MomoPayGateway
             'payment_invalid_subscription' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — Invalid subscription key', 'description' => 'Sends the protected request with an intentionally invalid subscription-key header.'],
             'payment_invalid_target' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — Invalid target environment', 'description' => 'Sends the protected request with an intentionally invalid X-Target-Environment header.'],
             'payment_invalid_token' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — Invalid bearer token', 'description' => 'Sends the protected request with an intentionally invalid bearer token.'],
-            'payment_https_callback' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — HTTPS callback URL', 'description' => 'Sends the supplied public HTTPS callback URL in the request.'],
-            'payment_http_callback' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — HTTP callback URL', 'description' => 'Sends the supplied public HTTP callback URL. MTN sandbox callback delivery uses HTTP.'],
+            'payment_https_api' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — HTTPS request to MoMo API', 'description' => 'Sends this payment request to the configured MoMo API host over HTTPS. It does not change the callback URL.'],
+            'payment_http_api' => ['group' => 'RequestToPay or Transfer', 'label' => 'TC02 — HTTP request to MoMo API', 'description' => 'Sends this payment request to the configured MoMo API host over HTTP. It does not change the callback URL.'],
             'status_valid' => ['group' => 'Transaction status', 'label' => 'TC02 — Valid MTN UUID', 'description' => 'Looks up a real MTN transaction UUID from an earlier request.'],
             'status_invalid_reference' => ['group' => 'Transaction status', 'label' => 'TC02 — Unknown MTN UUID', 'description' => 'Looks up a newly generated UUID that is not linked to a transaction.'],
             'status_invalid_subscription' => ['group' => 'Transaction status', 'label' => 'TC02 — Invalid subscription key', 'description' => 'Looks up a UUID with an intentionally invalid subscription-key header.'],
@@ -343,18 +343,11 @@ final class MomoPayGateway
             unset($payload['currency']);
         }
 
-        $callbackUrl = trim((string) ($input['callback_url'] ?? ''));
-        if ($callbackUrl === '') {
+        if (!in_array($case, ['payment_https_api', 'payment_http_api'], true)) {
             $callbackUrl = $this->callbackUrl(false);
-        }
-        if (in_array($case, ['payment_https_callback', 'payment_http_callback'], true)) {
-            $scheme = $case === 'payment_https_callback' ? 'https://' : 'http://';
-            if (!str_starts_with(strtolower($callbackUrl), $scheme)) {
-                throw new MomoPayException('Enter a public ' . strtoupper(rtrim($scheme, ':/')) . ' callback URL for this SIT case.', 422);
+            if (filter_var($callbackUrl, FILTER_VALIDATE_URL)) {
+                $payload['callbackUrl'] = $callbackUrl;
             }
-        }
-        if (filter_var($callbackUrl, FILTER_VALIDATE_URL)) {
-            $payload['callbackUrl'] = $callbackUrl;
         }
 
         $endpoint = $product === 'collection' ? '/collection/v1_0/requesttopay' : '/disbursement/v1_0/transfer';
@@ -537,7 +530,11 @@ final class MomoPayGateway
         if ($providerReference !== '') {
             $headers[] = 'X-Reference-Id: ' . $providerReference;
         }
-        return $this->http($operation, $method, $this->apiUrl($endpoint), $headers, $payload);
+        $apiBaseUrl = $overrides['api_base_url'] ?? null;
+        $url = is_string($apiBaseUrl) && $apiBaseUrl !== ''
+            ? $this->apiUrl($endpoint, $apiBaseUrl, true)
+            : $this->apiUrl($endpoint);
+        return $this->http($operation, $method, $url, $headers, $payload);
     }
 
     /** Send one MTN request and persist the provider's returned HTTP body. */
@@ -720,7 +717,7 @@ final class MomoPayGateway
             'payment_approved', 'payment_rejected', 'payment_timeout', 'payment_duplicate_reference',
             'payment_missing_amount', 'payment_missing_currency', 'payment_insufficient_funds', 'payment_invalid_party', 'payment_daily_limit',
             'payment_invalid_subscription', 'payment_invalid_target', 'payment_invalid_token',
-            'payment_https_callback', 'payment_http_callback',
+            'payment_https_api', 'payment_http_api',
             'status_valid', 'status_invalid_reference', 'status_invalid_subscription', 'status_invalid_target', 'status_invalid_token',
             'account_valid', 'account_invalid_type', 'account_invalid_id', 'account_invalid_subscription', 'account_invalid_target', 'account_invalid_token',
             'balance_valid', 'balance_invalid_subscription', 'balance_invalid_target', 'balance_invalid_token',
@@ -731,10 +728,12 @@ final class MomoPayGateway
         return $case;
     }
 
-    /** Apply only the deliberate header mutations required by a negative SIT case. */
+    /** Apply only the deliberate request mutations required by a SIT case. */
     private function sitRequestOverrides(string $case): array
     {
         return match ($case) {
+            'payment_https_api' => ['api_base_url' => $this->sitApiBaseUrl('https')],
+            'payment_http_api' => ['api_base_url' => $this->sitApiBaseUrl('http')],
             'payment_invalid_subscription', 'status_invalid_subscription', 'account_invalid_subscription', 'balance_invalid_subscription' => ['subscription_key' => 'invalid-sit-subscription-key'],
             'payment_invalid_target', 'status_invalid_target', 'account_invalid_target', 'balance_invalid_target' => ['target_environment' => 'invalid-sit-environment'],
             'payment_invalid_token', 'status_invalid_token', 'account_invalid_token', 'balance_invalid_token' => ['access_token' => 'invalid-sit-bearer-token'],
@@ -775,9 +774,6 @@ final class MomoPayGateway
             if ($case === 'payment_missing_currency') {
                 $fields = array_values(array_diff($fields, ['currency']));
             }
-            if (in_array($case, ['payment_https_callback', 'payment_http_callback'], true)) {
-                $fields[] = 'callback_url';
-            }
             return $fields;
         }
         if (str_starts_with($case, 'status_')) {
@@ -806,8 +802,11 @@ final class MomoPayGateway
         if (str_starts_with($case, 'payment_')) {
             $variables[] = 'MOMOPAY_DEFAULT_CURRENCY=EUR';
         }
-        if (in_array($case, ['payment_https_callback', 'payment_http_callback'], true)) {
-            $variables[] = 'MOMOPAY_CALLBACK_URL (or enter a public URL below)';
+        if ($case === 'payment_https_api') {
+            $variables[] = 'The runner sends this payment request to MOMOPAY_BASE_URL over HTTPS.';
+        }
+        if ($case === 'payment_http_api') {
+            $variables[] = 'The runner sends this payment request to the MOMOPAY_BASE_URL host over HTTP.';
         }
         if (str_contains($case, 'invalid_subscription')) {
             $variables[] = 'The runner replaces the subscription-key header only for this request.';
@@ -931,13 +930,27 @@ final class MomoPayGateway
         return 'MOMOPAY_' . strtoupper($product) . '_' . $suffix;
     }
 
-    private function apiUrl(string $path): string
+    private function apiUrl(string $path, ?string $baseUrl = null, bool $allowHttp = false): string
     {
-        $base = rtrim($this->config('MOMOPAY_BASE_URL'), '/');
-        if (!filter_var($base, FILTER_VALIDATE_URL) || !str_starts_with(strtolower($base), 'https://')) {
-            throw new MomoPayException('MOMOPAY_BASE_URL must be a valid HTTPS URL.', 503);
+        $base = rtrim($baseUrl ?? $this->config('MOMOPAY_BASE_URL'), '/');
+        $scheme = strtolower((string) parse_url($base, PHP_URL_SCHEME));
+        $allowedSchemes = $allowHttp ? ['http', 'https'] : ['https'];
+        if (filter_var($base, FILTER_VALIDATE_URL) === false || !in_array($scheme, $allowedSchemes, true)) {
+            $requirement = $allowHttp ? 'HTTP or HTTPS' : 'HTTPS';
+            throw new MomoPayException('MOMOPAY_BASE_URL must be a valid ' . $requirement . ' URL.', 503);
         }
         return $base . '/' . ltrim($path, '/');
+    }
+
+    /** Change only the transport scheme for the two protocol SIT cases. */
+    private function sitApiBaseUrl(string $scheme): string
+    {
+        $base = rtrim($this->config('MOMOPAY_BASE_URL'), '/');
+        $rewritten = preg_replace('/^https:/i', $scheme . ':', $base);
+        if (!is_string($rewritten)) {
+            throw new MomoPayException('MOMOPAY_BASE_URL must be a valid HTTPS URL.', 503);
+        }
+        return $rewritten;
     }
 
     private function targetEnvironment(): string

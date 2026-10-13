@@ -151,7 +151,6 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
         <label data-sit-field="phone_number">Sandbox phone number<input name="phone_number" inputmode="numeric" placeholder="46733123450"></label>
         <label data-sit-field="currency">Currency<input name="currency" value="EUR" maxlength="3"></label>
         <label data-sit-field="query">Account query<select name="query"><option value="active">Active status</option><option value="basicuserinfo">Basic user info</option></select></label>
-        <label class="wide" data-sit-field="callback_url">Callback URL<input name="callback_url" placeholder="Use the configured callback for other cases"></label>
         <label class="wide" data-sit-field="message">Message<input name="message" value="MoMo SIT test" maxlength="160"></label>
       </div>
       <section class="momopay-sit-guide" data-momopay-sit-guide aria-live="polite">
@@ -212,14 +211,14 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     };
     const requiredFor = (field, caseId) => {
       if (field === 'provider_reference') return ['payment_duplicate_reference', 'status_valid'].includes(caseId);
-      return ['reference', 'workbook_reference', 'amount', 'phone_number', 'currency', 'callback_url', 'message'].includes(field);
+      return ['reference', 'workbook_reference', 'amount', 'phone_number', 'currency', 'message'].includes(field);
     };
     const updateSitCase = () => {
       const caseId = caseSelect.value;
       const definition = sitCases[caseId];
       if (!definition) return;
       const fields = definition.fields || [];
-      ['reference', 'workbook_reference', 'provider_reference', 'amount', 'phone_number', 'currency', 'query', 'callback_url', 'message'].forEach((field) => {
+      ['reference', 'workbook_reference', 'provider_reference', 'amount', 'phone_number', 'currency', 'query', 'message'].forEach((field) => {
         const label = labelFor(field);
         const input = inputFor(field);
         const visible = fields.includes(field);

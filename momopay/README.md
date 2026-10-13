@@ -70,15 +70,15 @@ The supplied sandbox matrix uses `EUR` for SIT payment requests. OAuth token cal
 | Workbook sheet | UAT coverage in this project |
 | --- | --- |
 | SignUp & Provision API User | Portal signup and product subscription remain MTN portal steps. The **Setup** tab runs the sandbox API-user and API-key calls and logs MTN's returned bodies. |
-| Collection | Collection OAuth, RequestToPay, status, callback-protocol, validation, and negative-header cases are in **SIT cases** with **Collection** selected. |
-| Disbursement and Remittance | Disbursement OAuth, Transfer, status, callback-protocol, validation, and negative-header cases are in **SIT cases** with **Disbursement** selected. |
+| Collection | Collection OAuth, RequestToPay, status, API-request-protocol, validation, and negative-header cases are in **SIT cases** with **Collection** selected. |
+| Disbursement and Remittance | Disbursement OAuth, Transfer, status, API-request-protocol, validation, and negative-header cases are in **SIT cases** with **Disbursement** selected. |
 | ValidateAccount | Active and basic-user-information checks for either product are in **Account** and the ValidateAccount group in **SIT cases**. |
 | Balance | Collection and Disbursement balance checks plus authentication/header tests are in **Account** and the Balance group in **SIT cases**. The two worksheet rows that specify account-holder type or ID cannot be sent because MTN's balance endpoint has neither parameter. |
 | FAQ and documentation sheets | The setup, callback, environment, currency, and final-status requirements below come from these workbook sheets. |
 
 ### Required UAT setup from the FAQ
 
-1. The MTN API endpoint remains HTTPS in every environment. For the callback URL, use a public **HTTP** URL in sandbox and a public **HTTPS** URL in production. During API-user creation, `providerCallbackHost` is only the host name, such as `payments.example.com`; do not include a path.
+1. The HTTP and HTTPS SIT cases change the scheme used for the outgoing payment request to the MoMo API; they do not change the callback URL. During API-user creation, `providerCallbackHost` is only the host name, such as `payments.example.com`; do not include a path.
 2. Sandbox does not move real funds or issue customer prompts. Treat a request's initial HTTP response as submission only, then record MTN's callback or status response as the final result.
 3. Use a separate API user, API key, and subscription key for every country and product setup. Production API users and API keys come from the MTN Partner Portal, not the sandbox Provisioning API.
 4. Keep the MTN UUID v4 returned or sent in `X-Reference-Id`. The tester displays it beside the local PMT reference so it can be pasted into the status and duplicate-reference cases. The MTN API does not provide a search for unrelated historic transactions.
@@ -142,8 +142,8 @@ Choose **Collection** in the SIT tab. The request cases send `POST /collection/v
 | TC02-14 — status invalid subscription key | **Invalid subscription key** under Transaction status | The status request is rejected before a transaction result is returned. |
 | TC02-15 — status invalid target environment | **Invalid target environment** under Transaction status | The status request is rejected because the target header is invalid. |
 | TC02-16 — status invalid bearer token | **Invalid bearer token** under Transaction status | The status request is rejected with an authentication failure. |
-| TC02-17 — HTTPS protocol | **HTTPS callback URL** | Enter a public `https://` callback URL. The request log must include that URL. In sandbox, callback delivery still depends on the host registered with MTN. |
-| TC02-18 — HTTP protocol | **HTTP callback URL** | Enter a public `http://` callback URL. Sandbox callback testing uses HTTP according to the workbook FAQ; retain the request and callback logs. |
+| TC02-17 — HTTPS protocol | **HTTPS request to MoMo API** | Sends the payment request to the configured MoMo API host using `https://`. The request panel shows the exact URL sent. |
+| TC02-18 — HTTP protocol | **HTTP request to MoMo API** | Sends the payment request to the configured MoMo API host using `http://`. The request panel shows the exact URL sent. |
 
 ### Disbursement and Remittance — Transfer and status cases
 
@@ -165,8 +165,8 @@ Choose **Disbursement** in the SIT tab. The request cases send `POST /disburseme
 | TC02-12 — status invalid subscription key | **Invalid subscription key** under Transaction status | Status request is rejected before a transaction result is returned. |
 | TC02-13 — status invalid target environment | **Invalid target environment** under Transaction status | Status request is rejected because the target header is invalid. |
 | TC02-14 — status invalid bearer token | **Invalid bearer token** under Transaction status | Status request is rejected with an authentication failure. |
-| TC02-15 — HTTPS protocol | **HTTPS callback URL** | The outgoing request log contains the entered public HTTPS callback URL. |
-| TC02-16 — HTTP protocol | **HTTP callback URL** | The outgoing request log contains the entered public HTTP callback URL; retain any callback log produced by the sandbox. |
+| TC02-15 — HTTPS protocol | **HTTPS request to MoMo API** | Sends the transfer request to the configured MoMo API host using `https://`. The request panel shows the exact URL sent. |
+| TC02-16 — HTTP protocol | **HTTP request to MoMo API** | Sends the transfer request to the configured MoMo API host using `http://`. The request panel shows the exact URL sent. |
 
 ### ValidateAccount cases
 
