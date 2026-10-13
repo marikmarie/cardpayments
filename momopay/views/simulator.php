@@ -140,8 +140,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   </div>
 
   <div data-momopay-panel="sit"<?= $panelVisibility('sit') ?>>
-    <div class="warning"><strong>Sandbox SIT runner</strong><p>Select one case to see its required configuration, sandbox value, and reference-ID rule before it runs. The request and MTN response stay on this tab after submission.</p></div>
-    <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form" data-momopay-sit-form>
+   <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form" data-momopay-sit-form>
       <div class="compact-form-grid">
         <label>Product<select name="product" data-momopay-sit-product><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
         <label>SIT case<select name="case" data-momopay-sit-case required><?php foreach ($sitCaseGroups as $group => $cases): ?><optgroup label="<?= \App\View::e($group) ?>"><?php foreach ($cases as $caseId => $caseDefinition): ?><option value="<?= \App\View::e($caseId) ?>"><?= \App\View::e((string) $caseDefinition['label']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
