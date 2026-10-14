@@ -10,6 +10,27 @@ The PesaWay module implements the documented direct API operations that are appl
 
 FX and crypto products are deliberately not implemented. The UI has no FX or crypto tab, requests reject known crypto currencies, and the active-channel response is filtered before display.
 
+## Get PesaWay credentials
+
+1. Email [PesaWay support](mailto:support@pesaway.com) with your company details and a contact person to start onboarding.
+2. After onboarding, PesaWay sends the sandbox **Client ID** and **Client Secret**. Put them in `PESAWAY_CONSUMER_KEY` and `PESAWAY_CONSUMER_SECRET` respectively; PesaWay uses those names in its token request.
+3. Ask PesaWay for the merchant code for the service and region you will test, then set `PESAWAY_MERCHANT_CODE`. It is needed for payment, collection, bank, airtime, balance, and refund requests.
+4. Keep `PESAWAY_REGION="ke"` for Kenya. Use the region PesaWay enables for your merchant if you later test another country.
+5. Set `PESAWAY_CALLBACK_URL` to your public HTTPS callback URL. Use **Overview → Check OAuth connection** to confirm the sandbox credentials before testing other tabs.
+
+Do not create the Client ID, Client Secret, merchant code, or access token yourself. PesaWay issues the first three; the tester obtains the short-lived access token automatically. If PesaWay enables signed callbacks, request the shared callback signature key and set `PESAWAY_CALLBACK_SECRET`. For refunds, ask support to enable refunds and provide both the refund signing secret and the separate refund-callback signing secret.
+
+After the PesaWay developer test session, PesaWay creates the production application and emails the production credentials. Replace the sandbox URL and credentials with those values, then give PesaWay the public HTTPS callback URL for live transaction results.
+
+| PesaWay value | `.env` value |
+| --- | --- |
+| Client ID | `PESAWAY_CONSUMER_KEY` |
+| Client Secret | `PESAWAY_CONSUMER_SECRET` |
+| Merchant code | `PESAWAY_MERCHANT_CODE` |
+| Shared callback signature key, when enabled | `PESAWAY_CALLBACK_SECRET` |
+| Refund request signing secret, when refunds are enabled | `PESAWAY_REFUND_SECRET` |
+| Refund callback signing secret, when refunds are enabled | `PESAWAY_REFUND_CALLBACK_SECRET` |
+
 ## Implemented PesaWay operations
 
 The protected local API exposes each non-FX/non-crypto operation from the PesaWay guide:

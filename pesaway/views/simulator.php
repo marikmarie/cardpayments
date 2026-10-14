@@ -46,6 +46,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       <div><span>Region header</span><strong><?= \App\View::e(strtoupper($configuration['region'])) ?></strong></div>
       <div><span>OAuth credentials</span><strong><?= $ready('consumer_key_configured') && $ready('consumer_secret_configured') ? 'Configured' : 'Not configured' ?></strong></div>
     </div>
+    <div class="warning"><strong>Get credentials before testing</strong><p>Ask PesaWay support to onboard your company. Put the Client ID in Consumer key, Client Secret in Consumer secret, and the issued merchant code in `.env`. Use the sandbox first, then run this OAuth check. After the developer test session, PesaWay sends the live credentials and needs your public HTTPS callback URL.</p></div>
     <form method="post" action="<?= $url('/pesaway-tester/token') ?>" class="form-actions compact-actions"><button class="primary-action" type="submit">Check OAuth connection</button></form>
   </div>
 
