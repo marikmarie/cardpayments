@@ -49,11 +49,11 @@ The test runner never creates a result itself. Record the exact MTN response. An
 
 | Test type | Short note to paste after replacing the brackets |
 | --- | --- |
-| Valid token or account/balance check | `MTN returned HTTP [status] for the check. The raw response is in MoMo Logs.` |
-| Invalid API key, subscription key, target, or bearer token | `MTN returned HTTP [status] for the intentional header or credential test. The raw response is in MoMo Logs.` |
+| Valid token or account/balance check | `MTN returned HTTP [status] for the check. ` |
+| Invalid API key, subscription key, target, or bearer token | `MTN returned HTTP [status] for the intentional header or credential test. ` |
 | Payment or transfer | `MTN returned HTTP [status] for the request. Final result: [callback or status result].` |
-| Duplicate reference or missing field | `MTN returned HTTP [status] for the deliberate validation test. The raw response is in MoMo Logs.` |
-| Valid transaction status | `MTN returned [transaction status] for the supplied X-Reference-Id. The raw response is in MoMo Logs.` |
+| Duplicate reference or missing field | `MTN returned HTTP [status] for the deliberate validation test. ` |
+| Valid transaction status | `MTN returned [transaction status] for the supplied X-Reference-Id. ` |
 | HTTP or HTTPS protocol check | `MTN returned HTTP [status] for the request. The exact URL and response are shown below.` |
 
 Each specific SIT case displays its own version of the note in the tester, including the payment, transaction-status, account, and balance variants.
