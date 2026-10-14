@@ -151,6 +151,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
         <label data-sit-field="phone_number">Sandbox phone number<input name="phone_number" inputmode="numeric" placeholder="46733123450"></label>
         <label data-sit-field="currency">Currency<input name="currency" value="EUR" maxlength="3"></label>
         <label data-sit-field="query">Account query<select name="query"><option value="active">Active status</option><option value="basicuserinfo">Basic user info</option></select></label>
+        <label class="wide" data-sit-field="callback_url">Callback URL<input name="callback_url" placeholder="Use the configured callback for other cases"></label>
         <label class="wide" data-sit-field="message">Message<input name="message" value="MoMo SIT test" maxlength="160"></label>
       </div>
       <section class="momopay-sit-guide" data-momopay-sit-guide aria-live="polite">
@@ -161,7 +162,6 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
           <div><span>Reference ID</span><strong data-sit-reference-note></strong></div>
           <div><span>Test currency</span><strong data-sit-currency></strong></div>
         </div>
-        <div class="momopay-sit-variables"><span>Required environment variables</span><ul data-sit-environment></ul></div>
       </section>
       <div class="form-actions compact-actions"><button class="primary-action" type="submit">Run SIT case</button></div>
     </form>
@@ -211,14 +211,14 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     };
     const requiredFor = (field, caseId) => {
       if (field === 'provider_reference') return ['payment_duplicate_reference', 'status_valid'].includes(caseId);
-      return ['reference', 'workbook_reference', 'amount', 'phone_number', 'currency', 'message'].includes(field);
+      return ['reference', 'workbook_reference', 'amount', 'phone_number', 'currency', 'callback_url', 'message'].includes(field);
     };
     const updateSitCase = () => {
       const caseId = caseSelect.value;
       const definition = sitCases[caseId];
       if (!definition) return;
       const fields = definition.fields || [];
-      ['reference', 'workbook_reference', 'provider_reference', 'amount', 'phone_number', 'currency', 'query', 'message'].forEach((field) => {
+      ['reference', 'workbook_reference', 'provider_reference', 'amount', 'phone_number', 'currency', 'query', 'callback_url', 'message'].forEach((field) => {
         const label = labelFor(field);
         const input = inputFor(field);
         const visible = fields.includes(field);
@@ -239,13 +239,6 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
         : 'No MSISDN test number is sent for this endpoint.';
       guide.querySelector('[data-sit-reference-note]').textContent = definition.reference_note || '';
       guide.querySelector('[data-sit-currency]').textContent = fields.includes('currency') ? 'EUR' : 'Not sent for this case.';
-      const variableList = guide.querySelector('[data-sit-environment]');
-      variableList.replaceChildren();
-      (definition.environment || []).forEach((variable) => {
-        const item = document.createElement('li');
-        item.textContent = String(variable).replaceAll('{PRODUCT}', product.value.toUpperCase());
-        variableList.appendChild(item);
-      });
     };
     product.addEventListener('change', updateSitCase);
     caseSelect.addEventListener('change', updateSitCase);
