@@ -157,6 +157,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       <section class="momopay-sit-guide" data-momopay-sit-guide aria-live="polite">
         <h4 data-sit-title></h4>
         <p data-sit-description></p>
+        <p class="momopay-sit-copy-note"><strong>Copy to SIT:</strong> <span data-sit-copy-note></span></p>
         <div class="godigital-summary-grid">
           <div><span>Sandbox test number</span><strong data-sit-test-number></strong></div>
           <div><span>Reference ID</span><strong data-sit-reference-note></strong></div>
@@ -234,6 +235,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       const testNumber = valueForProduct(definition.test_numbers, product.value);
       guide.querySelector('[data-sit-title]').textContent = definition.label || caseId;
       guide.querySelector('[data-sit-description]').textContent = definition.description || '';
+      guide.querySelector('[data-sit-copy-note]').textContent = definition.sit_note || '';
       guide.querySelector('[data-sit-test-number]').textContent = testNumber
         ? `${testNumber}${testNumber === '46733123449' ? ' (an unlisted number; MTN treats other numbers as Success)' : ''}`
         : 'No MSISDN test number is sent for this endpoint.';

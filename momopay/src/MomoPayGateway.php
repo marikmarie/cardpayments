@@ -276,6 +276,7 @@ final class MomoPayGateway
             $definition['defaults'] = $this->sitDefaults($case);
             $definition['test_numbers'] = $this->sitTestNumbers($case);
             $definition['reference_note'] = $this->sitReferenceNote($case);
+            $definition['sit_note'] = $this->sitNote($case);
         }
         unset($definition);
 
@@ -868,6 +869,33 @@ final class MomoPayGateway
             str_starts_with($case, 'status_') => 'A test UUID is generated when blank. You may paste an MTN UUID for the header-error checks.',
             str_starts_with($case, 'payment_') => 'A fresh UUID v4 is generated and sent as X-Reference-Id.',
             default => 'This endpoint does not send X-Reference-Id.',
+        };
+    }
+
+    /** Provide a concise note the tester can copy into the matching SIT result row. */
+    private function sitNote(string $case): string
+    {
+        if (str_starts_with($case, 'auth_')) {
+            return in_array($case, ['auth_valid', 'auth_second_token'], true)
+                ? 'MTN returned HTTP [status] for the token request. The raw response is in MoMo Logs.'
+                : 'MTN returned HTTP [status] for the intentional credential test. The raw response is in MoMo Logs.';
+        }
+
+        return match (true) {
+            $case === 'payment_duplicate_reference' => 'MTN returned HTTP [status] for the reused X-Reference-Id. The raw response is in MoMo Logs.',
+            in_array($case, ['payment_missing_amount', 'payment_missing_currency'], true) => 'MTN returned HTTP [status] after the required field was intentionally omitted. The raw response is in MoMo Logs.',
+            $case === 'payment_invalid_party' => 'MTN returned HTTP [status] for the invalid recipient test. The raw response is in MoMo Logs.',
+            in_array($case, ['payment_invalid_subscription', 'payment_invalid_target', 'payment_invalid_token'], true) => 'MTN returned HTTP [status] for the intentional request-header test. The raw response is in MoMo Logs.',
+            $case === 'payment_https_api' => 'MTN returned HTTP [status] for the HTTPS request. The exact URL and response are shown below.',
+            $case === 'payment_http_api' => 'MTN returned HTTP [status] for the HTTP request. The exact URL and response are shown below.',
+            str_starts_with($case, 'payment_') => 'MTN returned HTTP [status] for the payment request. Final result: [callback or status result].',
+            $case === 'status_valid' => 'MTN returned [transaction status] for the supplied X-Reference-Id. The raw response is in MoMo Logs.',
+            $case === 'status_invalid_reference' => 'MTN returned HTTP [status] for the unknown X-Reference-Id. The raw response is in MoMo Logs.',
+            str_starts_with($case, 'status_') => 'MTN returned HTTP [status] for the intentional status-header test. The raw response is in MoMo Logs.',
+            $case === 'account_valid' => 'MTN returned HTTP [status] for the account check. The raw response is in MoMo Logs.',
+            str_starts_with($case, 'account_') => 'MTN returned HTTP [status] for the intentional account test. The raw response is in MoMo Logs.',
+            $case === 'balance_valid' => 'MTN returned HTTP [status] for the balance check. The raw response is in MoMo Logs.',
+            default => 'MTN returned HTTP [status] for the intentional balance-header test. The raw response is in MoMo Logs.',
         };
     }
 
