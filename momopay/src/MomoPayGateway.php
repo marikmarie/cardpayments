@@ -875,27 +875,41 @@ final class MomoPayGateway
     /** Provide a concise note the tester can copy into the matching SIT result row. */
     private function sitNote(string $case): string
     {
-        if (str_starts_with($case, 'auth_')) {
-            return in_array($case, ['auth_valid', 'auth_second_token'], true)
-                ? 'MTN returned HTTP [status] for the token request. The raw response is in MoMo Logs.'
-                : 'MTN returned HTTP [status] for the intentional credential test. The raw response is in MoMo Logs.';
-        }
-
-        return match (true) {
-            $case === 'payment_duplicate_reference' => 'MTN returned HTTP [status] for the reused X-Reference-Id. The raw response is in MoMo Logs.',
-            in_array($case, ['payment_missing_amount', 'payment_missing_currency'], true) => 'MTN returned HTTP [status] after the required field was intentionally omitted. The raw response is in MoMo Logs.',
-            $case === 'payment_invalid_party' => 'MTN returned HTTP [status] for the invalid recipient test. The raw response is in MoMo Logs.',
-            in_array($case, ['payment_invalid_subscription', 'payment_invalid_target', 'payment_invalid_token'], true) => 'MTN returned HTTP [status] for the intentional request-header test. The raw response is in MoMo Logs.',
-            $case === 'payment_https_api' => 'MTN returned HTTP [status] for the HTTPS request. The exact URL and response are shown below.',
-            $case === 'payment_http_api' => 'MTN returned HTTP [status] for the HTTP request. The exact URL and response are shown below.',
-            str_starts_with($case, 'payment_') => 'MTN returned HTTP [status] for the payment request. Final result: [callback or status result].',
-            $case === 'status_valid' => 'MTN returned [transaction status] for the supplied X-Reference-Id. The raw response is in MoMo Logs.',
-            $case === 'status_invalid_reference' => 'MTN returned HTTP [status] for the unknown X-Reference-Id. The raw response is in MoMo Logs.',
-            str_starts_with($case, 'status_') => 'MTN returned HTTP [status] for the intentional status-header test. The raw response is in MoMo Logs.',
-            $case === 'account_valid' => 'MTN returned HTTP [status] for the account check. The raw response is in MoMo Logs.',
-            str_starts_with($case, 'account_') => 'MTN returned HTTP [status] for the intentional account test. The raw response is in MoMo Logs.',
-            $case === 'balance_valid' => 'MTN returned HTTP [status] for the balance check. The raw response is in MoMo Logs.',
-            default => 'MTN returned HTTP [status] for the intentional balance-header test. The raw response is in MoMo Logs.',
+        return match ($case) {
+            'auth_invalid_subscription' => 'MTN returned HTTP [status] for the invalid subscription-key token test. The raw response is in MoMo Logs.',
+            'auth_invalid_api_key' => 'MTN returned HTTP [status] for the invalid API-key token test. The raw response is in MoMo Logs.',
+            'auth_valid' => 'MTN returned HTTP [status] for the valid token request. The masked token details are in MoMo Logs.',
+            'auth_second_token' => 'MTN returned HTTP [status] for the second token request before expiry. The masked token details are in MoMo Logs.',
+            'payment_approved' => 'MTN returned HTTP [status] for the success payment request. Final result: [callback or status result].',
+            'payment_rejected' => 'MTN returned HTTP [status] for the subscriber-rejection payment test. Final result: [callback or status result].',
+            'payment_timeout' => 'MTN returned HTTP [status] for the approval-timeout payment test. Final result: [callback or status result].',
+            'payment_duplicate_reference' => 'MTN returned HTTP [status] for the reused X-Reference-Id payment test. The raw response is in MoMo Logs.',
+            'payment_missing_amount' => 'MTN returned HTTP [status] after amount was omitted from the payment request. The raw response is in MoMo Logs.',
+            'payment_missing_currency' => 'MTN returned HTTP [status] after currency was omitted from the payment request. The raw response is in MoMo Logs.',
+            'payment_insufficient_funds' => 'MTN returned HTTP [status] for the insufficient-funds payment test. Final result: [callback or status result].',
+            'payment_invalid_party' => 'MTN returned HTTP [status] for the invalid-recipient payment test. The raw response is in MoMo Logs.',
+            'payment_daily_limit' => 'MTN returned HTTP [status] for the daily-limit payment test. Final result: [callback or status result].',
+            'payment_invalid_subscription' => 'MTN returned HTTP [status] for the payment request with an invalid subscription key. The raw response is in MoMo Logs.',
+            'payment_invalid_target' => 'MTN returned HTTP [status] for the payment request with an invalid target environment. The raw response is in MoMo Logs.',
+            'payment_invalid_token' => 'MTN returned HTTP [status] for the payment request with an invalid bearer token. The raw response is in MoMo Logs.',
+            'payment_https_api' => 'MTN returned HTTP [status] for the HTTPS payment request. The exact URL and response are shown below.',
+            'payment_http_api' => 'MTN returned HTTP [status] for the HTTP payment request. The exact URL and response are shown below.',
+            'status_valid' => 'MTN returned [transaction status] for the supplied X-Reference-Id. The raw response is in MoMo Logs.',
+            'status_invalid_reference' => 'MTN returned HTTP [status] for the unknown X-Reference-Id status test. The raw response is in MoMo Logs.',
+            'status_invalid_subscription' => 'MTN returned HTTP [status] for the status request with an invalid subscription key. The raw response is in MoMo Logs.',
+            'status_invalid_target' => 'MTN returned HTTP [status] for the status request with an invalid target environment. The raw response is in MoMo Logs.',
+            'status_invalid_token' => 'MTN returned HTTP [status] for the status request with an invalid bearer token. The raw response is in MoMo Logs.',
+            'account_valid' => 'MTN returned HTTP [status] for the valid account-holder check. The raw response is in MoMo Logs.',
+            'account_invalid_type' => 'MTN returned HTTP [status] for the invalid account-holder-type test. The raw response is in MoMo Logs.',
+            'account_invalid_id' => 'MTN returned HTTP [status] for the invalid account-holder-ID test. The raw response is in MoMo Logs.',
+            'account_invalid_subscription' => 'MTN returned HTTP [status] for the account check with an invalid subscription key. The raw response is in MoMo Logs.',
+            'account_invalid_target' => 'MTN returned HTTP [status] for the account check with an invalid target environment. The raw response is in MoMo Logs.',
+            'account_invalid_token' => 'MTN returned HTTP [status] for the account check with an invalid bearer token. The raw response is in MoMo Logs.',
+            'balance_valid' => 'MTN returned HTTP [status] for the valid balance check. The raw response is in MoMo Logs.',
+            'balance_invalid_subscription' => 'MTN returned HTTP [status] for the balance check with an invalid subscription key. The raw response is in MoMo Logs.',
+            'balance_invalid_target' => 'MTN returned HTTP [status] for the balance check with an invalid target environment. The raw response is in MoMo Logs.',
+            'balance_invalid_token' => 'MTN returned HTTP [status] for the balance check with an invalid bearer token. The raw response is in MoMo Logs.',
+            default => 'MTN returned HTTP [status] for this test. The raw response is in MoMo Logs.',
         };
     }
 
