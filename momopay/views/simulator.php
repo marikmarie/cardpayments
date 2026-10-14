@@ -16,6 +16,15 @@ $sitCaseGroups = [];
 foreach ($sit_cases as $caseId => $caseDefinition) {
   $sitCaseGroups[(string) ($caseDefinition['group'] ?? 'Other')][$caseId] = $caseDefinition;
 }
+$sitResultCase = is_array($result) ? trim((string) ($result['case'] ?? '')) : '';
+$selectedSitCase = isset($sit_cases[$sitResultCase]) ? $sitResultCase : (string) (array_key_first($sit_cases) ?? '');
+$sitResultNote = '';
+if ($sitResultCase !== '' && isset($sit_cases[$sitResultCase])) {
+  $sitResultNote = trim((string) ($sit_cases[$sitResultCase]['sit_note'] ?? ''));
+  if ($sitResultNote !== '' && $providerHttpStatus > 0) {
+    $sitResultNote .= ' — HTTP ' . $providerHttpStatus;
+  }
+}
 $sitCaseJson = json_encode($sit_cases, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?: '{}';
 $lastReference = $last_reference ?: $newReference();
 $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' : ' hidden';
@@ -143,7 +152,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
    <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form" data-momopay-sit-form>
       <div class="compact-form-grid">
         <label>Product<select name="product" data-momopay-sit-product><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
-        <label>SIT case<select name="case" data-momopay-sit-case required><?php foreach ($sitCaseGroups as $group => $cases): ?><optgroup label="<?= \App\View::e($group) ?>"><?php foreach ($cases as $caseId => $caseDefinition): ?><option value="<?= \App\View::e($caseId) ?>"><?= \App\View::e((string) $caseDefinition['label']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
+        <label>SIT case<select name="case" data-momopay-sit-case required><?php foreach ($sitCaseGroups as $group => $cases): ?><optgroup label="<?= \App\View::e($group) ?>"><?php foreach ($cases as $caseId => $caseDefinition): ?><option value="<?= \App\View::e($caseId) ?>"<?= $caseId === $selectedSitCase ? ' selected' : '' ?>><?= \App\View::e((string) $caseDefinition['label']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
         <label data-sit-field="reference">PMT reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" placeholder="PMT1234567"></label>
         <label data-sit-field="workbook_reference">Workbook Reference ID<input name="workbook_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
         <label data-sit-field="provider_reference">MTN X-Reference-Id<input name="provider_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
@@ -157,7 +166,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       <section class="momopay-sit-guide" data-momopay-sit-guide aria-live="polite">
         <h4 data-sit-title></h4>
         <p data-sit-description></p>
-        <p class="momopay-sit-copy-note"><strong>Copy to SIT:</strong> <span data-sit-copy-note></span></p>
+        <p class="momopay-sit-copy-note"><strong>Note:</strong> <span data-sit-copy-note></span></p>
         <div class="godigital-summary-grid">
           <div><span>Sandbox test number</span><strong data-sit-test-number></strong></div>
           <div><span>Reference ID</span><strong data-sit-reference-note></strong></div>
@@ -179,7 +188,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <?php else: ?><div class="event-empty"><span>◍</span><p>Requests, responses, and callbacks appear here.</p></div><?php endif; ?>
   </div>
 
-  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request and MTN response</h3><p>Both sides of this test are shown here. Secrets and customer numbers are masked.</p></div></div><?php if ($resultError !== ''): ?><div class="warning"><strong>MTN rejected this request</strong><p><?= \App\View::e($resultError) ?></p></div><?php endif; ?><?php if ($apiKeyOnce !== ''): ?><div class="warning"><strong>Copy the API key now</strong><p>This one-time value is returned by MTN and is never written to Logs. Put it in the selected product's `.env` API-key value.</p><pre class="code-block"><code><?= \App\View::e($apiKeyOnce) ?></code></pre></div><?php endif; ?><div class="momopay-exchange-grid"><article class="code-block"><span>REQUEST SENT</span><pre><code><?= \App\View::e($providerRequestJson ?: 'No provider request was created.') ?></code></pre></article><article class="code-block"><span>MTN RESPONSE<?= $providerHttpStatus > 0 ? ' · HTTP ' . \App\View::e((string) $providerHttpStatus) : '' ?></span><pre><code><?= \App\View::e($providerResponseJson ?: 'No provider response was returned.') ?></code></pre></article></div><?php if ($resultMetadataJson !== ''): ?><details class="momopay-result-metadata"><summary>Test metadata</summary><pre class="code-block"><code><?= \App\View::e($resultMetadataJson) ?></code></pre></details><?php endif; ?></section><?php endif; ?>
+  <?php if ($result): ?><section class="godigital-result" data-momopay-panel="<?= \App\View::e($active_tab) ?>"><div class="section-title"><span>✓</span><div><h3>Request and MTN response</h3><p>Both sides of this test are shown here. Secrets and customer numbers are masked.</p></div></div><?php if ($sitResultNote !== ''): ?><p class="momopay-sit-copy-note"><strong>SIT note:</strong> <?= \App\View::e($sitResultNote) ?></p><?php endif; ?><?php if ($resultError !== ''): ?><div class="warning"><strong>MTN rejected this request</strong><p><?= \App\View::e($resultError) ?></p></div><?php endif; ?><?php if ($apiKeyOnce !== ''): ?><div class="warning"><strong>Copy the API key now</strong><p>This one-time value is returned by MTN and is never written to Logs. Put it in the selected product's `.env` API-key value.</p><pre class="code-block"><code><?= \App\View::e($apiKeyOnce) ?></code></pre></div><?php endif; ?><div class="momopay-exchange-grid"><article class="code-block"><span>REQUEST SENT</span><pre><code><?= \App\View::e($providerRequestJson ?: 'No provider request was created.') ?></code></pre></article><article class="code-block"><span>MTN RESPONSE<?= $providerHttpStatus > 0 ? ' · HTTP ' . \App\View::e((string) $providerHttpStatus) : '' ?></span><pre><code><?= \App\View::e($providerResponseJson ?: 'No provider response was returned.') ?></code></pre></article></div><?php if ($resultMetadataJson !== ''): ?><details class="momopay-result-metadata"><summary>Test metadata</summary><pre class="code-block"><code><?= \App\View::e($resultMetadataJson) ?></code></pre></details><?php endif; ?></section><?php endif; ?>
 </section>
 
 <section class="api-test-band"><div><p class="eyebrow">Server API</p><h3>MoMo Pay API</h3><p>Use a dashboard-issued <code>X-API-Key</code>.</p></div><a class="primary-action" href="<?= $url('/api/v1/momopay/openapi.json') ?>">Open API JSON</a></section>
@@ -193,6 +202,8 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   const sitForm = document.querySelector('[data-momopay-sit-form]');
   if (sitForm) {
     const sitCases = <?= $sitCaseJson ?>;
+    const responseCase = <?= json_encode($sitResultCase, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const responseNote = <?= json_encode($sitResultNote, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
     const product = sitForm.querySelector('[data-momopay-sit-product]');
     const caseSelect = sitForm.querySelector('[data-momopay-sit-case]');
     const guide = sitForm.querySelector('[data-momopay-sit-guide]');
@@ -235,7 +246,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       const testNumber = valueForProduct(definition.test_numbers, product.value);
       guide.querySelector('[data-sit-title]').textContent = definition.label || caseId;
       guide.querySelector('[data-sit-description]').textContent = definition.description || '';
-      guide.querySelector('[data-sit-copy-note]').textContent = definition.sit_note || '';
+      guide.querySelector('[data-sit-copy-note]').textContent = caseId === responseCase && responseNote ? responseNote : (definition.sit_note || '');
       guide.querySelector('[data-sit-test-number]').textContent = testNumber
         ? `${testNumber}${testNumber === '46733123449' ? ' (an unlisted number; MTN treats other numbers as Success)' : ''}`
         : 'No MSISDN test number is sent for this endpoint.';

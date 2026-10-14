@@ -39,24 +39,22 @@ For production, use the credentials, target environment, and currency issued dur
 The **SIT cases** tab covers the API cases in `UG Momo OpenAPI SIT Sheet.xlsx`. It is available only in the sandbox so intentional bad credentials and headers cannot be sent to production.
 
 1. Choose the product and the matching SIT case.
-2. Read the small **Copy to SIT** note beside the selected case.
-3. Run the case, then replace `[status]` and `[transaction status]` in that note with the actual MTN result shown beneath the form or in **Logs**.
-4. Paste the completed sentence into the workbook test-result note.
+2. Run the case.
+3. Copy the short **SIT note** shown with the response, for example `Missing amount — HTTP 400`.
+4. Paste that note into the workbook Notes column.
 
-The test runner never creates a result itself. Record the exact MTN response. An initial HTTP `202` means MTN accepted the request; use the callback or transaction-status result for the final payment outcome.
+The app adds the HTTP status automatically from the MTN response. The response column already contains the full request result, so the note stays short. An initial HTTP `202` means MTN accepted the request; use the callback or transaction-status result for the final payment outcome.
 
-### Copy-ready SIT note examples
+### Note examples
 
-| Test type | Short note to paste after replacing the brackets |
+| Test type | Note shown after the response |
 | --- | --- |
-| Valid token or account/balance check | `MTN returned HTTP [status] for the check. ` |
-| Invalid API key, subscription key, target, or bearer token | `MTN returned HTTP [status] for the intentional header or credential test. ` |
-| Payment or transfer | `MTN returned HTTP [status] for the request. Final result: [callback or status result].` |
-| Duplicate reference or missing field | `MTN returned HTTP [status] for the deliberate validation test. ` |
-| Valid transaction status | `MTN returned [transaction status] for the supplied X-Reference-Id. ` |
-| HTTP or HTTPS protocol check | `MTN returned HTTP [status] for the request. The exact URL and response are shown below.` |
+| Valid token | `Valid token — HTTP 200` |
+| Missing amount | `Missing amount — HTTP 400` |
+| Invalid bearer token | `Payment with invalid bearer token — HTTP 401` |
+| Valid transaction status | `Valid transaction status — HTTP 200` |
 
-Each specific SIT case displays its own version of the note in the tester, including the payment, transaction-status, account, and balance variants.
+Each SIT case has its own simple note. The status code always comes from the actual MTN response.
 
 ### Workbook coverage
 
