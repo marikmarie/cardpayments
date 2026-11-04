@@ -12,7 +12,6 @@ use App\Controllers\VendorSimulatorController;
 use App\Controllers\WebhookController;
 use Efris\Http\EfrisController;
 use Efris\Http\EfrisSimulatorController;
-use GoDigital\GoDigitalController;
 use GoDigital\GoDigitalTesterController;
 use GoDigital\GoDigitalWebhookController;
 use Pegasus\PegasusController;
@@ -135,12 +134,6 @@ final class Application
         if (in_array($method, ['POST', 'PUT'], true) && $path === '/webhooks/momopay') { (new MomoPayWebhookController())->receive(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/openapi.json') { (new ApiDocsController())->openApi(); return true; }
-        if ($method === 'GET' && $path === '/api/v1/godigital/openapi.json') { (new GoDigitalController())->openApi(); return true; }
-        if ($method === 'POST' && $path === '/api/v1/godigital/collections') { (new GoDigitalController())->createCollection(); return true; }
-        if ($method === 'POST' && $path === '/api/v1/godigital/disbursements') { (new GoDigitalController())->createDisbursement(); return true; }
-        if ($method === 'GET' && preg_match('#^/api/v1/godigital/payments/([^/]+)$#', $path, $match)) { (new GoDigitalController())->status(rawurldecode($match[1])); return true; }
-        if ($method === 'GET' && preg_match('#^/api/v1/godigital/wallets/balance/([^/]+)$#', $path, $match)) { (new GoDigitalController())->balance(rawurldecode($match[1])); return true; }
-        if ($method === 'GET' && $path === '/api/v1/godigital/name-check') { (new GoDigitalController())->nameCheck(); return true; }
 
         if ($method === 'GET' && $path === '/api/v1/pesaway/openapi.json') { (new PesawayController())->openApi(); return true; }
         if ($method === 'POST' && $path === '/api/v1/pesaway/channels') { (new PesawayController())->channels(); return true; }
