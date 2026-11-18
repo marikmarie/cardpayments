@@ -63,8 +63,8 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
       <div><span>Default currency</span><strong><?= \App\View::e($configuration['currency']) ?></strong></div>
     </div>
     <div class="momopay-token-actions">
+         <form method="post" action="<?= $url('/momopay-tester/token') ?>"><input type="hidden" name="product" value="disbursement"><button class="outline-action" type="submit">Check Disbursement token</button></form>
       <form method="post" action="<?= $url('/momopay-tester/token') ?>"><input type="hidden" name="product" value="collection"><button class="primary-action" type="submit">Check Collection token</button></form>
-      <form method="post" action="<?= $url('/momopay-tester/token') ?>"><input type="hidden" name="product" value="disbursement"><button class="outline-action" type="submit">Check Disbursement token</button></form>
     </div>
   </div>
 
@@ -80,7 +80,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
         <h4>1. Create API user</h4>
         <p class="helper-copy">Leave API user blank to generate an MTN-compliant UUID v4. Use the public host only, without a path.</p>
         <div class="compact-form-grid">
-          <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+          <label>Product<select name="product"><option value="disbursement">Disbursement</option><option value="collection">Collection</option></select></label>
           <label>API user UUID (optional)<input name="api_user" placeholder="Leave blank to generate"></label>
           <label class="wide">Provider callback host<input name="provider_callback_host" value="<?= \App\View::e($configuration['provider_callback_host']) ?>" placeholder="payments.example.com" required></label>
         </div>
@@ -90,7 +90,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
         <h4>2. Create API key</h4>
         <p class="helper-copy">Use the exact API-user UUID above. Copy the returned API key immediately into the product's `.env` API-key value.</p>
         <div class="compact-form-grid">
-          <label>Product<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+          <label>Product<select name="product"><option value="disbursement">Disbursement</option><option value="collection">Collection</option></select></label>
           <label class="wide">API user UUID<input name="api_user" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx" required></label>
         </div>
         <div class="form-actions compact-actions"><button class="outline-action" type="submit">Create API key</button></div>
@@ -138,7 +138,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
     <p class="helper-copy">Use the PMT reference returned by this workspace. You can also use an MTN request UUID and choose its product.</p>
     <div class="compact-form-grid">
       <label class="wide">PMT or MTN reference<input name="reference" value="<?= \App\View::e($last_reference) ?>" placeholder="PMT1234567" required></label>
-      <label>Product if using MTN UUID<select name="product"><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+      <label>Product if using MTN UUID<select name="product"><option value="disbursement">Disbursement</option><option value="collection">Collection</option></select></label>
     </div>
     <div class="form-actions compact-actions"><button class="primary-action" type="submit">Check status</button></div>
   </form>
@@ -151,7 +151,7 @@ $panelVisibility = static fn(string $tab): string => $active_tab === $tab ? '' :
   <div data-momopay-panel="sit"<?= $panelVisibility('sit') ?>>
    <form method="post" action="<?= $url('/momopay-tester/sit') ?>" class="momopay-operation-form" data-momopay-sit-form>
       <div class="compact-form-grid">
-        <label>Product<select name="product" data-momopay-sit-product><option value="collection">Collection</option><option value="disbursement">Disbursement</option></select></label>
+        <label>Product<select name="product" data-momopay-sit-product><option value="disbursement">Disbursement</option><option value="collection">Collection</option></select></label>
         <label>SIT case<select name="case" data-momopay-sit-case required><?php foreach ($sitCaseGroups as $group => $cases): ?><optgroup label="<?= \App\View::e($group) ?>"><?php foreach ($cases as $caseId => $caseDefinition): ?><option value="<?= \App\View::e($caseId) ?>"<?= $caseId === $selectedSitCase ? ' selected' : '' ?>><?= \App\View::e((string) $caseDefinition['label']) ?></option><?php endforeach; ?></optgroup><?php endforeach; ?></select></label>
         <label data-sit-field="reference">PMT reference<input name="reference" value="<?= \App\View::e($newReference()) ?>" maxlength="10" pattern="PMT[A-Z0-9]{7}" placeholder="PMT1234567"></label>
         <label data-sit-field="workbook_reference">Workbook Reference ID<input name="workbook_reference" placeholder="xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx"></label>
