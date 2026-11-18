@@ -33,9 +33,6 @@
       <a class="<?= ($active_nav ?? '') === 'pegasus-card' ? 'active' : '' ?>" href="<?= $url('/pegasus-card') ?>">
         <span>▤</span> Card collections
       </a>
-      <a class="<?= ($active_nav ?? '') === 'payouts' ? 'active' : '' ?>" href="<?= $url('/pegasus-payouts') ?>">
-        <span>↗</span> Payouts
-      </a>
       <a class="<?= ($active_nav ?? '') === 'godigital' ? 'active' : '' ?>" href="<?= $url('/godigital-tester') ?>">
         <span>◉</span> GoDigital
       </a>

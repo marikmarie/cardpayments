@@ -121,7 +121,7 @@ final class PegasusController extends Controller
                 '/api/v1/pegasus/validate-recipient' => ['post' => [
                     'summary' => 'Validate a mobile-money number or bank account',
                     'requestBody' => $this->bodySchema(['account', 'network'], [
-                        'account' => ['type' => 'string', 'example' => '256702685176'],
+                        'account' => ['type' => 'string', 'description' => 'Live mobile-money number or bank account.'],
                         'network' => ['type' => 'string', 'example' => 'AIRTEL'],
                     ]),
                     'responses' => ['200' => ['description' => 'Recipient validation result'], '401' => ['description' => 'Invalid API key'], '503' => ['description' => 'PegPay is not configured']],
@@ -130,12 +130,12 @@ final class PegasusController extends Controller
                     'summary' => 'Create a PegPay collection or payout',
                     'description' => 'Use PULL to collect from from_account. Use PUSH to pay to to_account. Reusing the same vendor_transaction_id is safe only with identical data.',
                     'requestBody' => $this->bodySchema(['transaction_type', 'vendor_transaction_id', 'amount'], [
-                        'transaction_type' => ['type' => 'string', 'enum' => ['PULL', 'PUSH'], 'example' => 'PULL'],
-                        'vendor_transaction_id' => ['type' => 'string', 'minLength' => 10, 'maxLength' => 10, 'pattern' => '^PMT[A-Z0-9]{7}$', 'example' => 'PMT1234567'],
-                        'amount' => ['type' => 'string', 'description' => 'Whole UGX amount.', 'example' => '500'],
-                        'from_account' => ['type' => 'string', 'example' => '256772000000'],
+                        'transaction_type' => ['type' => 'string', 'enum' => ['PULL', 'PUSH']],
+                        'vendor_transaction_id' => ['type' => 'string', 'minLength' => 10, 'maxLength' => 10, 'pattern' => '^PMT[A-Z0-9]{7}$', 'description' => 'Your unique PMT payment ID.'],
+                        'amount' => ['type' => 'string', 'description' => 'Live whole-UGX amount.'],
+                        'from_account' => ['type' => 'string', 'description' => 'Live source account for a collection or payout.'],
                         'from_network' => ['type' => 'string', 'example' => 'MTN'],
-                        'to_account' => ['type' => 'string', 'example' => '256702685176'],
+                        'to_account' => ['type' => 'string', 'description' => 'Live destination account for a payout.'],
                         'to_network' => ['type' => 'string', 'example' => 'AIRTEL'],
                         'customer_name' => ['type' => 'string'],
                         'customer_reference' => ['type' => 'string'],

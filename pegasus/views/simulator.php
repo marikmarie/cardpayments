@@ -1,25 +1,19 @@
 <?php
-/** @var array $samples */
+/** @var array $forms */
 /** @var array|null $result */
 /** @var array|null $verification */
 /** @var array|null $status_result */
 /** @var array|null $balance_result */
 /** @var string $last_transaction_id */
-/** @var string $last_payout_id */
 /** @var array $log */
 /** @var array $mobile_networks */
 /** @var array $payout_networks */
-/** @var array $bank_test_accounts */
 /** @var string $active_tab */
-$testProfiles = ['AIRTEL' => ['account' => '256702685176', 'network' => 'AIRTEL']];
-foreach ($bank_test_accounts as $code => $recipient) {
-  $testProfiles[$code] = ['account' => $recipient['account'], 'network' => $recipient['network']];
-}
 ?>
 <section class="create-heading">
-  <p class="eyebrow">PegPay UAT</p>
+  <p class="eyebrow">PegPay operations</p>
   <h1>PegPay</h1>
-  <p>Collections, payouts, status, balance, and logs.</p>
+  <p>Enter the live payment details for each collection, payout, and status check.</p>
 </section>
 
 
@@ -28,7 +22,6 @@ foreach ($bank_test_accounts as $code => $recipient) {
   <button type="button" class="pegasus-tab" data-pegasus-tab="collect">Collect</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="mobile-payout">Payout</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="bank-payout">Bank</button>
-  <button type="button" class="pegasus-tab" data-pegasus-tab="duplicate">Retry</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="status">Status</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="balance">Balance</button>
   <button type="button" class="pegasus-tab" data-pegasus-tab="log">Log</button>
@@ -39,19 +32,20 @@ foreach ($bank_test_accounts as $code => $recipient) {
     <span>✓</span>
     <div>
       <h3>Verify recipient</h3>
-      <p>Use a supplied UAT account and network.</p>
+      <p>Enter the recipient account and its live network.</p>
     </div>
   </div>
   <form class="form-grid" action="<?= $url('/pegasus-tester/verify') ?>" method="post">
     <label>
       Mobile number or bank account
-      <input id="verify-account" name="account" inputmode="numeric" value="256702685176" required>
+      <input id="verify-account" name="account" inputmode="numeric" placeholder="Recipient account" required>
     </label>
     <label>
       Network or bank
-      <select name="network" data-account-target="verify-account" required>
+      <select name="network" required>
+        <option value="" selected disabled>Choose network</option>
         <?php foreach ($payout_networks as $code => $name): ?>
-          <option value="<?= $code ?>" <?= $code === 'AIRTEL' ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
+          <option value="<?= $code ?>"><?= \App\View::e($name) ?> (<?= $code ?>)</option>
         <?php endforeach; ?>
       </select>
     </label>
@@ -80,38 +74,11 @@ foreach ($bank_test_accounts as $code => $recipient) {
     </label>
     <div class="form-actions compact-actions">
       <button class="secondary-action">Check status</button>
-      <button class="outline-action" name="unknown_scenario" value="1" formnovalidate>Check unknown test ID</button>
     </div>
   </form>
   <?php if ($status_result): ?>
-    <p><strong><?= !empty($status_result['found_locally']) ? 'Known local transaction' : 'Unknown local transaction — PegPay was asked directly' ?></strong></p>
     <p><strong>Response returned by PegPay</strong></p>
     <pre class="code-block"><?= \App\View::e(json_encode($status_result['provider_response'] ?? $status_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
-  <?php endif; ?>
-</section>
-
-<section class="panel form-section" data-pegasus-panel="duplicate" hidden>
-  <div class="section-title">
-    <span>≡</span>
-    <div>
-      <h3>Duplicate payout test</h3>
-      <p>Retry an existing payout with the same ID.</p>
-    </div>
-  </div>
-  <?php if ($last_payout_id === ''): ?>
-    <p>Create a payout first.</p>
-  <?php else: ?>
-    <form class="form-grid" action="<?= $url('/pegasus-tester/duplicate') ?>" method="post">
-      <label>
-        Original payout transaction ID
-        <input name="vendor_transaction_id" value="<?= \App\View::e($last_payout_id) ?>" maxlength="60" required>
-      </label>
-      <div class="form-actions compact-actions">
-        <button class="secondary-action">Repeat payout safely</button>
-        <button class="outline-action" name="send_to_pegpay" value="1">Send duplicate to PegPay</button>
-      </div>
-    </form>
-    <p><small>Use this only with a UAT account.</small></p>
   <?php endif; ?>
 </section>
 
@@ -133,10 +100,11 @@ foreach ($bank_test_accounts as $code => $recipient) {
 </section>
 
 <div class="link-form">
-  <?php foreach ($samples as $sample): ?>
+  <?php foreach ($forms as $sample): ?>
     <?php $tab = $sample['type'] === 'PULL' ? 'collect' : ($sample['channel'] === 'bank' ? 'bank-payout' : 'mobile-payout'); ?>
     <form class="panel form-section" action="<?= $url('/pegasus-tester/transactions') ?>" method="post" data-pegasus-panel="<?= $tab ?>" hidden>
       <input type="hidden" name="transaction_type" value="<?= \App\View::e($sample['type']) ?>">
+      <input type="hidden" name="payment_channel" value="<?= \App\View::e($sample['channel']) ?>">
       <?php $networks = $sample['type'] === 'PULL' ? $mobile_networks : $payout_networks; ?>
       <div class="section-title">
         <span><?= $sample['type'] === 'PULL' ? '↓' : '↑' ?></span>
@@ -157,43 +125,26 @@ foreach ($bank_test_accounts as $code => $recipient) {
         </label>
         <label>
           From account
-          <input id="<?= $tab ?>-from-account" name="from_account" inputmode="numeric" value="<?= \App\View::e($sample['from_account']) ?>" required>
+          <input name="from_account" inputmode="numeric" value="<?= \App\View::e($sample['from_account']) ?>" placeholder="Source account" required>
         </label>
         <label>
           From network
-          <select name="from_network" data-account-target="<?= $tab ?>-from-account" required>
+          <select name="from_network" required>
+            <option value="" selected disabled>Choose network</option>
             <?php foreach ($networks as $code => $name): ?>
               <option value="<?= $code ?>" <?= $code === $sample['from_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
             <?php endforeach; ?>
           </select>
         </label>
-        <?php if ($sample['channel'] === 'bank'): ?>
-          <label class="wide">
-            Bank test recipient
-            <select id="bank-test-recipient" name="bank_test_recipient" data-account-target="bank-to-account" data-network-target="bank-to-network" required>
-              <?php foreach ($bank_test_accounts as $code => $recipient): ?>
-                <option value="<?= \App\View::e($code) ?>" <?= $code === $sample['to_network'] ? 'selected' : '' ?>>
-                  <?= \App\View::e($recipient['name']) ?> — <?= \App\View::e($recipient['account']) ?> (<?= \App\View::e($recipient['network']) ?>)
-                </option>
-              <?php endforeach; ?>
-            </select>
-          </label>
-          <label>
-            Recipient account
-            <input id="bank-to-account" value="<?= \App\View::e($sample['to_account']) ?>" disabled>
-          </label>
-          <label>
-            Recipient bank
-            <input id="bank-to-network" value="<?= \App\View::e($sample['to_network']) ?>" disabled>
-          </label>
-        <?php elseif ($sample['type'] === 'PUSH'): ?>
+        <?php if ($sample['type'] === 'PUSH'): ?>
           <label>
             To account
-            <input id="<?= $tab ?>-to-account" name="to_account" inputmode="numeric" value="<?= \App\View::e($sample['to_account']) ?>" required>
+            <input name="to_account" inputmode="numeric" value="<?= \App\View::e($sample['to_account']) ?>" placeholder="Recipient account" required>
           </label>
           <label>
             To network
-            <select name="to_network" data-account-target="<?= $tab ?>-to-account" required>
+            <select name="to_network" required>
+              <option value="" selected disabled>Choose network</option>
               <?php foreach ($networks as $code => $name): ?>
                 <option value="<?= $code ?>" <?= $code === $sample['to_network'] ? 'selected' : '' ?>><?= \App\View::e($name) ?> (<?= $code ?>)</option>
               <?php endforeach; ?>
@@ -226,15 +177,9 @@ foreach ($bank_test_accounts as $code => $recipient) {
       <span>✓</span>
       <div>
         <h3>Latest PegPay response</h3>
-      <p><?= !empty($result['duplicate_test']) ? 'The original payout record was returned.' : 'Check PENDING payments again after five seconds.' ?></p>
+      <p>Check PENDING payments again after five seconds.</p>
       </div>
     </div>
-    <?php if (!empty($result['duplicate_test'])): ?>
-      <div class="warning">
-        <strong><?= !empty($result['duplicate_sent']) ? 'Duplicate request sent to PegPay' : (!empty($result['replayed']) ? 'Duplicate protected' : 'Documented retry sent') ?></strong>
-        <p><?= !empty($result['duplicate_sent']) ? 'The request was sent again. Review the log.' : (!empty($result['replayed']) ? 'The original payout was returned.' : 'Response code 22 requires the same transaction ID.') ?></p>
-      </div>
-    <?php endif; ?>
     <pre class="code-block"><?= \App\View::e(json_encode($result['data']['provider_response'] ?? $result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre>
   </section>
 <?php endif; ?>
@@ -256,7 +201,6 @@ foreach ($bank_test_accounts as $code => $recipient) {
 
 <script>
 (() => {
-  const profiles = <?= json_encode($testProfiles, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   const tabs = document.querySelector('.pegasus-tabs');
   const showTab = (name) => {
     document.querySelectorAll('[data-pegasus-tab]').forEach((button) => button.classList.toggle('is-active', button.dataset.pegasusTab === name));
@@ -264,19 +208,5 @@ foreach ($bank_test_accounts as $code => $recipient) {
   };
   tabs.querySelectorAll('[data-pegasus-tab]').forEach((button) => button.addEventListener('click', () => showTab(button.dataset.pegasusTab)));
   showTab(tabs.dataset.defaultTab || 'verify');
-
-  document.querySelectorAll('[data-account-target]').forEach((select) => {
-    const fill = () => {
-      const profile = profiles[select.value];
-      const account = document.getElementById(select.dataset.accountTarget);
-      const network = document.getElementById(select.dataset.networkTarget);
-      if (!account) return;
-      account.value = profile ? profile.account : '';
-      account.placeholder = profile ? '' : 'No supplied UAT account for this network';
-      if (network) network.value = profile ? profile.network : select.value;
-    };
-    select.addEventListener('change', fill);
-    if (select.id === 'bank-test-recipient') fill();
-  });
 })();
 </script>

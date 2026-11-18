@@ -212,7 +212,7 @@ final class PegasusCardLogger
         return dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . ltrim($configured, './\\');
     }
 
-    /** Retain the UAT-relevant handoff fields while excluding credentials, signatures, and customer data. */
+    /** Retain payment handoff fields while excluding credentials, signatures, and customer data. */
     private function redactFormFields(array $fields): array
     {
         foreach ($fields as $key => $value) {

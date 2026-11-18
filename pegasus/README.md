@@ -34,18 +34,20 @@ $pegasus = new PegasusApiClient(
 );
 
 $response = $pegasus->transaction([
-    'transaction_type' => 'PULL',
-    'vendor_transaction_id' => 'PMT1234567',
-    'amount' => '500',
-    'from_account' => '256702685176',
-    'from_network' => 'AIRTEL',
-    'customer_name' => 'Collecto customer',
-    'customer_reference' => 'Collecto wallet top-up',
-    'narration' => 'Wallet top-up',
+    'transaction_type' => $payment['transaction_type'], // PULL or PUSH
+    'vendor_transaction_id' => $payment['vendor_transaction_id'],
+    'amount' => $payment['amount'],
+    'from_account' => $payment['from_account'],
+    'from_network' => $payment['from_network'],
+    'to_account' => $payment['to_account'] ?? '',
+    'to_network' => $payment['to_network'] ?? '',
+    'customer_name' => $payment['customer_name'] ?? '',
+    'customer_reference' => $payment['customer_reference'] ?? '',
+    'narration' => $payment['narration'] ?? '',
 ]);
 ```
 
-Use `transaction_status('PMT1234567')`, `balance()`, and `validateRecipient($account, $network)` for the remaining PegPay API calls. New IDs must be `PMT` followed by seven uppercase letters or digits.
+`$payment` is supplied by Collecto after it validates the customer and creates its own payment record. Use `transaction_status($payment['vendor_transaction_id'])`, `balance()`, and `validateRecipient($account, $network)` for the remaining PegPay API calls. New IDs must be `PMT` followed by seven uppercase letters or digits.
 
 ## PegPay Web cards
 
@@ -64,16 +66,16 @@ $cards = new PegasusWebClient(
 );
 
 $form = $cards->checkoutForm([
-    'vendor_transaction_id' => 'PMT1234567',
-    'amount' => '25000.00',
-    'currency' => 'UGX',
-    'description' => 'Collecto wallet top-up',
-    'return_url' => 'https://collecto.example/payments/pegasus/return',
+    'vendor_transaction_id' => $cardPayment['vendor_transaction_id'],
+    'amount' => $cardPayment['amount'],
+    'currency' => $cardPayment['currency'],
+    'description' => $cardPayment['description'],
+    'return_url' => $cardPayment['return_url'],
 ]);
 // Render an HTML POST form with $form['url'] and $form['fields'] server-side.
 ```
 
-To query a card collection, Collecto calls `$cards->queryStatus('PMT1234567')`, then validates it with `$cards->verifyResponse($response, 'PMT1234567')`. If PegPay returns `PENDING`, Collecto must wait at least five seconds before another query.
+`$cardPayment` is supplied by Collecto after it creates the collection record. To query it, call `$cards->queryStatus($cardPayment['vendor_transaction_id'])`, then validate it with `$cards->verifyResponse($response, $cardPayment['vendor_transaction_id'])`. If PegPay returns `PENDING`, Collecto must wait at least five seconds before another query.
 
 ## Credentials to provide securely
 

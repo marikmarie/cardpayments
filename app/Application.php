@@ -180,11 +180,7 @@ final class Application
         if ($method === 'POST' && $path === '/pegasus-tester/verify') { (new PegasusSimulatorController())->verify($_POST); return true; }
         if ($method === 'POST' && $path === '/pegasus-tester/transactions') { (new PegasusSimulatorController())->submit($_POST); return true; }
         if ($method === 'POST' && $path === '/pegasus-tester/status') { (new PegasusSimulatorController())->status($_POST); return true; }
-        if ($method === 'POST' && $path === '/pegasus-tester/duplicate') { (new PegasusSimulatorController())->duplicate($_POST); return true; }
         if ($method === 'POST' && $path === '/pegasus-tester/balance') { (new PegasusSimulatorController())->balance(); return true; }
-        if ($method === 'GET' && $path === '/pegasus-payouts') { (new PegasusSimulatorController())->payouts(); return true; }
-        if ($method === 'POST' && $path === '/pegasus-payouts/review') { (new PegasusSimulatorController())->reviewPayouts($_POST); return true; }
-        if ($method === 'POST' && $path === '/pegasus-payouts/send') { (new PegasusSimulatorController())->sendPayouts(); return true; }
         if ($method === 'GET' && $path === '/pegasus-card') { (new PegasusWebController())->index(); return true; }
         if ($method === 'GET' && preg_match('#^/pegasus-card/pay/([A-Za-z0-9_-]{1,60})$#', $path, $match)) { (new PegasusWebController())->pay($match[1]); return true; }
         if ($method === 'POST' && $path === '/pegasus-card/checkout') { (new PegasusWebController())->checkout($_POST); return true; }
