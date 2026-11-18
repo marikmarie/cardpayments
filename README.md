@@ -59,13 +59,17 @@ Content-Type: application/json
 
 The `201` response contains only `invoice_number` and `payment_url`. Keep the invoice number and use `GET /api/v1/payment-links/{invoice_number}?refresh=true` to retrieve the latest invoice status before fulfilling an order. Customer details are optional when you return the link yourself; `customer.email` is required if `send` is `true`.
 
+## Card SDK
+
+The shareable [`card/card-sdk.zip`](card/card-sdk.zip) contains the stateless `CissyTech\Cards\Sdk\CyberSourceClient` and its usage guide. A consuming application supplies its own CyberSource credentials and parameters, then owns all records, logs, callbacks, retry handling, and wallet decisions.
+
 ## EFRIS gateway
 
 The EFRIS work is kept in [`efris/README.md`](efris/README.md), separate from card-payment code. It provides a tenant-scoped API contract at `/api/v1/efris/openapi.json` and a safe mock mode for vendor integration tests. It does not create a URA fiscal document until URA test onboarding and the current encrypted/signed protocol implementation have been completed.
 
 ## GoDigital gateway
 
-The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). Its dashboard tester follows the v1.1.4 contract and has separate tabs for connection, C2B collections, B2C payouts, status, wallet balance, recipient name check, callback setup, and logs. Configure its credentials only in `.env`, allow-list the deployed server's public outbound IP with GoDigital, and use the public HTTPS callback `/webhooks/godigital`.
+The GoDigital integration is documented in [`godigital/README.md`](godigital/README.md). `GoDigital\Sdk\GoDigitalClient` is a stateless client for Collecto: Collecto supplies its own credentials and payment data, then owns wallets, persistence, logs, retries, and callbacks. The dashboard tester remains available for manual connection, collection, payout, status, balance, recipient name-check, and callback setup tests; it does not retain GoDigital requests or responses.
 
 ## PesaWay gateway
 
@@ -82,6 +86,10 @@ Run `card/database/schema.mysql.sql` and `pegasus/database/schema.mysql.sql` on 
 ## PegPay Web card status
 
 Set `PEGASUS_WEB_STATUS_URL` to the HTTPS `QueryStatus.aspx` address supplied by Pegasus. It is separate from the Payments and Collections API. For the supplied test checkout URL `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/Default.aspx`, use `https://test.pegasus.co.ug:8019/PaymentsGatewayTest/QueryStatus.aspx`; the guide's older `TestPegasusPaymentsGateway` example returns 404. The Card collections **Status** tab sends the documented `MerchantId`, `VendorCode`, `Pswd`, and original `VendorTranId` query. `Pswd` is `HMAC-SHA256(PEGASUS_WEB_PASSWORD, PEGASUS_WEB_SECRET_CODE)`, never the plaintext password. The status screen and card log show the complete request URL with that value redacted, plus the PegPay response. Pending collections cannot be queried more often than every five seconds.
+
+## Pegasus SDK
+
+The shareable [`pegasus/pegasus-sdk.zip`](pegasus/pegasus-sdk.zip) contains separate stateless clients for PegPay Payments and Collections API and PegPay Web cards. Its guide explains recipient checks, collections, payouts, status, balance, hosted checkout, QueryStatus, and signature verification. The consuming system keeps its own records, logs, retries, polling interval, callbacks, and wallet workflow.
 
 ## Vault card checkout API
 

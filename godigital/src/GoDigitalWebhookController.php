@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace GoDigital;
 
 use App\Controllers\Controller;
-use App\Store;
 
 /** Public HTTPS receiver used by GoDigital to finalise asynchronous payments. */
 final class GoDigitalWebhookController extends Controller
@@ -13,7 +12,7 @@ final class GoDigitalWebhookController extends Controller
 
     public function __construct()
     {
-        $this->gateway = new GoDigitalGateway(new Store());
+        $this->gateway = new GoDigitalGateway();
     }
 
     public function health(): never

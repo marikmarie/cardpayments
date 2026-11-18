@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace GoDigital;
 
 use App\Controllers\Controller;
-use App\Store;
 use App\View;
 
 /** Browser-only GoDigital UAT workspace. Credentials stay in the server .env. */
@@ -14,7 +13,7 @@ final class GoDigitalTesterController extends Controller
 
     public function __construct()
     {
-        $this->gateway = new GoDigitalGateway(new Store());
+        $this->gateway = new GoDigitalGateway();
     }
 
     public function index(): void
@@ -22,12 +21,10 @@ final class GoDigitalTesterController extends Controller
         View::renderModule('godigital', 'simulator', [
             'title' => 'GoDigital test',
             'active_nav' => 'godigital',
-            'topbar_action' => ['label' => 'GoDigital API', 'href' => '/api/v1/godigital/openapi.json'],
             'configuration' => $this->gateway->configuration(),
             'result' => $_SESSION['godigital_result'] ?? null,
             'active_tab' => $_SESSION['godigital_active_tab'] ?? 'connection',
             'last_reference' => $_SESSION['godigital_last_reference'] ?? '',
-            'activity' => $this->gateway->activityLog(),
             'flash' => $_SESSION['flash'] ?? null,
         ]);
         unset($_SESSION['godigital_result'], $_SESSION['godigital_active_tab'], $_SESSION['flash']);

@@ -1,7 +1,6 @@
 <?php
 /** @var array $configuration */
 /** @var array|null $result */
-/** @var array $activity */
 $resultJson = $result ? json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) : '';
 $ready = static fn(string $key): bool => !empty($configuration[$key]);
 $newReference = static fn(): string => \App\PaymentReference::generate();
@@ -51,7 +50,6 @@ $lastReference = $last_reference ?: $newReference();
     <button type="button" class="pegasus-tab" data-godigital-tab="balance">Balance</button>
     <button type="button" class="pegasus-tab" data-godigital-tab="name-check">Name check</button>
     <button type="button" class="pegasus-tab" data-godigital-tab="callbacks">Callback</button>
-    <button type="button" class="pegasus-tab" data-godigital-tab="activity">Logs</button>
   </div>
 
   <div data-godigital-panel="connection">
@@ -132,19 +130,7 @@ $lastReference = $last_reference ?: $newReference();
       <strong>Register this URL with GoDigital</strong>
       <p>It accepts JSON callbacks and acknowledges them with HTTP 200. <?= \App\View::e($configuration['signature_note']) ?></p>
     </div>
-    <pre class="code-block"><code><?= \App\View::e(json_encode(['status' => 'RECEIVED', 'message' => 'Callback accepted'], JSON_PRETTY_PRINT)) ?></code></pre>
-  </div>
-
-  <div data-godigital-panel="activity">
-    <?php if ($activity): ?>
-      <div class="event-list godigital-events">
-        <?php foreach ($activity as $entry): ?>
-          <div class="event-row"><span class="event-dot"></span><div><strong><?= \App\View::e($entry['message'] ?? '') ?></strong><small><?= \App\View::e((string) ($entry['at'] ?? '')) ?></small><?php if (!empty($entry['context'])): ?><details class="log-context"><summary>Details</summary><pre><?= \App\View::e(json_encode($entry['context'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) ?></pre></details><?php endif; ?></div></div>
-        <?php endforeach; ?>
-      </div>
-    <?php else: ?>
-      <div class="event-empty"><span>◌</span><p>Requests, responses, and callbacks appear here.</p></div>
-    <?php endif; ?>
+    <pre class="code-block"><code><?= \App\View::e(json_encode(['status' => 'RECEIVED', 'message' => 'Callback verified'], JSON_PRETTY_PRINT)) ?></code></pre>
   </div>
 
   <?php if ($result): ?>
@@ -153,11 +139,6 @@ $lastReference = $last_reference ?: $newReference();
       <pre class="code-block"><code><?= \App\View::e($resultJson) ?></code></pre>
     </section>
   <?php endif; ?>
-</section>
-
-<section class="api-test-band">
-  <div><p class="eyebrow">Server API</p><h3>GoDigital API</h3><p>Use a dashboard-issued <code>X-API-Key</code>.</p></div>
-  <a class="primary-action" href="<?= $url('/api/v1/godigital/openapi.json') ?>">Open API JSON</a>
 </section>
 
 <script>
